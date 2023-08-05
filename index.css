@@ -1,1 +1,24 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
+.navbar {
+    background: rgb(73, 116, 73);
+    display: flex;
+}
+
+.navbar a {
+    margin: 30px 40px 30px 40px; 
+    color: black;
+    text-decoration: none;
+}
+
+#navbar_left {
+    margin-left: 100px;
+}
+
+.navbar a:hover{
+    color: white;
+}
