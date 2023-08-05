@@ -7,18 +7,29 @@
 .navbar {
     background: rgb(73, 116, 73);
     display: flex;
+    justify-content: right;
+    
 }
 
 .navbar a {
     margin: 30px 40px 30px 40px; 
     color: black;
     text-decoration: none;
+    font-size: 18px;
 }
 
-#navbar_left {
-    margin-left: 100px;
+.navbar h1 {
+    margin: 20px auto 20px 100px; 
+    color: black;
+    text-decoration: none;
+    font-size: 30px;
+}
+
+#navbar_last {
+    margin-right: 150px;
 }
 
 .navbar a:hover{
     color: white;
+    transition: 0.3s;
 }
