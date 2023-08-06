@@ -1,11 +1,11 @@
 * {
     margin: 0px;
     padding: 0px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
 }
 
 .navbar {
-    background: rgb(73, 116, 73);
+    background: #081b29;
     display: flex;
     justify-content: right;
     
@@ -13,16 +13,9 @@
 
 .navbar a {
     margin: 30px 40px 30px 40px; 
-    color: black;
+    color: #ffffff;
     text-decoration: none;
     font-size: 18px;
-}
-
-.navbar h1 {
-    margin: 20px auto 20px 100px; 
-    color: black;
-    text-decoration: none;
-    font-size: 30px;
 }
 
 #navbar_last {
@@ -30,6 +23,25 @@
 }
 
 .navbar a:hover{
-    color: white;
+    color: rgb(31, 233, 233);
     transition: 0.3s;
 }
+
+.container {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid; 
+    margin: 60px 30px 0px 30px;
+}
+
+.item  {
+    flex-grow: 1;
+    border: 1px solid; 
+    margin: 10px;
+
+}
+
+
+
+
+
