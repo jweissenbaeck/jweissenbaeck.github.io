@@ -1,47 +1,57 @@
 * {
-    margin: 0px;
-    padding: 0px;
-    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif
+    margin: 0;
+    padding: 0;
 }
 
-.navbar {
-    background: #081b29;
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: rgb(9, 34, 87);
     display: flex;
-    justify-content: right;
-    
+    align-items: center;
+    justify-content: center;
+    height: 100%;
 }
 
-.navbar a {
-    margin: 30px 40px 30px 40px; 
-    color: #ffffff;
-    text-decoration: none;
-    font-size: 18px;
+.orbit {
+    position: absolute; /* Make sure child elements are positioned relative to this */
+    width: 500px;
+    height: 500px;
+    border: 1.5px solid white;
+    border-radius: 50%;
+    animation: rotate 100s infinite linear;
 }
 
-#navbar_last {
-    margin-right: 150px;
+@keyframes rotate {
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
-.navbar a:hover{
-    color: rgb(31, 233, 233);
-    transition: 0.3s;
+.earth {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    background-color: rgb(0, 162, 255);
+    border: 2px solid rgb(6, 93, 206);
+    border-radius: 50%;
+    box-shadow: 0px 0px 15px 5px rgba(2, 120, 167, 0.75);
 }
 
-.container {
-    display: flex;
-    flex-direction: row;
-    border: 1px solid; 
-    margin: 60px 30px 0px 30px;
+.moon {
+    position: absolute;
+    top: 30px;
+    left: 85%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: rgb(211, 199, 199);
+    background-position: center;
+    box-shadow: 0px 0px 5px 2px rgba(237, 241, 243, 0.75);
 }
-
-.item  {
-    flex-grow: 1;
-    border: 1px solid; 
-    margin: 10px;
-
-}
-
-
-
-
-
