@@ -10,10 +10,11 @@
     display: flex;
     flex-direction: row;
     border: 1px solid;
-    justify-content: space-around;
+    justify-content:space-evenly;
     align-items: center;
-    margin: 5% 20%;
+    margin: 5% auto;
     flex-wrap: wrap;
+    width: 70vw;
 }
 
 .container-element {
@@ -29,14 +30,22 @@
 
 @media (max-width: 768px) {
     .main-container {
-        margin: 5% 5%;
+        flex-direction: column;
+    }
+
+    .container-element {
+        width: 60vw;
     }
 }
 
 @media (max-width: 480px) {
+    .main-container {
+        flex-direction: column;
+    }
+
     .container-element {
         flex-direction: column;
-        width: 80vw; 
+        width: 60vw; 
 
     }
 }
