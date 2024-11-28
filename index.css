@@ -1,57 +1,42 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap');
+
 * {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
-html, body {
-    height: 100%;
-}
-
-body {
-    background-color: rgb(9, 34, 87);
+.main-container {
     display: flex;
+    flex-direction: row;
+    border: 1px solid;
+    justify-content: space-around;
     align-items: center;
-    justify-content: center;
-    height: 100%;
+    margin: 5% 20%;
+    flex-wrap: wrap;
 }
 
-.orbit {
-    position: absolute; /* Make sure child elements are positioned relative to this */
-    width: 500px;
-    height: 500px;
-    border: 1.5px solid white;
-    border-radius: 50%;
-    animation: rotate 100s infinite linear;
+.container-element {
+    display: flex;
+    flex-direction: column;
+    width: min(40%, 300px); 
+    height: 30vh;
+    border: 1px solid #ccc; 
+    margin: 1rem; 
+    padding: 1rem;
+    box-sizing: border-box; 
 }
 
-@keyframes rotate {
-    100% {
-        transform: rotate(360deg);
+@media (max-width: 768px) {
+    .main-container {
+        margin: 5% 5%;
     }
 }
 
-.earth {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    height: 300px;
-    background-color: rgb(0, 162, 255);
-    border: 2px solid rgb(6, 93, 206);
-    border-radius: 50%;
-    box-shadow: 0px 0px 15px 5px rgba(2, 120, 167, 0.75);
-}
+@media (max-width: 480px) {
+    .container-element {
+        flex-direction: column;
+        width: 80vw; 
 
-.moon {
-    position: absolute;
-    top: 30px;
-    left: 85%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background-color: rgb(211, 199, 199);
-    background-position: center;
-    box-shadow: 0px 0px 5px 2px rgba(237, 241, 243, 0.75);
+    }
 }
