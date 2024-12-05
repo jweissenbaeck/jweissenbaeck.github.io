@@ -6,6 +6,38 @@
     box-sizing: border-box;
 }
 
+/* <------------------------------- */
+/* <BESCHREIBUNG DES PORTFOLIOS     */
+/* <------------------------------- */
+
+.navbar {
+    display: flex;
+    border: 1px solid;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1.2rem 10%;
+}
+
+
+.navbar-logo {
+    margin-right: auto;
+}
+
+.navbar-element {
+    list-style-type: none;;
+    display: inline-block;
+    padding-right: 2rem; 
+}
+
+
+
+
+
+
+/* <------------------------------- */
+/* <DISPLAY DER PROJEKTE            */
+/* <------------------------------- */
+
 .main-container {
     display: flex;
     flex-direction: row;
@@ -14,18 +46,18 @@
     align-items: center;
     margin: 5% auto;
     flex-wrap: wrap;
-    width: 70vw;
+    width: 60vw;
 }
 
 .container-element {
     display: flex;
     flex-direction: column;
-    width: min(40%, 300px); 
+    width: min(50%, 300px); 
     height: 30vh;
     border: 1px solid #ccc; 
     margin: 1rem; 
     padding: 1rem;
-    box-sizing: border-box; 
+    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
 }
 
 @media (max-width: 768px) {
@@ -34,18 +66,20 @@
     }
 
     .container-element {
-        width: 60vw;
+        width: 50vw;
     }
 }
 
 @media (max-width: 480px) {
     .main-container {
         flex-direction: column;
+        width: 70vw;
     }
 
     .container-element {
         flex-direction: column;
-        width: 60vw; 
+        width: 60vw;
+        height: 60vw;
 
     }
 }
