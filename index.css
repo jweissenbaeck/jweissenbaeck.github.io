@@ -1,9 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Simonetta:wght@400;700&family=Tiro+Bangla&family=Send+Flowers&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:500');
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: Outfit;
+}
+
+body {
+    background: rgb(53, 53, 53);
 }
 
 /* <------------------------------- */
@@ -29,11 +35,6 @@
     padding-right: 2rem; 
 }
 
-
-
-
-
-
 /* <------------------------------- */
 /* <DISPLAY DER PROJEKTE            */
 /* <------------------------------- */
@@ -45,8 +46,12 @@
     justify-content:space-evenly;
     align-items: center;
     margin: 5% auto;
+    padding: 5% 0 5% 0;
     flex-wrap: wrap;
     width: 60vw;
+    border-color: #F1F1F2;
+    border-radius: 10px;
+    border-width: 2px;;
 }
 
 .container-element {
@@ -58,6 +63,20 @@
     margin: 1rem; 
     padding: 1rem;
     box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
+    color: black;
+    text-decoration: none;
+    border-radius: 8px; /* Abgerundete Ecken */
+    background-color: #F1F1F2
+}
+
+#dinocompany-container {
+    display: block; /* Damit der gesamte Container klickbar ist */
+    position: relative; /* Für das Pseudo-Element erforderlich */
+    background-size: cover; /* Passt das Bild an die Größe des Containers an */
+    background-position: center; /* Zentriert das Bild */
+    padding: 20px; /* Platz innerhalb des Containers */
+    color: rgb(0, 0, 0); /* Textfarbe */
+    text-decoration: none; /* Entfernt Link-Unterstreichung */
 }
 
 @media (max-width: 768px) {
