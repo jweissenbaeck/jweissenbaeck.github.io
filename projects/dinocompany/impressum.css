@@ -1,0 +1,142 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Simonetta:wght@400;700&family=Tiro+Bangla&family=Send+Flowers&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:500');
+
+* {
+    font-family: 'Outfit', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-weight: 400;
+  }
+  
+  body {
+    background-color: #FFB0B0;
+    padding-top: 2rem;
+  }
+
+  .navbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 1.7em 12%;
+    box-shadow: 0 0.2px 10px #000000;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: #FFB0B0;
+    z-index: 5;
+  }
+  
+  .nav-logo {
+    font-weight: bold;
+    font-size: 1.5rem;
+    margin-right: auto;
+    color: #810B0B;
+  }
+
+  .nav-logo a {
+    text-decoration: none;
+    color: #810B0B; /* Die gleiche Farbe wie für den Text der Navigation */
+    font-weight: bold;
+    font-size: 1.5rem;
+  }
+  
+  .nav-list {
+    list-style: none;
+    display: flex;
+    gap: 4rem;
+    font-size: 1.1rem;
+  }
+  
+  .nav-list a {
+    text-decoration: none;
+    color: #000;
+    transition: color 0.5s;
+  }
+  
+  .nav-list a:hover {
+    color: #810B0B;
+  }
+
+
+ /* Generelle Einstellungen für das Impressum */
+.impressum-section {
+    padding: 3rem 12%;
+    background-color: #fff; /* Weißer Hintergrund für das Impressum */
+    margin-top: 3rem; /* Abstand zur Navigation */
+    font-family: 'Outfit', sans-serif;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  /* Überschrift des Impressums */
+  .impressum-section h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #810B0B;
+    margin-bottom: 1rem;
+  }
+  
+  /* Stil für Absätze und fettgedruckte Elemente */
+  .impressum-section p {
+    margin-bottom: 1rem;
+  }
+  
+  .impressum-section strong {
+    font-weight: 700;
+    color: #810B0B; /* Dunkelrot für Hervorhebungen */
+  }
+  
+  /* Links im Impressum */
+  .impressum-section a {
+    color: #810B0B;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  .impressum-section a:hover {
+    text-decoration: underline;
+    color: #000;
+  }
+  
+  /* Abstände und Gestaltung für das Impressum */
+  .impressum-section p {
+    font-size: 1rem;
+  }
+  
+  .impressum-section p + p {
+    margin-top: 1.5rem;
+  }
+  
+  /* Footer bleibt wie im vorherigen CSS */
+  .footer {
+    background-color: #810B0B; /* Dunkelrot */
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 1.7em 12%;
+    margin-top: 0;
+    font-size: 1rem;
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  .footer-left a,
+  .footer-right p {
+    color: white;
+    text-decoration: none;
+  }
+  
+  .footer-left a {
+    margin-right: 4em;
+  }
+  
+  .footer-left a:hover {
+    text-decoration: underline;
+  }
+  
+  .footer-right {
+    text-align: right;
+  }
+  

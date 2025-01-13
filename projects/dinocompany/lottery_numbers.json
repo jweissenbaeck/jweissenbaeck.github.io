@@ -1,0 +1,39 @@
+{
+    "numbers": [
+        {
+            "order": 0,
+            "special": false,
+            "value": 19
+        },
+        {
+            "order": 1,
+            "special": false,
+            "value": 35
+        },
+        {
+            "order": 2,
+            "special": false,
+            "value": 37
+        },
+        {
+            "order": 3,
+            "special": false,
+            "value": 3
+        },
+        {
+            "order": 4,
+            "special": false,
+            "value": 29
+        },
+        {
+            "order": 0,
+            "special": true,
+            "value": 1
+        },
+        {
+            "order": 1,
+            "special": true,
+            "value": 9
+        }
+    ]
+}
