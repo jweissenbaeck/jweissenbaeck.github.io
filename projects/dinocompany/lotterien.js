@@ -9,7 +9,7 @@ async function loadLotteryNumbers() {
 
         const data = await response.json();
 
-        if (data.numbers) {
+        if (data.numbers && data.date) {
             // Filtern und sortieren der Zahlen
             const numbers = data.numbers.filter(n => !n.special).map(n => n.value);
             const specialNumbers = data.numbers.filter(n => n.special).map(n => n.value);
@@ -17,6 +17,7 @@ async function loadLotteryNumbers() {
             // Zahlen im HTML anzeigen
             const numbersContainer = document.getElementById("numbers");
             const specialNumbersContainer = document.getElementById("special-numbers");
+            const dateContainer = document.getElementById("draw-date"); // Neues Element für das Datum
 
             // Für Hauptzahlen: Jede Zahl in einem eigenen div-Element
             numbersContainer.innerHTML = '';  // Sicherstellen, dass der Container leer ist
@@ -35,8 +36,11 @@ async function loadLotteryNumbers() {
                 numberElement.textContent = number;
                 specialNumbersContainer.appendChild(numberElement);
             });
+
+            // Datum anzeigen
+            dateContainer.textContent = `${data.date}`;
         } else {
-            throw new Error("Keine 'numbers' im JSON gefunden.");
+            throw new Error("Daten im JSON fehlen ('numbers' oder 'date').");
         }
     } catch (error) {
         console.error(error);

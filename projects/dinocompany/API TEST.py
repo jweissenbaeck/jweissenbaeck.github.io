@@ -16,21 +16,23 @@ if response.status_code == 200:
     # Parse the JSON response
     data = response.json()
     
-    # Assuming the response contains 'numbers' key with a list of numbers
-    if 'numbers' in data:
+    # Check if the response contains 'numbers' and 'date'
+    if 'numbers' in data and 'date' in data:
         numbers = data['numbers']
-        # Create a dictionary to store the numbers data
-        numbers_data = {
-            "numbers": numbers
+        draw_date = data['date']
+        
+        # Create a dictionary to store the numbers and date data
+        lottery_data = {
+            "numbers": numbers,
+            "date": draw_date
         }
 
-        # Write the numbers data to a JSON file
+        # Write the lottery data to a JSON file
         with open('lottery_numbers.json', 'w') as json_file:
-            json.dump(numbers_data, json_file, indent=4)
+            json.dump(lottery_data, json_file, indent=4)
 
-        print("Die Daten wurden erfolgreich in die Datei 'lottery_numbers.json' geschrieben.")
+        print("Die Daten wurden erfolgreich in die Datei 'lottery_data.json' geschrieben.")
     else:
-        print("No 'numbers' key in the response data.")
+        print("Die Antwort enthält nicht die erwarteten Schlüssel 'numbers' oder 'date'.")
 else:
-    print(f"Failed to retrieve data. HTTP Status code: {response.status_code}")
-
+    print(f"Fehler beim Abrufen der Daten. HTTP-Statuscode: {response.status_code}")

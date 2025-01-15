@@ -84,6 +84,18 @@ h1 {
   text-transform: uppercase;
 }
 
+main p{
+  font-family: 'Outfit', sans-serif;
+  color: #444;
+  font-size: 1.1rem;
+}
+
+#draw-date {
+  font-family: 'Outfit', sans-serif;
+  color: #444;
+  font-size: 1.5rem;
+}
+
 .numbers-container {
   background: white;
   border-radius: 20px;
