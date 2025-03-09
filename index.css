@@ -1,104 +1,142 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Simonetta:wght@400;700&family=Tiro+Bangla&family=Send+Flowers&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:500');
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Outfit;
+    font-family: "Fixedsys", monospace;
+    margin: 0px;
+    padding: 0px;
+}
+
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Verhindert Scrollbalken */
 }
 
 body {
-    background: rgb(53, 53, 53);
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Zentriert den Inhalt vertikal */
+    align-items: center; /* Zentriert den Inhalt horizontal */
+    background: #008080;
+    padding-bottom: 40px; /* Etwas Platz für den Footer */
 }
 
-/* <------------------------------- */
-/* <BESCHREIBUNG DES PORTFOLIOS     */
-/* <------------------------------- */
+.main-section {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    height: 60vh;
+    background: #C0C0C0;
+    border: 2px solid #808080;
+    box-shadow: 4px 4px #404040;
+    padding: 4px;
+    border-top-color: white;
+    border-left-color: white;
+}
+
+.window-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #808080;
+    color: white;
+    padding: 5px;
+    font-size: 14px;
+}
+
+.window-buttons {
+    display: flex;
+    gap: 6px; /* Etwas mehr Abstand zwischen den Buttons */
+}
+
+.window-button {
+    width: 20px; /* Größerer Button */
+    height: 20px; /* Größerer Button */
+    background: #C0C0C0;
+    border: 2px solid #808080;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px; /* Etwas größere Schrift für den Button */
+    cursor: pointer;
+    box-shadow: inset -1px -1px #404040, inset 1px 1px white;
+}
+
+
+.window-button:active {
+    box-shadow: inset -1px -1px white, inset 1px 1px #404040;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: white;
+    border-bottom-color: white;
+}
 
 .navbar {
     display: flex;
-    border: 1px solid;
-    justify-content: flex-end;
     align-items: center;
-    padding: 1.2rem 10%;
+    background: #C0C0C0;
+    border-bottom: 2px solid #808080;
+    padding: 5px;
 }
 
-
-.navbar-logo {
-    margin-right: auto;
-}
-
-.navbar-element {
-    list-style-type: none;;
-    display: inline-block;
-    padding-right: 2rem; 
-}
-
-/* <------------------------------- */
-/* <DISPLAY DER PROJEKTE            */
-/* <------------------------------- */
-
-.main-container {
+.navbar-list {
     display: flex;
-    flex-direction: row;
-    border: 1px solid;
-    justify-content:space-evenly;
+    list-style: none;
+}
+
+.navbar-list-element {
+    padding: 4px 10px;
+    margin-right: 10px;
+    border: 2px solid transparent;
+    border-top-color: white;
+    border-left-color: white;
+    border-right-color: #808080;
+    border-bottom-color: #808080;
+    background: #C0C0C0;
+    cursor: pointer;
+}
+
+.navbar-list-element:active {
+    box-shadow: inset -1px -1px white, inset 1px 1px #404040;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: white;
+    border-bottom-color: white;
+}
+
+.content {
+    display: flex;
+    justify-content: space-around;
     align-items: center;
-    margin: 5% auto;
-    padding: 5% 0 5% 0;
-    flex-wrap: wrap;
-    width: 60vw;
-    border-color: #F1F1F2;
-    border-radius: 10px;
-    border-width: 2px;;
+    height: 100%;
+    padding: 10px;
+    border-top: 2px solid #808080;
+    border-left: 5px solid #808080;
 }
 
-.container-element {
+.content-box {
+    width: 30%;
+    height: 70%;
+    background: #C0C0C0;
+    border: 2px solid #808080;
     display: flex;
-    flex-direction: column;
-    width: min(50%, 300px); 
-    height: 30vh;
-    border: 1px solid #ccc; 
-    margin: 1rem; 
-    padding: 1rem;
-    box-shadow: rgba(0, 0, 0, 0.16) 0px 3px 6px, rgba(0, 0, 0, 0.23) 0px 3px 6px;
-    color: black;
-    text-decoration: none;
-    border-radius: 8px; /* Abgerundete Ecken */
-    background-color: #F1F1F2
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 1.2em;
+    font-weight: bold;
+    box-shadow: inset -2px -2px #404040, inset 2px 2px white;
 }
 
-#dinocompany-container {
-    display: block; /* Damit der gesamte Container klickbar ist */
-    position: relative; /* Für das Pseudo-Element erforderlich */
-    background-size: cover; /* Passt das Bild an die Größe des Containers an */
-    background-position: center; /* Zentriert das Bild */
-    padding: 20px; /* Platz innerhalb des Containers */
-    color: rgb(0, 0, 0); /* Textfarbe */
-    text-decoration: none; /* Entfernt Link-Unterstreichung */
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 10px;
+    background: #808080;
+    color: white;
+    text-align: center;
+    font-size: 14px;
 }
 
-@media (max-width: 768px) {
-    .main-container {
-        flex-direction: column;
-    }
-
-    .container-element {
-        width: 50vw;
-    }
-}
-
-@media (max-width: 480px) {
-    .main-container {
-        flex-direction: column;
-        width: 70vw;
-    }
-
-    .container-element {
-        flex-direction: column;
-        width: 60vw;
-        height: 60vw;
-
-    }
+footer p {
+    margin: 0;
 }
