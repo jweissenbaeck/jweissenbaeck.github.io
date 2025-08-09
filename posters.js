@@ -1,3 +1,37 @@
+window.addEventListener('DOMContentLoaded', function() {
+    const loader = document.getElementById('loader');
+    const grid = document.getElementById('postersGrid');
+    const images = document.querySelectorAll('.poster-item img');
+    let loaded = 0;
+    if (images.length === 0) {
+        if (loader) loader.style.display = 'none';
+        if (grid) grid.style.display = '';
+        return;
+    }
+    function hideLoader() {
+        setTimeout(() => {
+            if (loader) loader.style.display = 'none';
+            if (grid) grid.style.display = '';
+        }, 1500); // 1.5 seconds
+    }
+    images.forEach(img => {
+        if (img.complete) {
+            loaded++;
+            if (loaded === images.length) hideLoader();
+        } else {
+            img.addEventListener('load', () => {
+                loaded++;
+                if (loaded === images.length) hideLoader();
+            });
+            img.addEventListener('error', () => {
+                loaded++;
+                if (loaded === images.length) hideLoader();
+            });
+        }
+    });
+});
+
+// Modal functionality
 document.querySelectorAll('.poster-item').forEach(item => {
     item.addEventListener('click', function() {
         document.getElementById('modalImg').src = this.dataset.img;
@@ -7,33 +41,37 @@ document.querySelectorAll('.poster-item').forEach(item => {
         const modal = document.getElementById('posterModal');
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('show'), 10);
+        document.body.style.overflow = 'hidden';
     });
 });
 
-// Close modal when clicking the close (X) button
 document.getElementById('modalClose').onclick = function() {
     const modal = document.getElementById('posterModal');
-    modal.classList.remove('show'); // Remove animation class
-    setTimeout(() => modal.style.display = 'none', 400); // Hide modal after animation
+    modal.classList.remove('show');
+    setTimeout(() => {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }, 400);
 };
 
-// Close modal when clicking outside the modal content
 document.getElementById('posterModal').onclick = function(e) {
     if (e.target === this) {
         this.classList.remove('show');
-        setTimeout(() => this.style.display = 'none', 400);
+        setTimeout(() => {
+            this.style.display = 'none';
+            document.body.style.overflow = '';
+        }, 400);
     }
 };
 
-// Fullscreen button: open the modal image in fullscreen mode
 document.getElementById('fullscreenBtn').onclick = function(e) {
-    e.stopPropagation(); // Prevent modal from closing
+    e.stopPropagation();
     const img = document.getElementById('modalImg');
     if (img.requestFullscreen) {
         img.requestFullscreen();
-    } else if (img.webkitRequestFullscreen) { // Safari
+    } else if (img.webkitRequestFullscreen) {
         img.webkitRequestFullscreen();
-    } else if (img.msRequestFullscreen) { // IE11
+    } else if (img.msRequestFullscreen) {
         img.msRequestFullscreen();
     }
 };
