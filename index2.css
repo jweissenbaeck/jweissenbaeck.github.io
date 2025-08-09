@@ -126,5 +126,26 @@ body {
     font-size: 1.2em;
     font-weight: bold;
     box-shadow: inset -2px -2px #404040, inset 2px 2px white;
+    text-decoration: none; /* Links ohne Unterstreichung */
+    color: inherit;        /* Links wie normaler Text */
+    transition: background 0.1s;
 }
 
+.content a.content-box {
+    text-decoration: none; /* Sicherheitshalber für Links */
+    color: inherit;
+}
+
+.content-box:hover {
+    background: #808080; /* Farbe beim Hovern */
+    cursor: pointer;
+}
+
+.content-box:active {
+    box-shadow: inset 2px 2px #404040, inset -2px -2px white;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: white;
+    border-bottom-color: white;
+    background: #A0A0A0;
+}

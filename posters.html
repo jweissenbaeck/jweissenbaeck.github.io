@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Posters</title>
+    <link rel="stylesheet" href="posters.css">
+</head>
+<body>
+
+    
+    <main class="posters-main">
+        <h1>My Posters</h1>
+        <div class="posters-grid">
+          
+            <div class="poster-item" data-title="BF42 inspired" data-img="poster_battlefield2042.png" 
+                data-desc="I created this poster with the color scheme of BF42 and added self-modeled HUD elements to the poster. This is fan art and I am not affiliated with Electronic Arts (EA). All rights to Battlefield and related assets belong to EA.">
+                <img src="poster_battlefield2042.png" alt="Poster 1">
+                <p>BF42 inspired</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 2" data-img="poster2.png" data-desc="Beschreibung zu Poster 2.">
+                <img src="poster2.png" alt="Poster 2">
+                <p>poster title 2</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 3" data-img="poster3.png" data-desc="Beschreibung zu Poster 3.">
+                <img src="poster3.png" alt="Poster 3">
+                <p>poster title 3</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 4" data-img="poster4.png" data-desc="Beschreibung zu Poster 4.">
+                <img src="poster4.png" alt="Poster 4">
+                <p>poster title 4</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 5" data-img="poster5.png" data-desc="Beschreibung zu Poster 5.">
+                <img src="poster5.png" alt="Poster 5">
+                <p>poster title 5</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 6" data-img="poster6.png" data-desc="Beschreibung zu Poster 6.">
+                <img src="poster6.png" alt="Poster 6">
+                <p>poster title 6</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 7" data-img="poster7.png" data-desc="Beschreibung zu Poster 7.">
+                <img src="poster7.png" alt="Poster 7">
+                <p>poster title 7</p>
+            </div>
+
+            <div class="poster-item" data-title="poster title 8" data-img="poster8.png" data-desc="Beschreibung zu Poster 8.">
+                <img src="poster8.png" alt="Poster 8">
+                <p>poster title 8</p>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal overlay: shows large poster and description when a poster is clicked -->
+    <div class="poster-modal" id="posterModal">
+        <div class="poster-modal-content">
+            <!-- Large poster image in modal -->
+            <img id="modalImg" src="" alt="">
+            <!-- Text area: title, description, and fullscreen button -->
+            <div class="poster-modal-text" style="display: flex; flex-direction: column; height: 100%;">
+                <h2 id="modalTitle"></h2>
+                <p id="modalDesc"></p>
+                <button id="fullscreenBtn" class="fullscreen-btn">View Fullscreen</button>
+            </div>
+                        <!-- Close button for modal -->
+            <span class="poster-modal-close" id="modalClose">&times;</span>
+        </div>
+    </div>
+
+    <script src="posters.js"></script>
+</body>
+</html>

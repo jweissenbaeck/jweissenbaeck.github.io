@@ -1,0 +1,163 @@
+* {
+    font-family: "Fixedsys", monospace;
+    margin: 0px;
+    padding: 0px;
+}
+
+body {
+    background: #008080;
+    font-family: "Fixedsys", monospace;
+    margin: 0;
+    padding: 0;
+}
+
+.posters-main {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 32px 16px;
+}
+
+h1 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.posters-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px;
+    justify-content: center;
+}
+
+.poster-item {
+    background: #C0C0C0;
+    border: 2px solid #808080;
+    box-shadow: 4px 4px #404040;
+    padding: 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 270px;
+    margin-bottom: 32px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.poster-item:hover {
+    transform: scale(1.03);
+    box-shadow: 6px 6px #404040;
+}
+
+.poster-item img {
+    width: 100%;
+    height: 360px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid #808080;
+    margin-bottom: 12px;
+}
+
+.poster-item p {
+    margin: 0;
+    color: #222;
+    font-size: 1em;
+    text-align: center;
+}
+
+.poster-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+.poster-modal-content {
+    background: #C0C0C0;
+    border: 2px solid #808080;
+    box-shadow: 4px 4px #404040;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 32px;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 90vw;
+    max-height: 90vh;
+    position: relative;
+    gap: 32px;
+}
+
+.poster-modal-content img {
+    width: 600px;
+    height: 800px;
+    max-width: 80vw;
+    max-height: 80vh;
+    object-fit: contain;
+    flex-shrink: 0;
+    transform: scale(0.7) translateY(60px);
+    opacity: 0;
+    transition: 
+        transform 0.4s cubic-bezier(.4,1.6,.6,1),
+        opacity 0.3s;
+}
+
+.poster-modal.show .poster-modal-content img {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+.poster-modal-text {
+    max-width: 350px;
+    color: #222;
+    font-size: 1.1em;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.poster-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    font-size: 2.5em;
+    color: #404040;
+    cursor: pointer;
+    user-select: none;
+}
+
+.fullscreen-btn {
+    margin-top: 16px;
+    padding: 8px 18px;
+    font-size: 1em;
+    background: #808080;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.fullscreen-btn:hover {
+    background: #404040;
+}
+
+@media (max-width: 800px) {
+    .poster-modal-content {
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        gap: 16px;
+    }
+    .poster-modal-content img {
+        width: 90vw;
+        height: auto;
+        max-height: 50vh;
+    }
+    .poster-modal-text {
+        max-width: 90vw;
+    }
+}
