@@ -97,6 +97,11 @@ body {
   cursor: pointer;
 }
 
+.navbar-list-element a {
+  text-decoration: none;
+  color: black;
+}
+
 .navbar-list-element:active {
   box-shadow: inset -1px -1px white, inset 1px 1px #404040;
   border-top-color: #808080;
