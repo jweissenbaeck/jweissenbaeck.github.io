@@ -1,35 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>my portfolio</title>
-    <link rel="stylesheet" href="index.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jacob's Portfolio</title>
+    <link rel="icon" type="image/png" href="icons/browser_icon.png" />
+    <link rel="stylesheet" href="index.css" />
+  </head>
+  <body>
     <main class="main-section">
-        <div class="window-top">
-            <p><strong>My Computer</strong></p>
-            <div class="window-buttons">
-                <div class="window-button">_</div>
-                <div class="window-button">X</div>
-            </div>
+      <div class="window-top">
+        <p><strong>My Computer</strong></p>
+        <div class="window-buttons">
+          <div class="window-button">_</div>
+          <div class="window-button">X</div>
         </div>
-        <div class="navbar">
-            <ul class="navbar-list">
-                <li class="navbar-list-element">File</li>
-                <li class="navbar-list-element">Edit</li>
-                <li class="navbar-list-element">View</li>
-                <li class="navbar-list-element">Help</li>
-            </ul>
-        </div>
-        <div class="content">
-            <div class="content-box">CV</div>
-            <div class="content-box"></div>
-            <a href="posters.html" class="content-box" id="postersLink">Posters</a>
-        </div>
+      </div>
+      <div class="navbar">
+        <ul class="navbar-list">
+          <li class="navbar-list-element">File</li>
+          <li class="navbar-list-element">Edit</li>
+          <li class="navbar-list-element">View</li>
+          <li class="navbar-list-element">Help</li>
+        </ul>
+      </div>
+      <div class="content">
+        <a href="cv.html" class="content-box">
+          <img src="icons/cv_icon.png" alt="CV Icon" class="icon" />
+          <span> Curriculum Vitae </span>
+        </a>
+        <a href="uiux.html" class="content-box">
+          <img src="icons/uiux_icon.png" alt="UI UX Icon" class="icon" />
+          <span> UI / UX Design </span>
+        </a>
+        <a href="graphic_design.html" class="content-box">
+          <img src="icons/graphic_design_icon.png" alt="Graphic Design Icon" class="icon" />
+          <span> Graphic Design </span>
+        </a>
+      </div>
+
     </main>
-    <!-- Kein Loader hier nötig -->
     <script src="index.js"></script>
-</body>
+  </body>
 </html>

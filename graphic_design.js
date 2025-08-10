@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', function() {
     const loader = document.getElementById('loader');
-    const grid = document.getElementById('postersGrid');
-    const images = document.querySelectorAll('.poster-item img');
+    const grid = document.getElementById('graphic_designGrid');
+    const images = document.querySelectorAll('.graphic_design-item img');
     let loaded = 0;
     if (images.length === 0) {
         if (loader) loader.style.display = 'none';
@@ -32,13 +32,13 @@ window.addEventListener('DOMContentLoaded', function() {
 });
 
 // Modal functionality
-document.querySelectorAll('.poster-item').forEach(item => {
+document.querySelectorAll('.graphic_design-item').forEach(item => {
     item.addEventListener('click', function() {
         document.getElementById('modalImg').src = this.dataset.img;
         document.getElementById('modalImg').alt = this.dataset.title;
         document.getElementById('modalTitle').textContent = this.dataset.title;
         document.getElementById('modalDesc').textContent = this.dataset.desc;
-        const modal = document.getElementById('posterModal');
+        const modal = document.getElementById('graphic_designModal');
         modal.style.display = 'flex';
         setTimeout(() => modal.classList.add('show'), 10);
         document.body.style.overflow = 'hidden';
@@ -46,7 +46,7 @@ document.querySelectorAll('.poster-item').forEach(item => {
 });
 
 document.getElementById('modalClose').onclick = function() {
-    const modal = document.getElementById('posterModal');
+    const modal = document.getElementById('graphic_designModal');
     modal.classList.remove('show');
     setTimeout(() => {
         modal.style.display = 'none';
@@ -54,7 +54,7 @@ document.getElementById('modalClose').onclick = function() {
     }, 400);
 };
 
-document.getElementById('posterModal').onclick = function(e) {
+document.getElementById('graphic_designModal').onclick = function(e) {
     if (e.target === this) {
         this.classList.remove('show');
         setTimeout(() => {

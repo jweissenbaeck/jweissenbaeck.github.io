@@ -120,6 +120,7 @@ body {
     background: #C0C0C0;
     border: 2px solid #808080;
     display: flex;
+    flex-direction: column; /* neu: Bild über Text */
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -129,6 +130,14 @@ body {
     text-decoration: none;
     color: inherit;
     transition: background 0.1s;
+    padding: 10px;
+}
+
+.icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+    image-rendering: pixelated;
 }
 
 .content a.content-box {

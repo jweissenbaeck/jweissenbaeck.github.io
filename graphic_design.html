@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Graphic Design </title>
+    <link rel="stylesheet" href="graphic_design.css">
+</head>
+<body>
+    <div id="loader">
+        <img src="icons/loading_gif.webp" alt="Loading..." class="loader-img">
+        <span style="margin-top:16px;">Loading Designs...</span>
+    </div>
+    <main class="graphic_design-main">
+        <h1> My Designs </h1>
+        <div class="graphic_design-grid" id="graphic_designGrid" style="display:none;">
+            <div class="graphic_design-item" data-title="BF42 inspired" data-img="graphic_designs/poster_battlefield2042.webp"
+                data-desc="I created this poster with the color scheme of BF42 and added self-modeled HUD elements to the poster. This is fan art and I am not affiliated with Electronic Arts (EA). All rights to Battlefield and related assets belong to EA.">
+                <img src="graphic_designs/poster_battlefield2042.webp" alt="Poster 1">
+                <p>BF42 inspired</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
+                <img src="graphic_designs/soon_poster.webp" alt="soon">
+                <p>coming soon...</p>
+            </div>
+        </div>
+    </main>
+    <div class="graphic_design-modal" id="graphic_designModal">
+        <div class="graphic_design-modal-content">
+            <img id="modalImg" src="" alt="">
+            <div class="graphic_design-modal-text">
+                <h2 id="modalTitle"></h2>
+                <p id="modalDesc"></p>
+                <button id="fullscreenBtn" class="fullscreen-btn">View Fullscreen</button>
+            </div>
+            <span class="graphic_design-modal-close" id="modalClose">&times;</span>
+        </div>
+    </div>
+    <script src="graphic_design.js"></script>
+</body>
+</html>

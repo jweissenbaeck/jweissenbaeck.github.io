@@ -12,7 +12,7 @@ body {
 }
 
 
-.posters-main {
+.graphic_design-main {
     max-width: 1600px;
     margin: 0 auto;
     padding: 32px 16px;
@@ -45,14 +45,14 @@ h1 {
     image-rendering: pixelated;
 }
 
-.posters-grid {
+.graphic_design-grid {
     display: flex;
     flex-wrap: wrap;
     gap: 32px;
     justify-content: center;
 }
 
-.poster-item {
+.graphic_design-item {
     background: #C0C0C0;
     border: 2px solid #808080;
     box-shadow: 4px 4px #404040;
@@ -67,12 +67,12 @@ h1 {
     transition: transform 0.1s;
 }
 
-.poster-item:hover {
+.graphic_design-item:hover {
     transform: scale(1.03);
     box-shadow: 6px 6px #404040;
 }
 
-.poster-item img {
+.graphic_design-item img {
     width: 100%;
     height: 360px;
     object-fit: contain;
@@ -81,14 +81,14 @@ h1 {
     margin-bottom: 12px;
 }
 
-.poster-item p {
+.graphic_design-item p {
     margin: 0;
     color: #222;
     font-size: 1em;
     text-align: center;
 }
 
-.poster-modal {
+.graphic_design-modal {
     display: none;
     position: fixed;
     z-index: 1000;
@@ -98,7 +98,7 @@ h1 {
     align-items: center;
 }
 
-.poster-modal-content {
+.graphic_design-modal-content {
     background: #C0C0C0;
     border: 2px solid #808080;
     box-shadow: 4px 4px #404040;
@@ -114,7 +114,7 @@ h1 {
     gap: 32px;
 }
 
-.poster-modal-content img {
+.graphic_design-modal-content img {
     width: 600px;
     height: 800px;
     max-width: 80vw;
@@ -128,11 +128,11 @@ h1 {
         opacity 0.3s;
 }
 
-.poster-modal.show .poster-modal-content img {
+.graphic_design-modal.show .graphic_design-modal-content img {
     transform: scale(1) translateY(0);
     opacity: 1;
 }
-.poster-modal-text {
+.graphic_design-modal-text {
     max-width: 350px;
     color: #222;
     font-size: 1.1em;
@@ -141,7 +141,7 @@ h1 {
     gap: 12px;
 }
 
-.poster-modal-close {
+.graphic_design-modal-close {
     position: absolute;
     top: 12px;
     right: 20px;
@@ -168,18 +168,18 @@ h1 {
 }
 
 @media (max-width: 800px) {
-    .poster-modal-content {
+    .graphic_design-modal-content {
         flex-direction: column;
         align-items: center;
         padding: 16px;
         gap: 16px;
     }
-    .poster-modal-content img {
+    .graphic_design-modal-content img {
         width: 90vw;
         height: auto;
         max-height: 50vh;
     }
-    .poster-modal-text {
+    .graphic_design-modal-text {
         max-width: 90vw;
     }
 }
