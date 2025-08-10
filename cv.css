@@ -44,6 +44,10 @@ body {
     box-shadow: inset -2px -2px #404040, inset 2px 2px white;
 }
 
+.link {
+    color: black;
+}
+
 .section {
     margin-bottom: 25px;
 }
