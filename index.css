@@ -180,6 +180,10 @@ body {
   border-left-color: white;
 }
 
+.link {
+  color: black;
+}
+
 @media (max-width: 1024px) {
   .main-section {
     width: 70%;
