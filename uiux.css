@@ -14,20 +14,22 @@ body {
 
 /* Fenster-Layout */
 .window {
-    width: 720px;
-    height: 500px;
     background: #C0C0C0;
     border: 2px solid #000;
     box-shadow:
         inset 2px 2px 0 #fff,
         inset -2px -2px 0 #404040;
+    display: flex;
+    flex-direction: column;
+    font-family: "Fixedsys", monospace;
+    width: 90%;
+    height: auto;
+    max-width: 900px;
+    max-height: 95vh;
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    font-family: "Fixedsys", monospace;
 }
 
 /* Titelzeile */
@@ -47,7 +49,7 @@ body {
 
 .titlebar-icon {
     font-size: 20px;
-    line-height: 24px; /* passend zur Höhe der Titlebar */
+    line-height: 24px;
     margin-right: 8px;
     display: inline-block;
 }
@@ -87,28 +89,28 @@ body {
     height: 600px;
 }
 
-
-
-/* Sidebar (Tree View) */
+/* Sidebar */
 .sidebar {
     background: #c0c0c0;
-    width: 250px;
+    width: 200px;
+    min-width: 200px;
+    max-width: 200px;
     border-right: 2px solid #404040;
     padding: 8px;
     overflow-y: auto;
+    overflow-x: hidden;
     border-top: 2px solid white;
     border-left: 2px solid white;
     border-bottom: 2px solid #404040;
 }
 
-/* Tree View als Windows 98 Buttons */
+/* Tree View */
 .tree-view {
     list-style: none;
     font-size: 14px;
     padding-left: 0;
 }
 
-/* Tree Item als Button */
 .tree-item-button {
     display: flex;
     align-items: center;
@@ -131,7 +133,6 @@ body {
     color: white;
 }
 
-/* Pfeil-Toggle optisch passend */
 .tree-item-button .toggle {
     margin-right: 6px;
     user-select: none;
@@ -145,7 +146,6 @@ body {
     color: white;
 }
 
-/* Kinderlisten ausblenden */
 .nested {
     margin-left: 16px;
     margin-top: 4px;
@@ -154,7 +154,7 @@ body {
 
 .nested li {
     margin-left: 14px;
-    margin-bottom: 6px; /* oder 8px für mehr Abstand */
+    margin-bottom: 6px;
     cursor: pointer;
     font-family: "Fixedsys", monospace;
     font-size: 14px;
@@ -181,25 +181,16 @@ body {
 }
 
 .preview h2 {
-    font-size: 18px;
-    margin-bottom: 8px;
+    font-size: 20px;
+    margin-bottom: 15px;
 }
 
-.sidebar {
-    background: #c0c0c0;
-    width: 200px;         /* feste Breite */
-    min-width: 200px;     /* fixieren */
-    max-width: 200px;     /* fixieren */
-    border-right: 2px solid #404040;
-    padding: 8px;
-    overflow-y: auto;
-    overflow-x: hidden;   /* Horizontales Scrollen verhindern */
-    border-top: 2px solid white;
-    border-left: 2px solid white;
-    border-bottom: 2px solid #404040;
+.preview img {
+    max-width: 100%;
+    height: auto;
 }
 
-/* Scrollbars im Win98 Stil (optional) */
+/* Scrollbars im Win98 Stil */
 .sidebar::-webkit-scrollbar,
 .preview::-webkit-scrollbar {
     width: 12px;
@@ -219,18 +210,89 @@ body {
     border-right: 2px solid #404040;
 }
 
+#fullscreenBtn {
+    background: #c0c0c0;
+    border-top: 2px solid white;
+    border-left: 2px solid white;
+    border-bottom: 2px solid #404040;
+    border-right: 2px solid #404040;
+    color: #222;
+    font-weight: bold;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-family: "Fixedsys", monospace;
+    font-size: 14px;
+    margin-top: 10px;
+    transition: all 0.15s ease;
+}
+
+#fullscreenBtn:hover {
+    background: #000080;
+    color: white;
+}
+
+#fullscreenBtn:active {
+    border-top: 2px solid #404040;
+    border-left: 2px solid #404040;
+    border-bottom: 2px solid white;
+    border-right: 2px solid white;
+}
+
 /* Responsive für kleine Bildschirme */
 @media (max-width: 700px) {
+    body {
+        padding: 8px;
+    }
+
+    .window {
+        position: static;
+        transform: none;
+        width: 100%;
+        height: auto;
+    }
+
     .window-content {
         flex-direction: column;
         height: auto;
     }
+
     .sidebar {
         width: 100%;
+        min-width: unset;
+        max-width: unset;
         border-right: none;
         border-bottom: 2px solid #404040;
     }
+
     .preview {
         border-top: none;
+        padding: 12px;
+    }
+
+    .titlebar {
+        font-size: 12px;
+        padding: 10px 6px;
+        height: auto;
+    }
+
+    .titlebar-buttons button {
+        width: 20px;
+        height: 18px;
+        font-size: 12px;
+    }
+}
+
+/* Extrem kleine Bildschirme */
+@media (max-width: 400px) {
+    .titlebar-text {
+        font-size: 10px;
+    }
+
+    .tree-item-button {
+        font-size: 12px;
+    }
+
+    .preview h2 {
+        font-size: 16px;
     }
 }
