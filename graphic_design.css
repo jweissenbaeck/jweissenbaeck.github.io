@@ -53,18 +53,20 @@ h1 {
 }
 
 .graphic_design-item {
-    background: #C0C0C0;
-    border: 2px solid #808080;
-    box-shadow: 4px 4px #404040;
-    padding: 16px;
-    border-radius: 8px;
+    background: #C0C0C0; /* typisches Win98 Grau */
+    border: 2px solid white; /* helle Kante oben/links */
+    border-right-color: #404040; /* dunkle Kante rechts/unten */
+    border-bottom-color: #404040;
+    box-shadow: none; /* Statt Schatten, nur klare Kanten */
+    padding: 12px;
+    border-radius: 0; /* Windows 98 hat keine abgerundeten Ecken */
+    width: 270px;
+    cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 270px;
-    margin-bottom: 32px;
-    cursor: pointer;
-    transition: transform 0.1s;
+    margin-bottom: 24px;
+    transition: background 0.2s;
 }
 
 .graphic_design-item:hover {
@@ -76,11 +78,12 @@ h1 {
     width: 100%;
     height: 360px;
     object-fit: contain;
-    background: #fff;
-    border: 1px solid #808080;
+    background: white;
+    border: 2px solid white;
+    border-right-color: #404040;
+    border-bottom-color: #404040;
     margin-bottom: 12px;
 }
-
 .graphic_design-item p {
     margin: 0;
     color: #222;

@@ -1,16 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title> UI / UX Design </title>
-    <link rel="icon" type="image/png" href="icons/browser_icon.png" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UI/UX Prototypen - Windows 98 Style</title>
     <link rel="stylesheet" href="uiux.css" />
 </head>
 <body>
-  <div class="coming-soon-window">
-    <div class="coming-soon-text">Coming soon...</div>
-    <a href="/" class="win98-button">Back to Home</a>
-  </div>
+    <div class="window">
+        <div class="titlebar">
+            <div class="titlebar-icon">📁</div>
+            <div class="titlebar-text">My UI/UX Prototypes</div>
+            <div class="titlebar-buttons">
+                <button class="btn-minimize" title="Minimieren">_</button>
+                <button class="btn-close" title="Schließen">X</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <nav class="sidebar">
+              <ul class="tree-view">
+                <li>
+                  <div class="tree-item-button">
+                    <span class="toggle">▶</span>
+                    <span class="label-text"> Mobile Prototypes </span>
+                  </div>
+                  <ul class="nested" style="display:none;">
+                    <li>Login Screen</li>
+                    <li>Profile Page</li>
+                  </ul>
+                </li>
+                <li>
+                  <div class="tree-item-button">
+                    <span class="toggle">▶</span>
+                    <span class="label-text"> Web Prototypes </span>
+                  </div>
+                  <ul class="nested" style="display:none;">
+                    <li>Portfolio</li>
+                    <li>Blog</li>
+                  </ul>
+                </li>
+              </ul>
+            </nav>
+            <section class="preview">
+                <h2> Welcome!</h2>
+                <p> You can choose a prototype from the menu of the left side </p>
+            </section>
+        </div>
+    </div>
+    <script src="uiux.js"></script>
 </body>
 </html>
