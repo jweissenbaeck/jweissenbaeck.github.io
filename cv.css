@@ -11,7 +11,7 @@ body {
     align-items: center;
     background: #008080;
     min-height: 100vh;
-    padding: 20px;
+    padding: 40px 20px 40px 20px;
 }
 
 .cv-window {
@@ -22,7 +22,6 @@ body {
     box-shadow: 4px 4px #404040;
     width: 70%;
     max-width: 900px;
-    padding: 15px 20px;
 }
 
 .cv-header {
@@ -34,14 +33,45 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 1.2em;
+    border: 2px solid #808080;
+    border-top: none;
 }
+
+.cv-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.cv-buttons button {
+    background: #c0c0c0;
+    border-top: 2px solid white;
+    border-left: 2px solid white;
+    border-bottom: 2px solid #404040;
+    border-right: 2px solid #404040;
+    color: #222;
+    font-weight: bold;
+    width: 28px;
+    height: 24px;
+    margin-left: 6px;
+    cursor: pointer;
+    font-family: "Fixedsys", monospace;
+    transition: background 0.2s;
+    padding: 0;
+    font-size: 16px;
+}
+
+.cv-buttons button:hover {
+    background: #000080;
+    color: white;
+}
+
 
 .cv-content {
     padding: 20px 20px 0px 20px;
     border: 2px solid #808080;
     border-top: none;
-    background: #C0C0C0;
     box-shadow: inset -2px -2px #404040, inset 2px 2px white;
+    background: #C0C0C0;
 }
 
 .link {
@@ -50,21 +80,37 @@ body {
 
 .section {
     margin-bottom: 25px;
+    background: #c0c0c0;
+    border: 2px solid #808080;
+
+    /* Rahmendesign von h2 hierher verschoben */
+    border: 2px solid #606060;
+    border-top-color: white;
+    border-left-color: white;
+    border-bottom-color: #303030;
+    border-right-color: #303030;
 }
 
 .section h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 1.2em;
     background: #808080;
     color: white;
     padding: 6px 8px;
     margin-bottom: 12px;
     user-select: none;
-    border: 2px solid #606060;
-    border-top-color: white;
-    border-left-color: white;
-    border-bottom-color: #303030;
-    border-right-color: #303030;
-    box-shadow: inset 1px 1px white, inset -1px -1px #404040;
+
+    /* Border hier entfernen */
+    border: none;
+    box-shadow: none;
+}
+
+.section-icon {
+    font-size: 24px;
+    line-height: 20px;
+    display: inline-block;
 }
 
 .section p {
@@ -77,7 +123,7 @@ body {
 .section ul {
     font-size: 1em;
     line-height: 1.6em;
-    padding-left: 25px;
+    padding-left: 30px;
     list-style: square;
     margin-bottom: 12px;
 }
