@@ -10,6 +10,7 @@ body {
     background: #008080;
     color: #222;
     padding: 32px;
+    font-size: 18px; /* Größere Grundschrift */
 }
 
 /* Fenster-Layout */
@@ -21,10 +22,9 @@ body {
         inset -2px -2px 0 #404040;
     display: flex;
     flex-direction: column;
-    font-family: "Fixedsys", monospace;
     width: 90%;
     height: auto;
-    max-width: 900px;
+    max-width: 1100px; /* etwas breiter */
     max-height: 95vh;
     position: fixed;
     top: 50%;
@@ -39,24 +39,24 @@ body {
     font-weight: bold;
     display: flex;
     align-items: center;
-    padding: 14px 8px;
+    padding: 18px 10px; /* mehr Höhe */
     border-bottom: 2px solid #404040;
     border-top: 2px solid white;
     border-left: 2px solid white;
     border-right: 2px solid #404040;
-    height: 24px;
+    height: 32px;
 }
 
 .titlebar-icon {
-    font-size: 20px;
+    font-size: 24px;
     line-height: 24px;
-    margin-right: 8px;
+    margin-right: 10px;
     display: inline-block;
 }
 
 .titlebar-text {
     flex-grow: 1;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
     user-select: text;
 }
@@ -69,13 +69,14 @@ body {
     border-right: 2px solid #404040;
     color: #222;
     font-weight: bold;
-    width: 24px;
-    height: 20px;
-    margin-left: 4px;
+    width: 28px;
+    height: 24px;
+    margin-left: 6px;
     cursor: pointer;
     font-family: "Fixedsys", monospace;
     transition: background 0.2s;
     padding: 0;
+    font-size: 16px;
 }
 
 .titlebar-buttons button:hover {
@@ -86,17 +87,17 @@ body {
 /* Inhalt Aufteilung */
 .window-content {
     display: flex;
-    height: 600px;
+    height: 650px; /* mehr Höhe */
 }
 
 /* Sidebar */
 .sidebar {
     background: #c0c0c0;
-    width: 200px;
-    min-width: 200px;
-    max-width: 200px;
+    width: 240px;
+    min-width: 240px;
+    max-width: 240px;
     border-right: 2px solid #404040;
-    padding: 8px;
+    padding: 10px;
     overflow-y: auto;
     overflow-x: hidden;
     border-top: 2px solid white;
@@ -107,15 +108,15 @@ body {
 /* Tree View */
 .tree-view {
     list-style: none;
-    font-size: 14px;
+    font-size: 16px;
     padding-left: 0;
 }
 
 .tree-item-button {
     display: flex;
     align-items: center;
-    padding: 4px 8px;
-    margin-bottom: 6px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
     background: #C0C0C0;
     border-top: 2px solid white;
     border-left: 2px solid white;
@@ -124,7 +125,7 @@ body {
     cursor: pointer;
     user-select: none;
     font-family: "Fixedsys", monospace;
-    font-size: 14px;
+    font-size: 16px;
     color: #222;
 }
 
@@ -134,11 +135,11 @@ body {
 }
 
 .tree-item-button .toggle {
-    margin-right: 6px;
+    margin-right: 8px;
     user-select: none;
     font-weight: bold;
     color: #222;
-    width: 14px;
+    width: 18px;
     text-align: center;
 }
 
@@ -147,17 +148,17 @@ body {
 }
 
 .nested {
-    margin-left: 16px;
-    margin-top: 4px;
+    margin-left: 20px;
+    margin-top: 6px;
     display: none;
 }
 
 .nested li {
-    margin-left: 14px;
-    margin-bottom: 6px;
+    margin-left: 16px;
+    margin-bottom: 8px;
     cursor: pointer;
     font-family: "Fixedsys", monospace;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .nested li:hover {
@@ -171,29 +172,32 @@ body {
 /* Preview-Bereich */
 .preview {
     flex-grow: 1;
-    background: white;
+    width: 50%;
+    margin: 0px auto 0px auto;
     padding: 16px;
-    border-top: 2px solid white;
-    border-left: 2px solid white;
-    border-bottom: 2px solid #404040;
-    border-right: 2px solid #404040;
+    font-size: 1em;
+    color: #333;
+    text-align: center;
+    font-family: "Fixedsys", monospace;
+    background: #ffffff;
     overflow-y: auto;
 }
 
 .preview h2 {
-    font-size: 20px;
+    font-size: 1.4em;
     margin-bottom: 15px;
 }
 
 .preview img {
-    max-width: 100%;
-    height: auto;
+    display: block;
+    margin: 15px auto;
+    max-width: 90%;
 }
 
 /* Scrollbars im Win98 Stil */
 .sidebar::-webkit-scrollbar,
 .preview::-webkit-scrollbar {
-    width: 12px;
+    width: 14px;
 }
 
 .sidebar::-webkit-scrollbar-track,
@@ -218,11 +222,11 @@ body {
     border-right: 2px solid #404040;
     color: #222;
     font-weight: bold;
-    padding: 6px 14px;
+    padding: 8px 16px;
     cursor: pointer;
     font-family: "Fixedsys", monospace;
-    font-size: 14px;
-    margin-top: 10px;
+    font-size: 16px;
+    margin-top: 15px;
     transition: all 0.15s ease;
 }
 
@@ -242,6 +246,7 @@ body {
 @media (max-width: 700px) {
     body {
         padding: 8px;
+        font-size: 16px;
     }
 
     .window {
@@ -266,33 +271,35 @@ body {
 
     .preview {
         border-top: none;
-        padding: 12px;
+        padding: 14px;
+        width: 100%;
+        margin: 20px auto;
     }
 
     .titlebar {
-        font-size: 12px;
-        padding: 10px 6px;
+        font-size: 14px;
+        padding: 12px 8px;
         height: auto;
     }
 
     .titlebar-buttons button {
-        width: 20px;
-        height: 18px;
-        font-size: 12px;
+        width: 24px;
+        height: 20px;
+        font-size: 14px;
     }
 }
 
 /* Extrem kleine Bildschirme */
 @media (max-width: 400px) {
     .titlebar-text {
-        font-size: 10px;
-    }
-
-    .tree-item-button {
         font-size: 12px;
     }
 
+    .tree-item-button {
+        font-size: 14px;
+    }
+
     .preview h2 {
-        font-size: 16px;
+        font-size: 1.2em;
     }
 }
