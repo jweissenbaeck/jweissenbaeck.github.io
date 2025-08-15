@@ -16,15 +16,15 @@ body {
 /* Fenster-Layout */
 .window {
     background: #C0C0C0;
-    border: 2px solid #000;
-    box-shadow:
-        inset 2px 2px 0 #fff,
-        inset -2px -2px 0 #404040;
+    border: 2px solid #808080;
+    border-top-color: white;
+    border-left-color: white;
+    box-shadow: 4px 4px #404040;
     display: flex;
     flex-direction: column;
     width: 90%;
     height: auto;
-    max-width: 1100px; /* etwas breiter */
+    max-width: 1100px;
     max-height: 95vh;
     position: fixed;
     top: 50%;
@@ -38,22 +38,19 @@ body {
     color: white;
     font-weight: bold;
     display: flex;
-    align-items: center;
-    padding: 18px 10px; /* mehr Höhe */
+    align-items: center; /* vertikal zentriert */
+    padding: 18px 10px;
     border-bottom: 2px solid #404040;
-    border-top: 2px solid white;
-    border-left: 2px solid white;
     border-right: 2px solid #404040;
     height: 32px;
 }
 
-.titlebar-icon {
-    font-size: 24px;
-    line-height: 24px;
+.folder-icon {
+    width: 24px;
+    height: 24px;
+    display: block; /* verhindert kleine Lücken unter dem Bild */
     margin-right: 10px;
-    display: inline-block;
 }
-
 .titlebar-text {
     flex-grow: 1;
     font-size: 16px;
@@ -100,9 +97,7 @@ body {
     padding: 10px;
     overflow-y: auto;
     overflow-x: hidden;
-    border-top: 2px solid white;
-    border-left: 2px solid white;
-    border-bottom: 2px solid #404040;
+
 }
 
 /* Tree View */
@@ -134,6 +129,7 @@ body {
     color: white;
 }
 
+
 .tree-item-button .toggle {
     margin-right: 8px;
     user-select: none;
@@ -145,6 +141,24 @@ body {
 
 .tree-item-button:hover .toggle {
     color: white;
+}
+
+.btn-minimize:active {
+  box-shadow: inset -1px -1px white, inset 1px 1px #404040;
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-right-color: white;
+  border-bottom-color: white;
+}
+
+
+
+.btn-close:active{
+    box-shadow: inset -1px -1px white, inset 1px 1px #404040;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    border-right-color: white;
+    border-bottom-color: white;
 }
 
 .nested {
@@ -181,6 +195,7 @@ body {
     font-family: "Fixedsys", monospace;
     background: #ffffff;
     overflow-y: auto;
+
 }
 
 .preview h2 {
@@ -241,6 +256,8 @@ body {
     border-bottom: 2px solid white;
     border-right: 2px solid white;
 }
+
+
 
 /* Responsive für kleine Bildschirme */
 @media (max-width: 700px) {

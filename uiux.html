@@ -1,85 +1,164 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>UI/UX Prototypen - Windows 98 Style</title>
     <link rel="stylesheet" href="uiux.css" />
-</head>
-<body>
+  </head>
+  <body>
     <div class="window">
-        <div class="titlebar">
-            <div class="titlebar-icon">📁</div>
-            <div class="titlebar-text">My UI/UX Designs</div>
-            <div class="titlebar-buttons">
-                <button class="btn-minimize" title="Minimieren">_</button>
-                <button class="btn-close" title="Schließen">X</button>
-            </div>
+      <div class="titlebar">
+        <div class="titlebar-icon">
+            <img src="icons/folder.png" alt="Folder" class="folder-icon" style="width: 24px; height: 24px" />
         </div>
-        <div class="window-content">
-            <nav class="sidebar">
-              <ul class="tree-view">
+        <div class="titlebar-text">My UI/UX Designs</div>
+        <div class="titlebar-buttons">
+          <button class="btn-minimize" title="Minimieren">_</button>
+          <button class="btn-close" title="Schließen">X</button>
+        </div>
+      </div>
+      <div class="window-content">
+        <nav class="sidebar">
+          <ul class="tree-view">
+            <li>
+              <div class="tree-item-button">
+                <span class="toggle">▶</span>
+                <span class="label-text"> Mobile Prototypes </span>
+              </div>
+              <ul class="nested" style="display: none">
                 <li>
-                  <div class="tree-item-button">
-                    <span class="toggle">▶</span>
-                    <span class="label-text"> Mobile Prototypes </span>
+                  Fitness App for Bachelor's Thesis
+                  <div class="description" style="display: none">
+                    This fitness app is specifically designed for my bachelor's
+                    thesis. In the process, I created five relevant elements
+                    (start screen, navigation bar, add workout function, workout
+                    detail view, and calendar) based on a scientific approach.
+                    The key frameworks applied were three of
+                    <strong>
+                      <a
+                        href="https://www.nngroup.com/articles/ten-usability-heuristics/"
+                        style="color: black; text-decoration: none"
+                        >Nielsen's 10 Usability Heuristics
+                      </a>
+                    </strong>
+                    and the
+                    <strong>
+                      <a
+                        href="https://www.researchgate.net/publication/346381286_Gestalt_principles_in_web_design_A_study_of_the_usage_of_similarity_symmetry_and_closure_in_today's_websites"
+                        style="color: black; text-decoration: none"
+                        >Gestalt Principles.
+                      </a>
+                    </strong>
+                    To achieve this, I first analyzed five existing fitness
+                    apps and evaluated them based on relevant literature. I then
+                    combined this knowledge with design theory to create the
+                    app. After designing, I conducted user tests to gather
+                    feedback, which demonstrated that a scientific design
+                    approach leads to an effective user experience.
+                    <br />
+                    <a
+                      href="files/bachelors_thesis_jw.pdf"
+                      download
+                      style="
+                        color: black;
+                        text-decoration: none;
+                        font-weight: bold;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 6px;
+                      "
+                    >
+                      <img
+                        src="icons/download.png"
+                        alt="Download Icon"
+                        style="width: 25px; height: 25px"
+                      />
+                      Download Bachelor's Thesis (PDF)
+                    </a>
                   </div>
-                  <ul class="nested" style="display:none;">
-                    <li>
-                      Fitness App for Bachelor's Thesis
-                      <div class="description" style="display:none;">
-                        This fitness app is specifically designed for my bachelor's thesis.
-                        In the process, I created five relevant elements (start screen, navigation bar, add workout function, workout detail view, and calendar) based on a scientific approach. 
-                        The key frameworks applied were three of <strong><a href="https://www.nngroup.com/articles/ten-usability-heuristics/" style="color:black; text-decoration: none;">Nielsen's 10 Usability Heuristics</a></strong> and the <strong><a href="https://www.researchgate.net/publication/346381286_Gestalt_principles_in_web_design_A_study_of_the_usage_of_similarity_symmetry_and_closure_in_today's_websites" style="color:black;text-decoration: none;">Gestalt Principles</a></strong>.
-                        To achieve this, I first analyzed five existing fitness apps and evaluated them based on relevant literature. I then combined this knowledge with design theory to create the app. After designing, 
-                        I conducted user tests to gather feedback, which demonstrated that a scientific design approach leads to an effective user experience.
-                      </div> 
-                    </li>
-                  </ul>
-                </li>
-                <li>
-                  <div class="tree-item-button">
-                    <span class="toggle">▶</span>
-                    <span class="label-text"> Web Prototypes </span>
-                  </div>
-                  <ul class="nested" style="display:none;">
-                    <li>
-                      Intranet for Websline
-                      <div class="description" style="display:none;">
-                        I created this prototype in Figma to improve my skills by working on a real-world project. As a small challenge for myself, I tried to present everything compactly on a 1920x1080 screen.
-                        The prototype is fully interactive within Figma and includes hover, press, and filter interactions. All rights to the logos and color schemes belong to
-                        <strong><a href="https://www.websline.com/" style="color:black;text-decoration: none;">Websline</a></strong>.
-                      </div> 
-                    </li>
-                  </ul>
-                </li>
-                <li>
-                  <div class="tree-item-button">
-                    <span class="toggle">▶</span>
-                    <span class="label-text"> Applications </span>
-                  </div>
-                  <ul class="nested" style="display:none;">
-                    <li>
-                      Spotify Spatial Music Viewer
-                      <div class="description" style="display:none;">
-                        In this project, I worked in a group to link Spotify data with a spatial layer. We aimed to visualize the most-streamed albums and songs in each available European
-                        country. The goal was to create an interactive web map where users can click on a country to see its specific trends. We used the Spotify API to obtain the most up-to-date data.
-                        With the help of Python, we implemented an automated process for data retrieval over time. If the program was running on a server, the trends would automatically update continuously.
-                        You can read more about this project on my <strong><a href="https://github.com/jweissenbaeck/spotify_spatial_music_viewer" style="color:black; text-decoration: none;"> GitHub account</a></strong>, where I have documented it in great detail.
-                      </div>
-                    </li>
-                  </ul>
                 </li>
               </ul>
-            </nav>
-            <section class="preview">
-                <h2> Welcome!</h2>
-                <img id="previewImage" src="" alt="" style="max-width: 100%; margin-top: 20px; display: none;" />
-                <p style="line-height: 1.3; text-align:justify; margin-top:20px;"> You can choose a project from the menu of the left side </p>
-                <button id="fullscreenBtn" style="display:none; margin-top: 15px; margin-bottom: 15px;"> Fullscreen </button>
-            </section>
-        </div>
+            </li>
+            <li>
+              <div class="tree-item-button">
+                <span class="toggle">▶</span>
+                <span class="label-text"> Web Prototypes </span>
+              </div>
+              <ul class="nested" style="display: none">
+                <li>
+                  Intranet for Websline
+                  <div class="description" style="display: none">
+                    I created this prototype in Figma to improve my auto-layout skills by
+                    working on a real-world project. As a small challenge for
+                    myself, I tried to present everything compactly on a
+                    1920x1080 resolution. The prototype is fully interactive within
+                    Figma and includes hover, press, and filter interactions.
+                    All rights to the logos and color schemes belong to
+                    <strong
+                      ><a
+                        href="https://www.websline.com/"
+                        style="color: black; text-decoration: none"
+                        >Websline</a
+                      ></strong
+                    >.
+                  </div>
+                </li>
+              </ul>
+            </li>
+            <li>
+              <div class="tree-item-button">
+                <span class="toggle">▶</span>
+                <span class="label-text"> Applications </span>
+              </div>
+              <ul class="nested" style="display: none">
+                <li>
+                  Spotify Spatial Music Viewer
+                  <div class="description" style="display: none">
+                    In this project, I worked in a group to link Spotify data
+                    with a spatial layer. We aimed to visualize the
+                    most-streamed albums and songs in each available European
+                    country. The goal was to create an interactive web map where
+                    users can click on a country to see its specific trends. We
+                    used the Spotify API to obtain the most up-to-date data.
+                    With the help of Python, we implemented an automated process
+                    for data retrieval over time. If the program was running on
+                    a server, the trends would automatically update
+                    continuously. You can read more about this project on my
+                    <strong
+                      ><a
+                        href="https://github.com/jweissenbaeck/spotify_spatial_music_viewer"
+                        style="color: black; text-decoration: none"
+                      >
+                        GitHub account</a
+                      ></strong
+                    >, where I have documented it in great detail.
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+        <section class="preview">
+          <h2>Welcome!</h2>
+          <img
+            id="previewImage"
+            src=""
+            alt=""
+            style="max-width: 100%; margin-top: 20px; display: none"
+          />
+          <p style="line-height: 1.3; text-align: justify; margin-top: 20px">
+            You can choose a project from the menu of the left side
+          </p>
+          <button
+            id="fullscreenBtn"
+            style="display: none; margin-top: 15px; margin-bottom: 15px"
+          >
+            Fullscreen
+          </button>
+        </section>
+      </div>
     </div>
     <script src="uiux.js"></script>
-</body>
+  </body>
 </html>

@@ -1,49 +1,49 @@
+/* Reset & Grundschrift */
 * {
   font-family: "Fixedsys", monospace;
-  margin: 0px;
-  padding: 0px;
-}
-
-html,
-body {
-  height: 100%;
-  width: 100%;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
 }
 
 body {
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   background: #008080;
   min-height: 100vh;
+  flex-direction: column;
 }
 
+/* Hauptfenster */
 .main-section {
   display: flex;
   flex-direction: column;
   width: 50%;
   height: 60vh;
-  background: #c0c0c0;
+  background: #C0C0C0;
   border: 2px solid #808080;
-  box-shadow: 4px 4px #404040;
-  padding: 4px;
   border-top-color: white;
   border-left-color: white;
+  box-shadow: 4px 4px #404040;
+  padding: 4px;
 }
 
+/* Fensterleiste */
 .window-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #808080;
+  background: #000080;
   color: white;
-  padding: 5px;
-  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 10px;
+  border-bottom: 2px solid #404040;
 }
 
 .window-buttons {
@@ -52,32 +52,42 @@ body {
 }
 
 .window-button {
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 24px;
   background: #c0c0c0;
-  border: 2px solid #808080;
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  border-bottom: 2px solid #404040;
+  border-right: 2px solid #404040;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  color: black; /* Schriftfarbe standardmäßig schwarz */
   cursor: pointer;
-  box-shadow: inset -1px -1px #404040, inset 1px 1px white;
+  transition: background 0.2s, color 0.2s;
+}
+
+.window-button:hover {
+  background: #000080;
+  color: white; /* Farbe beim Hover bleibt weiß */
 }
 
 .window-button:active {
   box-shadow: inset -1px -1px white, inset 1px 1px #404040;
   border-top-color: #808080;
   border-left-color: #808080;
-  border-right-color: white;
   border-bottom-color: white;
+  border-right-color: white;
 }
 
+/* Navbar */
 .navbar {
   display: flex;
-  align-items: center;
-  background: #c0c0c0;
-  border-bottom: 2px solid #808080;
-  padding: 5px;
+  background: #C0C0C0;
+  border-bottom: 2px solid #404040;
+  padding: 4px;
 }
 
 .navbar-list {
@@ -88,55 +98,82 @@ body {
 .navbar-list-element {
   padding: 4px 10px;
   margin-right: 10px;
-  border: 2px solid transparent;
-  border-top-color: white;
-  border-left-color: white;
-  border-right-color: #808080;
-  border-bottom-color: #808080;
-  background: #c0c0c0;
+  background: #C0C0C0;
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  border-bottom: 2px solid #404040;
+  border-right: 2px solid #404040;
   cursor: pointer;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s;
 }
 
 .navbar-list-element a {
   text-decoration: none;
-  color: black;
+  color: #222;
+}
+
+.navbar-list-element:hover {
+  background: #000080;
+  color: white;
+}
+
+.navbar-list-element:hover a {
+  color: white;
 }
 
 .navbar-list-element:active {
   box-shadow: inset -1px -1px white, inset 1px 1px #404040;
   border-top-color: #808080;
   border-left-color: #808080;
-  border-right-color: white;
   border-bottom-color: white;
+  border-right-color: white;
 }
 
+/* Content-Bereich */
 .content {
   display: flex;
   justify-content: space-around;
   align-items: center;
   height: 100%;
   padding: 10px;
-  border-top: 2px solid #808080;
-  border-left: 5px solid #808080;
 }
 
 .content-box {
   width: 30%;
   height: 70%;
-  background: #c0c0c0;
-  border: 2px solid #808080;
+  background: #C0C0C0;
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  border-bottom: 2px solid #404040;
+  border-right: 2px solid #404040;
   display: flex;
-  flex-direction: column; /* neu: Bild über Text */
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
   font-size: 1.2em;
   font-weight: bold;
-  box-shadow: inset -2px -2px #404040, inset 2px 2px white;
+  text-align: center;
   text-decoration: none;
-  color: inherit;
-  transition: background 0.1s;
+  color: #222;
+  cursor: pointer;
+  transition: background 0.1s, box-shadow 0.1s;
   padding: 10px;
+  box-shadow: inset -2px -2px #404040, inset 2px 2px white;
+}
+
+.content-box:hover {
+  background: #000080;
+  color: white;
+}
+
+.content-box:active {
+  box-shadow: inset 2px 2px #404040, inset -2px -2px white;
+  border-top-color: #808080;
+  border-left-color: #808080;
+  border-bottom-color: white;
+  border-right-color: white;
+  background: #000080;
 }
 
 .icon {
@@ -146,58 +183,31 @@ body {
   image-rendering: pixelated;
 }
 
-.content a.content-box {
-  text-decoration: none;
-  color: inherit;
-}
-
-.content-box:hover {
-  background: #808080;
-  cursor: pointer;
-}
-
-.content-box:active {
-  box-shadow: inset 2px 2px #404040, inset -2px -2px white;
-  border-top-color: #808080;
-  border-left-color: #808080;
-  border-right-color: white;
-  border-bottom-color: white;
-  background: #a0a0a0;
-}
-
+/* Footer */
 .footer {
   width: 50%;
   margin: 80px auto 10px auto;
   padding: 10px;
   font-size: 0.9em;
-  color: #333;
+  color: #222;
   text-align: center;
-  font-family: "Fixedsys", monospace;
-  background: #c0c0c0;
-  border: 2px solid #808080;
+  background: #C0C0C0;
+  border-top: 2px solid white;
+  border-left: 2px solid white;
+  border-bottom: 2px solid #404040;
+  border-right: 2px solid #404040;
   box-shadow: inset -2px -2px #404040, inset 2px 2px white;
-  border-top-color: white;
-  border-left-color: white;
 }
 
+/* Links */
 .link {
-  color: black;
+  color: #222;
 }
 
+/* Responsive */
 @media (max-width: 1024px) {
   .main-section {
     width: 70%;
-    height: auto;
-  }
-
-  .content {
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-  }
-
-  .content-box {
-    width: 40%;
     height: auto;
   }
 }
@@ -205,7 +215,6 @@ body {
 @media (max-width: 768px) {
   .main-section {
     width: 90%;
-    height: auto;
   }
 
   .content {
@@ -228,11 +237,6 @@ body {
 @media (max-width: 480px) {
   body {
     padding: 10px;
-  }
-
-  .navbar-list {
-    flex-wrap: wrap;
-    gap: 5px;
   }
 
   .navbar-list-element {

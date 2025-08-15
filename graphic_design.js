@@ -12,7 +12,7 @@ window.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             if (loader) loader.style.display = 'none';
             if (grid) grid.style.display = '';
-        }, 1500); // 1.5 seconds
+        }, 1500); // 1.5 Sekunden
     }
     images.forEach(img => {
         if (img.complete) {
@@ -31,39 +31,43 @@ window.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Modal functionality
+// Modal-Funktionalität
 document.querySelectorAll('.graphic_design-item').forEach(item => {
     item.addEventListener('click', function() {
-        document.getElementById('modalImg').src = this.dataset.img;
-        document.getElementById('modalImg').alt = this.dataset.title;
+        const modal = document.getElementById('graphic_designModal');
+        const img = document.getElementById('modalImg');
+
+        img.src = this.dataset.img;
+        img.alt = this.dataset.title;
+
         document.getElementById('modalTitle').textContent = this.dataset.title;
         document.getElementById('modalDesc').textContent = this.dataset.desc;
-        const modal = document.getElementById('graphic_designModal');
+
+        // Modal sofort anzeigen
         modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('show'), 10);
+        modal.style.opacity = '1'; // sofort sichtbar
         document.body.style.overflow = 'hidden';
     });
 });
 
+// Modal schließen
+function closeModal(modal) {
+    modal.style.display = 'none';
+    modal.style.opacity = '0';
+    document.body.style.overflow = '';
+}
+
 document.getElementById('modalClose').onclick = function() {
-    const modal = document.getElementById('graphic_designModal');
-    modal.classList.remove('show');
-    setTimeout(() => {
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-    }, 400);
+    closeModal(document.getElementById('graphic_designModal'));
 };
 
 document.getElementById('graphic_designModal').onclick = function(e) {
     if (e.target === this) {
-        this.classList.remove('show');
-        setTimeout(() => {
-            this.style.display = 'none';
-            document.body.style.overflow = '';
-        }, 400);
+        closeModal(this);
     }
 };
 
+// Vollbild-Button
 document.getElementById('fullscreenBtn').onclick = function(e) {
     e.stopPropagation();
     const img = document.getElementById('modalImg');

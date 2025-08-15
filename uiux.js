@@ -12,7 +12,7 @@ function checkAllClosed() {
 // Funktion: Default Preview anzeigen
 function showDefaultPreview() {
   previewTitle.textContent = "Welcome!";
-  previewContent.textContent = "You can choose a prototype from the menu of the left side.";
+  previewContent.textContent = "You can choose a project from the menu of the left side.";
   previewImage.src = "";
   previewImage.alt = "";
   previewImage.style.display = 'none';

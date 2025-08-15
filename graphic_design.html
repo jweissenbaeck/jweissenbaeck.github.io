@@ -15,14 +15,18 @@
     <main class="graphic_design-main">
         <h1> My Designs </h1>
         <div class="graphic_design-grid" id="graphic_designGrid" style="display:none;">
-            <div class="graphic_design-item" data-title="Poster - inspired by BF42" data-img="graphic_designs/poster_battlefield2042.webp"
-                data-desc="I created this poster with the color scheme of BF42 and added self-modeled HUD elements to the poster. This is fan art and I am not affiliated with Electronic Arts (EA). All rights to Battlefield and related assets belong to EA.">
-                <img src="graphic_designs/poster_battlefield2042.webp" alt="Poster 1">
-                <p> Poster - inspired by BF42 </p>
+            <div class="graphic_design-item" data-title="ORBIT" data-img="graphic_designs/orbit_poster.webp"
+                data-desc="I created this poster completely by chance. I was just playing around with shapes in Figma, trying to make a sphere, when I thought, 
+                        “This actually looks like a planet.” The rest of the design started to take shape in my mind from there.
+                        My goal was to create an environment that feels ominous — especially through the use of color and the styling of the text.">
+                <img src="graphic_designs/orbit_poster.webp" alt="Poster 1">
+                <p> ORBIT </p>
             </div>
-            <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
-                <img src="graphic_designs/soon_poster.webp" alt="soon">
-                <p>coming soon...</p>
+            <div class="graphic_design-item" data-title="BF42" data-img="graphic_designs/poster_battlefield2042.webp"
+                data-desc="I created this poster with the color scheme of BF42 and added self-modeled HUD elements to the poster. 
+                This is fan art and I am not affiliated with Electronic Arts (EA). All rights to Battlefield and related assets belong to EA.">
+                <img src="graphic_designs/poster_battlefield2042.webp" alt="Poster 2">
+                <p> BF42 </p>
             </div>
             <div class="graphic_design-item" data-title="" data-img="graphic_designs/soon_poster.webp" data-desc="coming soon...">
                 <img src="graphic_designs/soon_poster.webp" alt="soon">
@@ -53,12 +57,14 @@
     <div class="graphic_design-modal" id="graphic_designModal">
         <div class="graphic_design-modal-content">
             <img id="modalImg" src="" alt="">
-            <div class="graphic_design-modal-text">
-                <h2 id="modalTitle"></h2>
-                <p id="modalDesc"></p>
-                <button id="fullscreenBtn" class="fullscreen-btn">View Fullscreen</button>
-            </div>
-            <span class="graphic_design-modal-close" id="modalClose">&times;</span>
+                <div class="graphic_design-modal-text">
+                    <div class="modal-header">
+                        <h2 id="modalTitle"></h2>
+                        <span class="graphic_design-modal-close" id="modalClose">&times;</span>
+                    </div>
+                    <p id="modalDesc"></p>
+                    <button id="fullscreenBtn" class="fullscreen-btn">View Fullscreen</button>
+                </div>
         </div>
     </div>
     <script src="graphic_design.js"></script>
