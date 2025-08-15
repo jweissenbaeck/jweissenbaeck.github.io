@@ -210,12 +210,16 @@ body {
 
 @media (max-width: 1024px) {
   .main-section {
-    width: 70%;
+    width: 90%;
     height: auto;
   }
 
   .content {
     padding: 80px 10px;
+  }
+
+  .footer {
+    width: 90%;
   }
 
 }
@@ -229,7 +233,9 @@ body {
   .content {
     flex-direction: column;
     align-items: center;
-    padding: 10px
+    justify-content: center;
+    padding: 10px;
+
   }
 
   .content-box {
@@ -266,6 +272,6 @@ body {
   }
 
   .footer {
-    width: 90%;
+    display: none;
   }
 }
