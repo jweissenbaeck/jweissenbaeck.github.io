@@ -134,14 +134,14 @@ body {
 .content {
   display: flex;
   justify-content: space-around;
-  align-items: center;
   height: 100%;
-  padding: 10px;
+  padding: 100px 10px 100px 10px;
+  gap: 10px; /* Abstand zwischen Boxen */
+  flex-wrap: wrap; /* bei kleinen Screens umbrechen */
 }
 
 .content-box {
-  width: 30%;
-  height: 70%;
+  flex: 1 1 30%; /* flexibel, max 30% Breite, min 0 */
   background: #C0C0C0;
   border-top: 2px solid white;
   border-left: 2px solid white;
@@ -160,6 +160,8 @@ body {
   transition: background 0.1s, box-shadow 0.1s;
   padding: 10px;
   box-shadow: inset -2px -2px #404040, inset 2px 2px white;
+  height: auto; /* Höhe automatisch nach Inhalt */
+  min-height: 150px; /* optional, damit Boxen nicht zu klein werden */
 }
 
 .content-box:hover {
@@ -179,6 +181,8 @@ body {
 .icon {
   width: 85px;
   height: 85px;
+  max-width: 100%; /* skaliert mit Box */
+  max-height: 50%;   /* skaliert mit Boxhöhe */
   margin-bottom: 20px;
   image-rendering: pixelated;
 }
@@ -204,7 +208,6 @@ body {
   color: #222;
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .main-section {
     width: 70%;
@@ -215,11 +218,11 @@ body {
 @media (max-width: 768px) {
   .main-section {
     width: 90%;
+    height: auto;
   }
 
   .content {
     flex-direction: column;
-    gap: 15px;
     align-items: center;
   }
 
@@ -235,21 +238,24 @@ body {
 }
 
 @media (max-width: 480px) {
-  body {
-    padding: 10px;
-  }
-
   .navbar-list-element {
     font-size: 12px;
     padding: 2px 6px;
+    margin-right: 5px;
   }
 
   .content-box {
     font-size: 1em;
+    width: 100%;
+    max-width: none;
   }
 
   .icon {
     width: 50px;
     height: 50px;
+  }
+
+  .footer {
+    width: 100%;
   }
 }
