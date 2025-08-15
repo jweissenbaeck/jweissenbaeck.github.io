@@ -191,12 +191,13 @@ h1 {
 /* Responsive Modal */
 @media (max-width: 620px) {
     .graphic_design-modal-content {
-        flex-direction: column; /* Bild über Text */
+        flex-direction: column;
         align-items: center;
         max-width: 95%;
         max-height: 95%;
         gap: 16px;
         padding: 12px;
+        overflow-y: auto; /* Scrollbalken bei Bedarf anzeigen */
     }
 
     #modalDesc {
