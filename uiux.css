@@ -207,6 +207,7 @@ body {
     display: block;
     margin: 15px auto;
     max-width: 90%;
+    cursor: pointer;
 }
 
 /* Scrollbars im Win98 Stil */

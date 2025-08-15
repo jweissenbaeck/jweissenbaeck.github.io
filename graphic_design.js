@@ -68,14 +68,24 @@ document.getElementById('graphic_designModal').onclick = function(e) {
 };
 
 // Vollbild-Button
-document.getElementById('fullscreenBtn').onclick = function(e) {
-    e.stopPropagation();
-    const img = document.getElementById('modalImg');
+function enterFullscreen(img) {
     if (img.requestFullscreen) {
         img.requestFullscreen();
-    } else if (img.webkitRequestFullscreen) {
+    } else if (img.webkitRequestFullscreen) { // Safari
         img.webkitRequestFullscreen();
-    } else if (img.msRequestFullscreen) {
+    } else if (img.msRequestFullscreen) { // IE/Edge
         img.msRequestFullscreen();
     }
+}
+
+document.getElementById('fullscreenBtn').onclick = function(e) {
+    e.stopPropagation(); // verhindert, dass das Modal geschlossen wird
+    const img = document.getElementById('modalImg');
+    enterFullscreen(img);
+};
+
+// Tippen/Klicken auf das Modalbild selbst ebenfalls fullscreen
+document.getElementById('modalImg').onclick = function(e) {
+    e.stopPropagation(); // verhindert, dass das Modal geschlossen wird
+    enterFullscreen(this);
 };

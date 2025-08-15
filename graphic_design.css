@@ -124,6 +124,11 @@ h1 {
     max-height: 80vh;
 }
 
+.graphic_design-modal-content img:hover {
+    cursor: pointer;
+}
+
+
 .graphic_design-modal-text {
     max-width: 35%;
     display: flex;

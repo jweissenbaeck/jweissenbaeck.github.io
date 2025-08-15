@@ -87,8 +87,7 @@ document.querySelectorAll('.nested li').forEach(item => {
   });
 });
 
-// Fullscreen Button Funktion
-fullscreenBtn.addEventListener('click', () => {
+function openFullscreen() {
   if (previewImage && previewImage.src) {
     if (previewImage.requestFullscreen) {
       previewImage.requestFullscreen();
@@ -98,7 +97,13 @@ fullscreenBtn.addEventListener('click', () => {
       previewImage.msRequestFullscreen();
     }
   }
-});
+}
+
+// Fullscreen Button
+fullscreenBtn.addEventListener('click', openFullscreen);
+
+// Klick auf das Bild ebenfalls fullscreen öffnen
+previewImage.addEventListener('click', openFullscreen);
 
 // Beim Laden: alles schließen und Default anzeigen
 window.addEventListener('DOMContentLoaded', () => {
