@@ -1,36 +1,114 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sketch Playground</title>
+
+<title>Studio Portfolio</title>
+
 <link rel="stylesheet" href="style.css">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
 </head>
+
 <body>
 
 <div class="cursor"></div>
+<div class="cursor-ring">
+  <div class="cursor-circle">
+    DESIGN • MOTION • STUDIO • EXPERIENCE • CREATIVE • DESIGN • MOTION •
+  </div>
+</div>
 
 <nav class="nav">
-  <button data-page="home" class="nav-link active">Home</button>
-  <button data-page="about" class="nav-link">About</button>
-  <button data-page="contact" class="nav-link">Contact</button>
+<a href="#hero">Home</a>
+<a href="#work">Work</a>
+<a href="#about">About</a>
+<a href="#contact">Contact</a>
 </nav>
 
-<main>
+<section class="section hero" id="hero">
 
-<section class="page active" id="home">
-  <div class="hero">
-    <h1>
-      <span class="word design">DESIGN</span>
-      <span class="word shapes">SHAPES</span>
-      <span class="word worlds">WORLDS</span>
-    </h1>
-    <p class="hero-subtext">Digitale Skizzen. Interaktive Experimente. Interfaces mit Haltung.</p>
-  </div>
+<video class="hero-video" autoplay muted loop playsinline>
+<source src="hero-video.mp4" type="video/mp4">
+</video>
+
+<div class="hero-overlay"></div>
+
+<div class="hero-tiles" id="heroTiles"></div>
+
+<div class="hero-content">
+<h1>
+CREATING<br>
+DIGITAL EXPERIENCES
+</h1>
+
+<p>Design. Motion. Strategy.</p>
+</div>
+
 </section>
 
-</main>
+<section class="section work" id="work">
+
+<div class="work-container">
+
+<div class="work-left">
+<h2>Selected Work</h2>
+<p>
+A collection of recent projects focused on
+motion, interaction and high-end experience.
+</p>
+</div>
+
+<div class="work-right">
+
+<div class="card">
+<img src="https://picsum.photos/800/600?random=1">
+<h3>Project One</h3>
+</div>
+
+<div class="card">
+<img src="https://picsum.photos/800/600?random=2">
+<h3>Project Two</h3>
+</div>
+
+<div class="card">
+<img src="https://picsum.photos/800/600?random=3">
+<h3>Project Three</h3>
+</div>
+
+</div>
+</div>
+
+</section>
+
+<section class="section about" id="about">
+
+<div class="about-inner">
+
+<h2>About</h2>
+
+<p>
+High-end Digital Studio mit Fokus auf
+Motion Design, Interaction und Experience.
+</p>
+
+</div>
+
+</section>
+
+<section class="section contact" id="contact">
+
+<h2>Let’s Build Something Exceptional</h2>
+
+</section>
 
 <script src="script.js"></script>
+
 </body>
 </html>

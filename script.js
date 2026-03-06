@@ -1,62 +1,112 @@
-const design = document.querySelector(".design");
-const shapes = document.querySelector(".shapes");
-const worlds = document.querySelector(".worlds");
-const subtext = document.querySelector(".hero-subtext");
-const hero = document.querySelector(".hero");
+gsap.registerPlugin(ScrollTrigger);
+
+/* HERO VIDEO ZOOM */
+
+gsap.to(".hero-video",{
+scale:1.2,
+scrollTrigger:{
+trigger:".hero",
+start:"top top",
+end:"bottom top",
+scrub:true
+}
+});
+
+/* HERO TEXT FADE */
+
+gsap.to(".hero-content",{
+opacity:0,
+y:-100,
+scrollTrigger:{
+trigger:".hero",
+start:"top top",
+end:"bottom top",
+scrub:true
+}
+});
+
+/* TILE GENERATOR */
+
+const container = document.getElementById("heroTiles");
+
+const cols = 16;
+const rows = 9;
+
+for(let i=0;i<cols*rows;i++){
+
+  const tile = document.createElement("div");
+  tile.classList.add("tile");
+
+  const inner = document.createElement("div");
+  inner.classList.add("tile-inner");
+
+  const front = document.createElement("div");
+  front.classList.add("tile-face","tile-front");
+
+  const back = document.createElement("div");
+  back.classList.add("tile-face","tile-back");
+
+  inner.appendChild(front);
+  inner.appendChild(back);
+  tile.appendChild(inner);
+  container.appendChild(tile);
+
+  let isHovered = false;
+
+  const tl = gsap.timeline({
+    paused: true,
+    defaults: {
+      duration: 0.35,
+      ease: "power2.out"
+    }
+  });
+
+  tl.to(inner, { rotationX: 180 });
+
+  tile.addEventListener("mouseenter", () => {
+
+    isHovered = true;
+    tl.play();
+
+  });
+
+  tile.addEventListener("mouseleave", () => {
+
+    isHovered = false;
+
+    // Wenn Animation noch läuft → warten bis sie fertig ist
+    if (tl.progress() < 1) {
+      tl.eventCallback("onComplete", () => {
+        if (!isHovered) {
+          tl.reverse();
+        }
+      });
+    } else {
+      tl.reverse();
+    }
+
+  });
+
+}
 
 const cursor = document.querySelector(".cursor");
-let mouseX=0, mouseY=0, currentX=0, currentY=0;
+const ring = document.querySelector(".cursor-ring");
 
 document.addEventListener("mousemove",(e)=>{
-  mouseX=e.clientX;
-  mouseY=e.clientY;
+
+  // normaler Cursor
+  gsap.to(cursor,{
+    x:e.clientX,
+    y:e.clientY,
+    duration:0.15
+  });
+
+  // Text-Ring folgt etwas smoother
+  gsap.to(ring,{
+    x:e.clientX,
+    y:e.clientY,
+    duration:0.25
+  });
+
 });
 
-function animateCursor(){
-  currentX += (mouseX-currentX)*0.15;
-  currentY += (mouseY-currentY)*0.15;
-  cursor.style.left=currentX+"px";
-  cursor.style.top=currentY+"px";
-  requestAnimationFrame(animateCursor);
-}
-animateCursor();
-
-/* Scroll-Simulation */
-let targetProgress = 0;
-let currentProgress = 0;
-
-window.addEventListener("wheel", e => {
-  targetProgress += e.deltaY * 0.0009; // <- langsamer als vorher
-  targetProgress = Math.min(Math.max(targetProgress,0),1);
-});
-
-function updateHero(progress){
-  const designWidth = design.offsetWidth;
-  const shapesWidth = shapes.offsetWidth;
-
-  // DESIGN nach links raus
-  design.style.transform = `translateX(${-progress*(window.innerWidth + designWidth)}px)`;
-
-  // SHAPES nach rechts raus
-  shapes.style.transform = `translateX(${progress*(window.innerWidth + shapesWidth)}px)`;
-
-  // Untertext schneller dissolven
-  subtext.style.opacity = `${Math.max(1 - progress*3,0)}`;
-
-  // WORLDS smooth zur Mitte
-  const heroHeight = hero.offsetHeight;
-  const startOffset = 0; // initial Y in %
-  const endOffset = (window.innerHeight/2 - worlds.offsetHeight/2 - hero.offsetTop) / heroHeight * 100;
-  // progress clamped zwischen 0-1
-  const worldsProgress = Math.min(progress / 0.5, 1); // bis progress=0.5 hoch
-  const moveY = startOffset + worldsProgress * endOffset;
-
-  worlds.style.transform = `translateY(${moveY}%)`;
-}
-
-function animateHero(){
-  currentProgress += (targetProgress - currentProgress) * 0.05; // <- langsamer, smooth
-  updateHero(currentProgress);
-  requestAnimationFrame(animateHero);
-}
-animateHero();
