@@ -3,70 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Studio Portfolio</title>
-
+<title>Jacob's Portfolio</title>
 <link rel="stylesheet" href="style.css">
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100;0,200;0,300;1,100;1,200;1,300&family=Plus+Jakarta+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 </head>
-
 <body>
 
 <div class="cursor"></div>
-
 <div class="cursor-ring">
-  <div class="cursor-circle">
-    <span id="cursorWord">DESIGN</span>
+  <div class="cursor-circle"><span id="cursorWord">DESIGN</span></div>
+</div>
+
+<!-- NAV — mix-blend-difference, floats over everything -->
+<nav class="nav" id="mainNav">
+  <div class="nav-logo">MY<span class="nav-logo-sep">_</span>SHOW<span class="nav-logo-italic">CASE</span></div>
+  <div class="nav-links">
+    <a href="#work">01. PROJECTS</a>
+    <a href="#about">02. ABOUT</a>
+    <a href="#contact">03. CONTACT</a>
+  </div>
+  <button class="nav-cta-btn">CONNECT</button>
+</nav>
+
+<!-- HERO — 3D SPIRAL -->
+<section class="hero-spiral" id="hero">
+  <!-- Ghost background text -->
+  <div class="hero-ghost-text hero-ghost-text--cult">THINK</div>
+  <div class="hero-ghost-text hero-ghost-text--digital">CREATE</div>
+
+  <!-- 3D Spiral -->
+  <div class="spiral-container">
+    <div class="spiral-wrapper" id="spiralWrapper">
+      <div class="spiral-item glitch-border" style="transform:rotateY(0deg) translateZ(500px) translateY(-100px);">
+        <img src="https://picsum.photos/640/360?random=20" alt="Project">
+      </div>
+      <div class="spiral-item glitch-border" style="transform:rotateY(72deg) translateZ(500px) translateY(150px);">
+        <img src="https://picsum.photos/480/480?random=21" alt="Project">
+      </div>
+      <div class="spiral-item glitch-border" style="transform:rotateY(144deg) translateZ(500px) translateY(-200px);">
+        <img src="https://picsum.photos/400/500?random=22" alt="Project">
+      </div>
+      <div class="spiral-item glitch-border" style="transform:rotateY(216deg) translateZ(500px) translateY(50px);">
+        <img src="https://picsum.photos/520/690?random=23" alt="Project">
+      </div>
+      <div class="spiral-item glitch-border" style="transform:rotateY(288deg) translateZ(500px) translateY(-50px);">
+        <img src="https://picsum.photos/640/360?random=24" alt="Project">
+      </div>
+    </div>
+  </div>
+
+  <!-- Central text overlay -->
+  <div class="hero-overlay-text">
+    <h1 class="hero-title">DESIGN<br><em>CHANGES</em><br>EVERYTHING</h1>
+    <p class="hero-sub">BY JACOB WEISSENBÄCK</p>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>LET'S WORK TOGETHER —&nbsp;</span>
   </div>
 </div>
 
-<nav class="nav">
-  <a href="#hero">Home</a>
-  <a href="#work">Work</a>
-  <a href="#about">About</a>
-  <a href="#contact">Contact</a>
-</nav>
-
-<section class="section hero" id="hero">
-
-  <canvas id="sketchCanvas" class="hero-video"></canvas>
-
-  <div class="hero-overlay"></div>
-  <div class="hero-tiles" id="heroTiles"></div>
-
-  <div class="hero-content">
-    <h1>
-      CREATING<br>
-      <em>DIGITAL</em> EXPERIENCES
-    </h1>
-    <p>Design. Motion. Strategy.</p>
+<!-- ASYMMETRICAL — RUTHLESS SECTION -->
+<section class="asym-section">
+  <div class="asym-inner">
+    <div class="asym-left">
+      <div class="asym-vert-label">DESIGN SYSTEMS</div>
+      <div class="asym-img-wrap">
+        <img src="https://picsum.photos/600/600?random=30" alt="Identity">
+      </div>
+      <div class="asym-float-card">
+        <h3>SYSTEMAT<br><em>DESIGN</em></h3>
+        <p>I ARCHITECT REALITIES. EVERY PIXEL IS A COMMAND. EVERY SPACE IS INTENTIONAL. EVERY RADIUS IS VISUALLY CALCULATED.</p>
+      </div>
+    </div>
+    <div class="asym-right">
+      <div class="asym-headline-wrap">
+        <h2 class="asym-headline">DESIGN<br>LESS</h2>
+        <div class="asym-line-wrap">
+          <div class="asym-line-fill"></div>
+        </div>
+      </div>
+      <p class="asym-body"> UI/UX debt is not an option. I establish <u>structural dominance</u> through disciplined, system-driven design.</p>
+    </div>
   </div>
-
 </section>
 
-<section class="section work" id="work">
-  <div class="work-container">
+<!-- RED BLEED SERVICES -->
+<section class="bleed-section">
+  <div class="bleed-ghost">STUDIO STUDIO STUDIO</div>
+  <div class="bleed-cards">
+    <div class="bleed-card bleed-card--dark">
+      <span class="bleed-num">01.</span>
+      <h4><em>IDENTITY<br>DESTRUCTION</em></h4>
+      <p>We break the old to build the new. Visual languages that demand submission.</p>
+    </div>
+    <div class="bleed-card bleed-card--light bleed-card--offset-1">
+      <span class="bleed-num">02.</span>
+      <h4>CHAOS<br>CONTROL</h4>
+      <p>Interfaces that prioritize cognitive load for maximum impact and retention.</p>
+    </div>
+    <div class="bleed-card bleed-card--dark bleed-card--offset-2">
+      <span class="bleed-num">03.</span>
+      <h4><em class="underline-accent">VOID<br>DESIGN</em></h4>
+      <p>Curating the absence of noise. The most powerful message is the one not spoken.</p>
+    </div>
+  </div>
+</section>
 
+<!-- MANIFESTO / BEYOND GRIDS -->
+<section class="manifesto-section" id="about">
+  <div class="manifesto-vert">MANIFESTO</div>
+  <div class="manifesto-inner">
+    <h2 class="manifesto-headline">BEYOND<br><span class="outline-text">GRIDS</span></h2>
+    <div class="manifesto-images">
+      <div class="manifesto-img manifesto-img--1">
+        <img src="https://picsum.photos/384/500?random=40" alt="Project">
+      </div>
+      <div class="manifesto-img manifesto-img--2">
+        <div class="manifesto-badge">NEW_ERA</div>
+        <img src="https://picsum.photos/500/380?random=41" alt="Project">
+      </div>
+    </div>
+    <div class="manifesto-text-block">
+      <span class="eyebrow">Manifesto 01.0</span>
+      <p class="manifesto-lead">A multidisciplinary practice operating at the intersection of digital precision and physical emotion. We don't just build interfaces — we curate experiences that linger.</p>
+      <p class="manifesto-body">Rooted in structural brutalism and informed by classical editorial design, our work strips away the superfluous to reveal the essential. Every pixel is a choice. Every void is a statement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SELECTED WORK -->
+<section class="work-section" id="work">
+  <div class="work-container">
     <div class="work-left">
       <h2>Work</h2>
-      <p id="workDesc" class="work-desc">
-        Recent projects focused on
-        motion, interaction and
-        high-end experience.
-      </p>
+      <p id="workDesc" class="work-desc">Recent projects focused on motion, interaction and high-end experience.</p>
       <span id="workCount" class="work-count">01</span>
     </div>
-
     <div class="work-right">
 
       <div class="card" data-index="01" data-desc="Brand identity system and motion design for a global fintech product launch.">
         <div class="card-img">
           <img src="https://picsum.photos/800/500?random=1" alt="Project One">
+          <span class="card-artifact">IMG_001_RAW.OBJ</span>
         </div>
         <div class="card-tags">
           <span class="card-tag">Branding</span>
@@ -87,6 +181,7 @@
       <div class="card" data-index="02" data-desc="End-to-end UX and interaction design for a next-generation creative tool.">
         <div class="card-img">
           <img src="https://picsum.photos/800/500?random=2" alt="Project Two">
+          <span class="card-artifact">IMG_002_RAW.OBJ</span>
         </div>
         <div class="card-tags">
           <span class="card-tag">UX Design</span>
@@ -107,6 +202,7 @@
       <div class="card" data-index="03" data-desc="Campaign strategy and digital experience for a luxury fashion house.">
         <div class="card-img">
           <img src="https://picsum.photos/800/500?random=3" alt="Project Three">
+          <span class="card-artifact">IMG_003_RAW.OBJ</span>
         </div>
         <div class="card-tags">
           <span class="card-tag">Campaign</span>
@@ -128,21 +224,131 @@
   </div>
 </section>
 
-<section class="section about" id="about">
-  <div class="about-inner">
-    <h2>About</h2>
-    <p>
-      High-end Digital Studio mit Fokus auf
-      Motion Design, Interaction und Experience.
-    </p>
+<!-- TEAM / STUDIO SECTION -->
+<section class="studio-section">
+  <div class="studio-grid-bg"></div>
+  <div class="studio-inner">
+    <div class="studio-header">
+      <h2 class="studio-title">The Collective</h2>
+      <div class="studio-status">system_status: operational</div>
+    </div>
+    <div class="studio-members">
+      <div class="member member--wide">
+        <div class="member-img-wrap">
+          <img src="https://picsum.photos/900/550?random=10" alt="Member One">
+          <div class="member-overlay"></div>
+        </div>
+        <div class="member-info">
+          <p class="member-role">01 / Creative Director</p>
+          <h3 class="member-name">Elias Thorne</h3>
+        </div>
+        <span class="member-artifact">IMG_4412_RAW.OBJ</span>
+      </div>
+      <div class="member member--square zine-mask">
+        <div class="member-img-wrap">
+          <img src="https://picsum.photos/600/600?random=11" alt="Member Two">
+        </div>
+        <div class="member-info">
+          <p class="member-role">02 / Lead Architect</p>
+          <h3 class="member-name">Lena Vance</h3>
+        </div>
+      </div>
+      <div class="member member--square">
+        <div class="member-img-wrap">
+          <img src="https://picsum.photos/600/600?random=12" alt="Member Three">
+        </div>
+        <div class="member-info">
+          <p class="member-role">03 / Tech Lead</p>
+          <h3 class="member-name">Julian Marks</h3>
+        </div>
+      </div>
+      <div class="studio-culture zine-border">
+        <div class="culture-bg-num">ZINE_04</div>
+        <h4 class="culture-title">Radical<br>Transparency.</h4>
+        <p class="culture-body">We operate as a flat hierarchy. Every member of the collective is a stakeholder in the vision. Where craft precedes commerce.</p>
+        <div class="culture-log">
+          &lt;!-- internal_culture_v2.log --&gt;<br>
+          &gt; build_status: true<br>
+          &gt; craft_purity: maximum
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
-<section class="section contact" id="contact">
-  <h2>Let's Build Something Exceptional</h2>
+<!-- CONTACT -->
+<section class="contact-section" id="contact">
+  <div class="contact-diag contact-diag--1"></div>
+  <div class="contact-diag contact-diag--2"></div>
+  <div class="contact-grid">
+    <div class="contact-left">
+      <span class="eyebrow">Transmission_Start</span>
+      <h2 class="contact-title">LET'S<br><em>DEFINE</em><br>THE FUTURE.</h2>
+      <div class="contact-details">
+        <div class="contact-item">
+          <p class="contact-label">Inquiries.txt</p>
+          <a href="mailto:hello@studio.com" class="contact-link">hello@studio.com</a>
+        </div>
+        <div class="contact-item">
+          <p class="contact-label">New_Work.exe</p>
+          <a href="mailto:work@studio.com" class="contact-link">work@studio.com</a>
+        </div>
+        <div class="contact-item">
+          <p class="contact-label">Coordinates</p>
+          <p class="contact-link">72nd Bleury St.<br>Montreal, QC</p>
+        </div>
+      </div>
+    </div>
+    <div class="contact-form-wrap">
+      <div class="contact-form-id">Form_ID: 99x-A</div>
+      <form class="contact-form">
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">?_WHO_ARE_YOU</label>
+            <input class="form-input" type="text" placeholder="IDENTIFY_SELF">
+          </div>
+          <div class="form-field">
+            <label class="form-label">@_RETURN_ADDR</label>
+            <input class="form-input form-input--skew" type="email" placeholder="EMAIL_STRING">
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">&gt;_THE_VISION</label>
+          <textarea class="form-textarea" placeholder="INPUT_DATA..." rows="5"></textarea>
+        </div>
+        <div class="form-footer">
+          <div class="form-latency">
+            <span class="form-latency-label">EST_LATENCY: 24–48H</span>
+            <div class="form-dots">
+              <span class="dot dot--full"></span>
+              <span class="dot dot--mid"></span>
+              <span class="dot dot--dim"></span>
+            </div>
+          </div>
+          <button class="form-submit" type="submit">EXECUTE_SEND</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </section>
 
-<script src="script.js"></script>
+<!-- FOOTER — red, bold, italic socials -->
+<footer class="footer">
+  <div class="footer-ghost">END.</div>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <div class="footer-logo">STUDIO_<br>PORT</div>
+      <p class="footer-tagline">STAY RAW. STAY DIGITAL. STAY BRUTAL.</p>
+    </div>
+    <div class="footer-right">
+      <a href="#" class="footer-social">INSTAGRAM</a>
+      <a href="#" class="footer-social">TWITTER</a>
+      <a href="#" class="footer-social">WORK.CV</a>
+      <p class="footer-copy">© 2024 TERMINAL SESSION CLOSED</p>
+    </div>
+  </div>
+</footer>
 
+<script src="script.js"></script>
 </body>
 </html>
