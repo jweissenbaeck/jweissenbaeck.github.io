@@ -3,348 +3,274 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jacob's Portfolio</title>
-<link rel="stylesheet" href="style.css">
+<title>Jacob Weissenbäck — Portfolio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Inter:wght@300;400;500&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Syne:wght@400;500;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="cursor"></div>
-<div class="cursor-ring">
-  <div class="cursor-circle"><span id="cursorWord">DESIGN</span></div>
+<!-- CUSTOM CURSOR -->
+<div class="cursor-dot"  id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- PROJECT HOVER PREVIEW -->
+<div class="project-preview" id="projectPreview">
+  <img id="previewImg" src="" alt="">
+  <div class="preview-overlay"></div>
+  <span class="preview-label" id="previewLabel"></span>
 </div>
 
-<!-- NAV — mix-blend-difference, floats over everything -->
+<!-- NAV -->
 <nav class="nav" id="mainNav">
-  <div class="nav-logo">MY<span class="nav-logo-sep">_</span>SHOW<span class="nav-logo-italic">CASE</span></div>
+  <div class="nav-logo">JW<span class="nav-dot">·</span>Studio</div>
   <div class="nav-links">
-    <a href="#work">01. PROJECTS</a>
-    <a href="#about">02. ABOUT</a>
-    <a href="#contact">03. CONTACT</a>
+    <a href="#work">01 — Projekte</a>
+    <a href="#contact">02 — Kontakt</a>
   </div>
-  <button class="nav-cta-btn">CONNECT</button>
+  <a href="#contact" class="nav-cta">Zusammenarbeiten ↗</a>
 </nav>
 
-<!-- HERO — 3D SPIRAL -->
-<section class="hero-spiral" id="hero">
-  <!-- Ghost background text -->
-  <div class="hero-ghost-text hero-ghost-text--cult">THINK</div>
-  <div class="hero-ghost-text hero-ghost-text--digital">CREATE</div>
+<!-- ========================
+     HERO
+======================== -->
+<section class="hero" id="hero">
+  <div class="hero-bg-grain"></div>
 
-  <!-- 3D Spiral -->
-  <div class="spiral-container">
-    <div class="spiral-wrapper" id="spiralWrapper">
-      <div class="spiral-item glitch-border" style="transform:rotateY(0deg) translateZ(500px) translateY(-100px);">
-        <img src="https://picsum.photos/640/360?random=20" alt="Project">
-      </div>
-      <div class="spiral-item glitch-border" style="transform:rotateY(72deg) translateZ(500px) translateY(150px);">
-        <img src="https://picsum.photos/480/480?random=21" alt="Project">
-      </div>
-      <div class="spiral-item glitch-border" style="transform:rotateY(144deg) translateZ(500px) translateY(-200px);">
-        <img src="https://picsum.photos/400/500?random=22" alt="Project">
-      </div>
-      <div class="spiral-item glitch-border" style="transform:rotateY(216deg) translateZ(500px) translateY(50px);">
-        <img src="https://picsum.photos/520/690?random=23" alt="Project">
-      </div>
-      <div class="spiral-item glitch-border" style="transform:rotateY(288deg) translateZ(500px) translateY(-50px);">
-        <img src="https://picsum.photos/640/360?random=24" alt="Project">
-      </div>
-    </div>
+  <!-- Portrait -->
+  <div class="hero-portrait-wrap" id="portraitReveal">
+    <img id="portraitImg" class="hero-portrait-img"
+      src="https://picsum.photos/600/900?random=20" alt="">
   </div>
 
-  <!-- Central text overlay -->
-  <div class="hero-overlay-text">
-    <h1 class="hero-title">DESIGN<br><em>CHANGES</em><br>EVERYTHING</h1>
-    <p class="hero-sub">BY JACOB WEISSENBÄCK</p>
+  <!-- Content -->
+  <div class="hero-content">
+    <div class="hero-eyebrow" id="heroEyebrow">
+      <span class="eyebrow-rule"></span>
+      <span>Design & Creative Direction — Wien</span>
+    </div>
+
+    <h1 class="hero-title">
+      <span class="line"><span class="line-inner">Design</span></span>
+      <span class="line"><span class="line-inner serif-italic">verändert</span></span>
+      <span class="line"><span class="line-inner">alles.</span></span>
+    </h1>
+
+    <p class="hero-name" id="heroName">Jacob Weissenbäck</p>
+  </div>
+
+  <div class="hero-scroll" id="heroScroll">
+    <div class="scroll-track"><div class="scroll-thumb"></div></div>
+    <span>Scrollen</span>
   </div>
 </section>
 
 <!-- MARQUEE -->
-<div class="marquee-wrap">
+<div class="marquee-wrap" aria-hidden="true">
   <div class="marquee-track">
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
-    <span>LET'S WORK TOGETHER —&nbsp;</span>
+    <span>Lass uns zusammenarbeiten</span>
+    <em class="m-sep">·</em>
+    <span>Lass uns zusammenarbeiten</span>
+    <em class="m-sep">·</em>
+    <span>Lass uns zusammenarbeiten</span>
+    <em class="m-sep">·</em>
+    <span>Lass uns zusammenarbeiten</span>
+    <em class="m-sep">·</em>
+    <span>Lass uns zusammenarbeiten</span>
+    <em class="m-sep">·</em>
+    <span>Lass uns zusammenarbeiten</span>
+    <em class="m-sep">·</em>
   </div>
 </div>
 
-<!-- ASYMMETRICAL — RUTHLESS SECTION -->
-<section class="asym-section">
-  <div class="asym-inner">
-    <div class="asym-left">
-      <div class="asym-vert-label">DESIGN SYSTEMS</div>
-      <div class="asym-img-wrap">
-        <img src="https://picsum.photos/600/600?random=30" alt="Identity">
-      </div>
-      <div class="asym-float-card">
-        <h3>SYSTEMAT<br><em>DESIGN</em></h3>
-        <p>I ARCHITECT REALITIES. EVERY PIXEL IS A COMMAND. EVERY SPACE IS INTENTIONAL. EVERY RADIUS IS VISUALLY CALCULATED.</p>
-      </div>
-    </div>
-    <div class="asym-right">
-      <div class="asym-headline-wrap">
-        <h2 class="asym-headline">DESIGN<br>LESS</h2>
-        <div class="asym-line-wrap">
-          <div class="asym-line-fill"></div>
-        </div>
-      </div>
-      <p class="asym-body"> UI/UX debt is not an option. I establish <u>structural dominance</u> through disciplined, system-driven design.</p>
-    </div>
-  </div>
-</section>
-
-<!-- RED BLEED SERVICES -->
-<section class="bleed-section">
-  <div class="bleed-ghost">STUDIO STUDIO STUDIO</div>
-  <div class="bleed-cards">
-    <div class="bleed-card bleed-card--dark">
-      <span class="bleed-num">01.</span>
-      <h4><em>IDENTITY<br>DESTRUCTION</em></h4>
-      <p>We break the old to build the new. Visual languages that demand submission.</p>
-    </div>
-    <div class="bleed-card bleed-card--light bleed-card--offset-1">
-      <span class="bleed-num">02.</span>
-      <h4>CHAOS<br>CONTROL</h4>
-      <p>Interfaces that prioritize cognitive load for maximum impact and retention.</p>
-    </div>
-    <div class="bleed-card bleed-card--dark bleed-card--offset-2">
-      <span class="bleed-num">03.</span>
-      <h4><em class="underline-accent">VOID<br>DESIGN</em></h4>
-      <p>Curating the absence of noise. The most powerful message is the one not spoken.</p>
-    </div>
-  </div>
-</section>
-
-<!-- MANIFESTO / BEYOND GRIDS -->
-<section class="manifesto-section" id="about">
-  <div class="manifesto-vert">MANIFESTO</div>
-  <div class="manifesto-inner">
-    <h2 class="manifesto-headline">BEYOND<br><span class="outline-text">GRIDS</span></h2>
-    <div class="manifesto-images">
-      <div class="manifesto-img manifesto-img--1">
-        <img src="https://picsum.photos/384/500?random=40" alt="Project">
-      </div>
-      <div class="manifesto-img manifesto-img--2">
-        <div class="manifesto-badge">NEW_ERA</div>
-        <img src="https://picsum.photos/500/380?random=41" alt="Project">
-      </div>
-    </div>
-    <div class="manifesto-text-block">
-      <span class="eyebrow">Manifesto 01.0</span>
-      <p class="manifesto-lead">A multidisciplinary practice operating at the intersection of digital precision and physical emotion. We don't just build interfaces — we curate experiences that linger.</p>
-      <p class="manifesto-body">Rooted in structural brutalism and informed by classical editorial design, our work strips away the superfluous to reveal the essential. Every pixel is a choice. Every void is a statement.</p>
-    </div>
-  </div>
-</section>
-
-<!-- SELECTED WORK -->
+<!-- ========================
+     WORK
+======================== -->
 <section class="work-section" id="work">
-  <div class="work-container">
-    <div class="work-left">
-      <h2>Work</h2>
-      <p id="workDesc" class="work-desc">Recent projects focused on motion, interaction and high-end experience.</p>
-      <span id="workCount" class="work-count">01</span>
+
+  <div class="work-header">
+    <div>
+      <span class="section-label">Ausgewählte Arbeiten</span>
+      <h2 class="work-title">Projekte</h2>
     </div>
-    <div class="work-right">
-
-      <div class="card" data-index="01" data-desc="Brand identity system and motion design for a global fintech product launch.">
-        <div class="card-img">
-          <img src="https://picsum.photos/800/500?random=1" alt="Project One">
-          <span class="card-artifact">IMG_001_RAW.OBJ</span>
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Branding</span>
-          <span class="card-tag">Motion</span>
-        </div>
-        <div class="card-meta">
-          <div class="card-title-row">
-            <h3>Project One</h3>
-            <span class="card-year">2024</span>
-          </div>
-          <div class="card-arrow">
-            <span class="card-index">01</span>
-            <span class="card-arrow-icon">↗</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" data-index="02" data-desc="End-to-end UX and interaction design for a next-generation creative tool.">
-        <div class="card-img">
-          <img src="https://picsum.photos/800/500?random=2" alt="Project Two">
-          <span class="card-artifact">IMG_002_RAW.OBJ</span>
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">UX Design</span>
-          <span class="card-tag">Interaction</span>
-        </div>
-        <div class="card-meta">
-          <div class="card-title-row">
-            <h3>Project Two</h3>
-            <span class="card-year">2024</span>
-          </div>
-          <div class="card-arrow">
-            <span class="card-index">02</span>
-            <span class="card-arrow-icon">↗</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="card" data-index="03" data-desc="Campaign strategy and digital experience for a luxury fashion house.">
-        <div class="card-img">
-          <img src="https://picsum.photos/800/500?random=3" alt="Project Three">
-          <span class="card-artifact">IMG_003_RAW.OBJ</span>
-        </div>
-        <div class="card-tags">
-          <span class="card-tag">Campaign</span>
-          <span class="card-tag">Web</span>
-        </div>
-        <div class="card-meta">
-          <div class="card-title-row">
-            <h3>Project Three</h3>
-            <span class="card-year">2023</span>
-          </div>
-          <div class="card-arrow">
-            <span class="card-index">03</span>
-            <span class="card-arrow-icon">↗</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
+    <p class="work-intro">Fokussiert auf Motion,<br>Interaction und High-End Experience.</p>
   </div>
+
+  <!-- First 4 always visible -->
+  <div class="projects-list">
+
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=1" data-label="01 — 2024">
+      <div class="project-row-inner">
+        <div class="project-left">
+          <span class="project-num">01</span>
+          <div class="project-info">
+            <h3 class="project-title">Neural Lens</h3>
+            <span class="project-year">2024</span>
+          </div>
+        </div>
+        <div class="project-right">
+          <div class="project-tags">
+            <span class="project-tag">Branding</span>
+            <span class="project-tag">Motion</span>
+          </div>
+          <div class="project-arrow">↗</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=2" data-label="02 — 2024">
+      <div class="project-row-inner">
+        <div class="project-left">
+          <span class="project-num">02</span>
+          <div class="project-info">
+            <h3 class="project-title">Kinetic Grid</h3>
+            <span class="project-year">2024</span>
+          </div>
+        </div>
+        <div class="project-right">
+          <div class="project-tags">
+            <span class="project-tag">UX Design</span>
+            <span class="project-tag">Interaction</span>
+          </div>
+          <div class="project-arrow">↗</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=3" data-label="03 — 2023">
+      <div class="project-row-inner">
+        <div class="project-left">
+          <span class="project-num">03</span>
+          <div class="project-info">
+            <h3 class="project-title">Crypto Mono</h3>
+            <span class="project-year">2023</span>
+          </div>
+        </div>
+        <div class="project-right">
+          <div class="project-tags">
+            <span class="project-tag">Campaign</span>
+            <span class="project-tag">Web</span>
+          </div>
+          <div class="project-arrow">↗</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=4" data-label="04 — 2023">
+      <div class="project-row-inner">
+        <div class="project-left">
+          <span class="project-num">04</span>
+          <div class="project-info">
+            <h3 class="project-title">Flux System</h3>
+            <span class="project-year">2023</span>
+          </div>
+        </div>
+        <div class="project-right">
+          <div class="project-tags">
+            <span class="project-tag">Design System</span>
+            <span class="project-tag">E-Com</span>
+          </div>
+          <div class="project-arrow">↗</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /projects-list -->
+
+  <!-- Collapsible extras -->
+  <div class="projects-extra" id="projectsExtra">
+
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=5" data-label="05 — 2023">
+      <div class="project-row-inner">
+        <div class="project-left">
+          <span class="project-num">05</span>
+          <div class="project-info">
+            <h3 class="project-title">Terra Forms</h3>
+            <span class="project-year">2023</span>
+          </div>
+        </div>
+        <div class="project-right">
+          <div class="project-tags">
+            <span class="project-tag">3D</span>
+            <span class="project-tag">Identity</span>
+          </div>
+          <div class="project-arrow">↗</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=6" data-label="06 — 2022">
+      <div class="project-row-inner">
+        <div class="project-left">
+          <span class="project-num">06</span>
+          <div class="project-info">
+            <h3 class="project-title">Moss Archive</h3>
+            <span class="project-year">2022</span>
+          </div>
+        </div>
+        <div class="project-right">
+          <div class="project-tags">
+            <span class="project-tag">Editorial</span>
+            <span class="project-tag">Typography</span>
+          </div>
+          <div class="project-arrow">↗</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /projects-extra -->
+
+  <div class="toggle-wrap">
+    <button class="toggle-btn" id="projectsToggle" aria-expanded="false">
+      <span class="toggle-label">Mehr Projekte</span>
+      <span class="toggle-icon" aria-hidden="true">
+        <span class="icon-h"></span>
+        <span class="icon-v"></span>
+      </span>
+    </button>
+  </div>
+
 </section>
 
-<!-- TEAM / STUDIO SECTION -->
-<section class="studio-section">
-  <div class="studio-grid-bg"></div>
-  <div class="studio-inner">
-    <div class="studio-header">
-      <h2 class="studio-title">The Collective</h2>
-      <div class="studio-status">system_status: operational</div>
-    </div>
-    <div class="studio-members">
-      <div class="member member--wide">
-        <div class="member-img-wrap">
-          <img src="https://picsum.photos/900/550?random=10" alt="Member One">
-          <div class="member-overlay"></div>
-        </div>
-        <div class="member-info">
-          <p class="member-role">01 / Creative Director</p>
-          <h3 class="member-name">Elias Thorne</h3>
-        </div>
-        <span class="member-artifact">IMG_4412_RAW.OBJ</span>
-      </div>
-      <div class="member member--square zine-mask">
-        <div class="member-img-wrap">
-          <img src="https://picsum.photos/600/600?random=11" alt="Member Two">
-        </div>
-        <div class="member-info">
-          <p class="member-role">02 / Lead Architect</p>
-          <h3 class="member-name">Lena Vance</h3>
-        </div>
-      </div>
-      <div class="member member--square">
-        <div class="member-img-wrap">
-          <img src="https://picsum.photos/600/600?random=12" alt="Member Three">
-        </div>
-        <div class="member-info">
-          <p class="member-role">03 / Tech Lead</p>
-          <h3 class="member-name">Julian Marks</h3>
-        </div>
-      </div>
-      <div class="studio-culture zine-border">
-        <div class="culture-bg-num">ZINE_04</div>
-        <h4 class="culture-title">Radical<br>Transparency.</h4>
-        <p class="culture-body">We operate as a flat hierarchy. Every member of the collective is a stakeholder in the vision. Where craft precedes commerce.</p>
-        <div class="culture-log">
-          &lt;!-- internal_culture_v2.log --&gt;<br>
-          &gt; build_status: true<br>
-          &gt; craft_purity: maximum
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- CONTACT -->
-<section class="contact-section" id="contact">
-  <div class="contact-diag contact-diag--1"></div>
-  <div class="contact-diag contact-diag--2"></div>
-  <div class="contact-grid">
-    <div class="contact-left">
-      <span class="eyebrow">Transmission_Start</span>
-      <h2 class="contact-title">LET'S<br><em>DEFINE</em><br>THE FUTURE.</h2>
-      <div class="contact-details">
-        <div class="contact-item">
-          <p class="contact-label">Inquiries.txt</p>
-          <a href="mailto:hello@studio.com" class="contact-link">hello@studio.com</a>
-        </div>
-        <div class="contact-item">
-          <p class="contact-label">New_Work.exe</p>
-          <a href="mailto:work@studio.com" class="contact-link">work@studio.com</a>
-        </div>
-        <div class="contact-item">
-          <p class="contact-label">Coordinates</p>
-          <p class="contact-link">72nd Bleury St.<br>Montreal, QC</p>
-        </div>
-      </div>
-    </div>
-    <div class="contact-form-wrap">
-      <div class="contact-form-id">Form_ID: 99x-A</div>
-      <form class="contact-form">
-        <div class="form-row">
-          <div class="form-field">
-            <label class="form-label">?_WHO_ARE_YOU</label>
-            <input class="form-input" type="text" placeholder="IDENTIFY_SELF">
-          </div>
-          <div class="form-field">
-            <label class="form-label">@_RETURN_ADDR</label>
-            <input class="form-input form-input--skew" type="email" placeholder="EMAIL_STRING">
-          </div>
-        </div>
-        <div class="form-field">
-          <label class="form-label">&gt;_THE_VISION</label>
-          <textarea class="form-textarea" placeholder="INPUT_DATA..." rows="5"></textarea>
-        </div>
-        <div class="form-footer">
-          <div class="form-latency">
-            <span class="form-latency-label">EST_LATENCY: 24–48H</span>
-            <div class="form-dots">
-              <span class="dot dot--full"></span>
-              <span class="dot dot--mid"></span>
-              <span class="dot dot--dim"></span>
-            </div>
-          </div>
-          <button class="form-submit" type="submit">EXECUTE_SEND</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER — red, bold, italic socials -->
-<footer class="footer">
-  <div class="footer-ghost">END.</div>
+<!-- ========================
+     FOOTER / CONTACT
+======================== -->
+<footer class="footer" id="contact">
   <div class="footer-inner">
-    <div class="footer-left">
-      <div class="footer-logo">STUDIO_<br>PORT</div>
-      <p class="footer-tagline">STAY RAW. STAY DIGITAL. STAY BRUTAL.</p>
+    <div class="footer-top">
+      <span class="section-label section-label--light">Kontakt</span>
+      <h2 class="footer-title">
+        Lass uns etwas<br><em>Bleibendes</em> schaffen.
+      </h2>
     </div>
-    <div class="footer-right">
-      <a href="#" class="footer-social">INSTAGRAM</a>
-      <a href="#" class="footer-social">TWITTER</a>
-      <a href="#" class="footer-social">WORK.CV</a>
-      <p class="footer-copy">© 2024 TERMINAL SESSION CLOSED</p>
+    <div class="footer-grid">
+      <div class="footer-contacts">
+        <div class="footer-item">
+          <span class="footer-label">E-Mail</span>
+          <a href="mailto:hello@jacobwb.com" class="footer-link">hello@jacobwb.com</a>
+        </div>
+        <div class="footer-item">
+          <span class="footer-label">Anfragen</span>
+          <a href="mailto:work@jacobwb.com" class="footer-link">work@jacobwb.com</a>
+        </div>
+        <div class="footer-item">
+          <span class="footer-label">Standort</span>
+          <span class="footer-link">Wien, Österreich</span>
+        </div>
+      </div>
+      <nav class="footer-social">
+        <a href="#" class="social-link">Instagram ↗</a>
+        <a href="#" class="social-link">Twitter / X ↗</a>
+        <a href="#" class="social-link">LinkedIn ↗</a>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-logo">Jacob Weissenbäck</span>
+      <span class="footer-copy">© 2024</span>
     </div>
   </div>
 </footer>
