@@ -6,7 +6,7 @@
 <title>Jacob Weissenbäck — Portfolio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Syne:wght@400;500;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
@@ -26,41 +26,43 @@
 </div>
 
 <!-- NAV -->
-<nav class="nav" id="mainNav">
-  <div class="nav-logo">JW<span class="nav-dot">·</span>Studio</div>
+<nav class="nav" id="mainNav" style="left:50%">
+  <div class="nav-logo">Portfolio<span class="nav-dot">·</span>JCKY</div>
   <div class="nav-links">
     <a href="#work">01 — Projekte</a>
-    <a href="#contact">02 — Kontakt</a>
+    <a href="#gallery">02 — Galerie</a>
+    <a href="#contact">03 — Kontakt</a>
   </div>
-  <a href="#contact" class="nav-cta">Zusammenarbeiten ↗</a>
+  <div class="nav-right">
+    <a href="#" class="nav-cv">CV</a>
+    <a href="#contact" class="nav-cta">Kontaktiere mich</a>
+  </div>
 </nav>
 
 <!-- ========================
      HERO
 ======================== -->
 <section class="hero" id="hero">
+  <div class="hero-spotlight"></div>
   <div class="hero-bg-grain"></div>
 
   <!-- Portrait -->
   <div class="hero-portrait-wrap" id="portraitReveal">
-    <img id="portraitImg" class="hero-portrait-img"
-      src="https://picsum.photos/600/900?random=20" alt="">
+    <div class="hero-visual"></div>
   </div>
 
   <!-- Content -->
   <div class="hero-content">
     <div class="hero-eyebrow" id="heroEyebrow">
       <span class="eyebrow-rule"></span>
-      <span>Design & Creative Direction — Wien</span>
+      <span>UI- / UX- / Product-Design</span>
     </div>
 
     <h1 class="hero-title">
-      <span class="line"><span class="line-inner">Design</span></span>
+      <span class="line"><span class="line-inner"><span id="designWord">Design</span></span></span>
       <span class="line"><span class="line-inner serif-italic">verändert</span></span>
       <span class="line"><span class="line-inner">alles.</span></span>
     </h1>
-
-    <p class="hero-name" id="heroName">Jacob Weissenbäck</p>
   </div>
 
   <div class="hero-scroll" id="heroScroll">
@@ -72,18 +74,53 @@
 <!-- MARQUEE -->
 <div class="marquee-wrap" aria-hidden="true">
   <div class="marquee-track">
-    <span>Lass uns zusammenarbeiten</span>
+    <span class="marquee-item">Figma</span>
     <em class="m-sep">·</em>
-    <span>Lass uns zusammenarbeiten</span>
+    <span class="marquee-item">UI Design</span>
     <em class="m-sep">·</em>
-    <span>Lass uns zusammenarbeiten</span>
+    <span class="marquee-item">DaVinci Resolve</span>
     <em class="m-sep">·</em>
-    <span>Lass uns zusammenarbeiten</span>
+    <span class="marquee-item">UX Design</span>
     <em class="m-sep">·</em>
-    <span>Lass uns zusammenarbeiten</span>
+    <span class="marquee-item">HTML</span>
     <em class="m-sep">·</em>
-    <span>Lass uns zusammenarbeiten</span>
+    <span class="marquee-item">Product Design</span>
     <em class="m-sep">·</em>
+    <span class="marquee-item">CSS</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">JavaScript</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Python</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Lightroom</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Photoshop</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Claude</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Figma</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">UI Design</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">DaVinci Resolve</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">UX Design</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">HTML</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Product Design</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">CSS</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">JavaScript</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Python</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Lightroom</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Photoshop</span>
+    <em class="m-sep">·</em>
+    <span class="marquee-item">Claude</span>
   </div>
 </div>
 
@@ -91,63 +128,64 @@
      WORK
 ======================== -->
 <section class="work-section" id="work">
+  <div class="section-bg-num" aria-hidden="true">01</div>
 
   <div class="work-header">
     <div>
       <span class="section-label">Ausgewählte Arbeiten</span>
       <h2 class="work-title">Projekte</h2>
     </div>
-    <p class="work-intro">Fokussiert auf Motion,<br>Interaction und High-End Experience.</p>
+    <p class="work-intro">Fokussiert auf Kreatitivät,<br> Nutzer und Innovation</p>
   </div>
 
   <!-- First 4 always visible -->
   <div class="projects-list">
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=1" data-label="01 — 2024">
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=1" data-label="01 — Aug 2024">
       <div class="project-row-inner">
         <div class="project-left">
           <span class="project-num">01</span>
           <div class="project-info">
-            <h3 class="project-title">Neural Lens</h3>
-            <span class="project-year">2024</span>
+            <h3 class="project-title">Design System</h3>
+            <span class="project-year">2025 - on going</span>
           </div>
         </div>
         <div class="project-right">
           <div class="project-tags">
-            <span class="project-tag">Branding</span>
-            <span class="project-tag">Motion</span>
+            <span class="project-tag">Design</span>
+            <span class="project-tag">Figma</span>
           </div>
           <div class="project-arrow">↗</div>
         </div>
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=2" data-label="02 — 2024">
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=2" data-label="02 — Nov 2024">
       <div class="project-row-inner">
         <div class="project-left">
           <span class="project-num">02</span>
           <div class="project-info">
-            <h3 class="project-title">Kinetic Grid</h3>
-            <span class="project-year">2024</span>
+            <h3 class="project-title">Lehrling des Monats</h3>
+            <span class="project-year">2026</span>
           </div>
         </div>
         <div class="project-right">
           <div class="project-tags">
-            <span class="project-tag">UX Design</span>
-            <span class="project-tag">Interaction</span>
+            <span class="project-tag">Video</span>
+            <span class="project-tag">DaVinci Resolve</span>
           </div>
           <div class="project-arrow">↗</div>
         </div>
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=3" data-label="03 — 2023">
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=3" data-label="03 — Jul 2023">
       <div class="project-row-inner">
         <div class="project-left">
           <span class="project-num">03</span>
           <div class="project-info">
-            <h3 class="project-title">Crypto Mono</h3>
-            <span class="project-year">2023</span>
+            <h3 class="project-title">Intranet</h3>
+            <span class="project-year">2025 - on going</span>
           </div>
         </div>
         <div class="project-right">
@@ -160,13 +198,13 @@
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=4" data-label="04 — 2023">
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=4" data-label="04 — Nov 2023">
       <div class="project-row-inner">
         <div class="project-left">
           <span class="project-num">04</span>
           <div class="project-info">
             <h3 class="project-title">Flux System</h3>
-            <span class="project-year">2023</span>
+            <span class="project-year">Nov 2023</span>
           </div>
         </div>
         <div class="project-right">
@@ -184,13 +222,13 @@
   <!-- Collapsible extras -->
   <div class="projects-extra" id="projectsExtra">
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=5" data-label="05 — 2023">
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=5" data-label="05 — Mai 2023">
       <div class="project-row-inner">
         <div class="project-left">
           <span class="project-num">05</span>
           <div class="project-info">
             <h3 class="project-title">Terra Forms</h3>
-            <span class="project-year">2023</span>
+            <span class="project-year">Mai 2023</span>
           </div>
         </div>
         <div class="project-right">
@@ -203,13 +241,13 @@
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=6" data-label="06 — 2022">
+    <div class="project-row" data-img="https://picsum.photos/800/500?random=6" data-label="06 — Dez 2022">
       <div class="project-row-inner">
         <div class="project-left">
           <span class="project-num">06</span>
           <div class="project-info">
             <h3 class="project-title">Moss Archive</h3>
-            <span class="project-year">2022</span>
+            <span class="project-year">Dez 2022</span>
           </div>
         </div>
         <div class="project-right">
@@ -237,40 +275,94 @@
 </section>
 
 <!-- ========================
+     GALLERY
+======================== -->
+<section class="gallery-section" id="gallery">
+  <div class="gallery-bg-num" aria-hidden="true">02</div>
+  <div class="gallery-inner">
+
+    <!-- Header row -->
+    <div class="gallery-text-col">
+      <div>
+        <span class="section-label section-label--light">Ausgewählte Aufnahmen</span>
+        <h2 class="gallery-title">Galerie</h2>
+      </div>
+      <div class="gallery-text-right">
+        <p class="gallery-intro">Fotografien, Bildbearbeitungen und visuelle Experimente. Klick auf den Ordner — die Bilder kommen dann zu dir.</p>
+        <a href="#" class="gallery-cta">
+          Alle Aufnahmen ansehen
+          <span class="gallery-cta-icon">↗</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Full-width interactive stage -->
+    <div class="gallery-stage">
+      <div class="gallery-interactive">
+        <div class="floating-photos" id="floatingPhotos">
+          <img src="https://picsum.photos/200/150?random=21" alt="Foto 1"  class="floating-photo" data-index="0">
+          <img src="https://picsum.photos/200/150?random=22" alt="Foto 2"  class="floating-photo" data-index="1">
+          <img src="https://picsum.photos/200/150?random=23" alt="Foto 3"  class="floating-photo" data-index="2">
+          <img src="https://picsum.photos/200/150?random=24" alt="Foto 4"  class="floating-photo" data-index="3">
+          <img src="https://picsum.photos/200/150?random=25" alt="Foto 5"  class="floating-photo" data-index="4">
+          <img src="https://picsum.photos/200/150?random=26" alt="Foto 6"  class="floating-photo" data-index="5">
+          <img src="https://picsum.photos/200/150?random=27" alt="Foto 7"  class="floating-photo" data-index="6">
+          <img src="https://picsum.photos/200/150?random=28" alt="Foto 8"  class="floating-photo" data-index="7">
+          <img src="https://picsum.photos/200/150?random=29" alt="Foto 9"  class="floating-photo" data-index="8">
+          <img src="https://picsum.photos/200/150?random=30" alt="Foto 10" class="floating-photo" data-index="9">
+          <img src="https://picsum.photos/200/150?random=31" alt="Foto 11" class="floating-photo" data-index="10">
+          <img src="https://picsum.photos/200/150?random=32" alt="Foto 12" class="floating-photo" data-index="11">
+          <img src="https://picsum.photos/200/150?random=33" alt="Foto 13" class="floating-photo" data-index="12">
+          <img src="https://picsum.photos/200/150?random=34" alt="Foto 14" class="floating-photo" data-index="13">
+          <img src="https://picsum.photos/200/150?random=35" alt="Foto 15" class="floating-photo" data-index="14">
+        </div>
+        <div class="folder" id="folder">
+          <div class="folder-shimmer"></div>
+          <div class="folder-tab"></div>
+          <div class="folder-body">
+            <span class="folder-label">Vorschau</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================
      FOOTER / CONTACT
 ======================== -->
 <footer class="footer" id="contact">
+  <div class="section-bg-num section-bg-num--left section-bg-num--bottom" aria-hidden="true">03</div>
   <div class="footer-inner">
     <div class="footer-top">
       <span class="section-label section-label--light">Kontakt</span>
-      <h2 class="footer-title">
-        Lass uns etwas<br><em>Bleibendes</em> schaffen.
-      </h2>
+      <h2 class="footer-title" id="footerEggTrigger">Überzeugt?</h2>
     </div>
     <div class="footer-grid">
       <div class="footer-contacts">
         <div class="footer-item">
           <span class="footer-label">E-Mail</span>
-          <a href="mailto:hello@jacobwb.com" class="footer-link">hello@jacobwb.com</a>
+          <a href="mailto:hello@jacobwb.com" class="footer-link">j.weissenbaeck@gmx.at</a>
         </div>
         <div class="footer-item">
           <span class="footer-label">Anfragen</span>
-          <a href="mailto:work@jacobwb.com" class="footer-link">work@jacobwb.com</a>
+          <a href="mailto:work@jacobwb.com" class="footer-link">j.weissenbaeck@gmx.at</a>
         </div>
         <div class="footer-item">
           <span class="footer-label">Standort</span>
-          <span class="footer-link">Wien, Österreich</span>
+          <span class="footer-link">Salzburg, Österreich</span>
         </div>
       </div>
       <nav class="footer-social">
         <a href="#" class="social-link">Instagram ↗</a>
         <a href="#" class="social-link">Twitter / X ↗</a>
-        <a href="#" class="social-link">LinkedIn ↗</a>
+        <a href="https://www.linkedin.com/in/jweissenbaeck/" class="social-link">LinkedIn ↗</a>
       </nav>
     </div>
     <div class="footer-bottom">
       <span class="footer-logo">Jacob Weissenbäck</span>
-      <span class="footer-copy">© 2024</span>
+      <span class="footer-copy">Made with love © 2026</span>
     </div>
   </div>
 </footer>
