@@ -65,41 +65,135 @@ document.addEventListener('mouseenter', () => {
 });
 
 /* ============================
-   HERO — CINEMATIC REVEAL
-   Images: clip-path polygon reveal
-   Title lines: 3D rotateX perspective animation
+   HERO — CINEMATIC REVEAL (NEW)
 ============================ */
-const heroTL = gsap.timeline({ delay: 0.2 });
 
-// Initialize clip-path for animation
-gsap.set("#portraitReveal", {
-  clipPath: "polygon(0 0, 100% 0, 85% 100%, 0 100%)"
+// ── Font load guard ──
+const heroInit = () => {
+  const heroTL = gsap.timeline({ delay: 0 });
+
+  // Set initial states
+  gsap.set('#heroNameBig',    { y: '110%' });
+  gsap.set('#heroNameOutline',{ y: '110%' });
+  gsap.set('#heroSurname',    { y: '110%' });
+  gsap.set('#heroEyebrow',    { opacity: 0, y: 16 });
+  gsap.set('#heroSubRow',     { opacity: 0, y: 24 });
+  gsap.set('#heroScroll',     { opacity: 0 });
+  gsap.set('#heroBadge',      { opacity: 0, y: 12 });
+
+  heroTL
+    // Eyebrow slides in
+    .to('#heroEyebrow', {
+      opacity: 1, y: 0,
+      duration: 1.0,
+      ease: 'power3.out'
+    })
+
+    // JACOB fills in — mask reveal
+    .to('#heroNameBig', {
+      y: '0%',
+      duration: 1.4,
+      ease: 'power4.out'
+    }, 0.2)
+
+    // Outline offset slightly after
+    .to('#heroNameOutline', {
+      y: '0%',
+      duration: 1.6,
+      ease: 'power4.out'
+    }, 0.35)
+
+    // WEISSENBÄCK rises
+    .to('#heroSurname', {
+      y: '0%',
+      duration: 1.4,
+      ease: 'power4.out'
+    }, 0.55)
+
+    // Subtitle row
+    .to('#heroSubRow', {
+      opacity: 1, y: 0,
+      duration: 0.9,
+      ease: 'power3.out'
+    }, 0.9)
+
+    // Scroll + Badge
+    .to(['#heroScroll', '#heroBadge'], {
+      opacity: 1, y: 0,
+      duration: 0.7,
+      stagger: 0.12,
+      ease: 'power2.out'
+    }, 1.3);
+};
+
+// Run after a minimal delay (font safety)
+setTimeout(heroInit, 20);
+
+/* ── MAGNETIC CTA ── */
+const ctaBtn = document.getElementById('heroCTA');
+if (ctaBtn) {
+  ctaBtn.addEventListener('mousemove', (e) => {
+    const rect = ctaBtn.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top  + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+
+    gsap.to(ctaBtn, {
+      x: dx * 10,
+      y: dy * 6,
+      duration: 0.5,
+      ease: 'power2.out'
+    });
+
+    // Update gradient position
+    const px = ((e.clientX - rect.left) / rect.width) * 100;
+    const py = ((e.clientY - rect.top)  / rect.height) * 100;
+    ctaBtn.style.setProperty('--mx', `${px}%`);
+    ctaBtn.style.setProperty('--my', `${py}%`);
+  });
+
+  ctaBtn.addEventListener('mouseleave', () => {
+    gsap.to(ctaBtn, {
+      x: 0, y: 0,
+      duration: 0.8,
+      ease: 'elastic.out(1, 0.5)'
+    });
+  });
+}
+
+/* ── HERO PARALLAX ON SCROLL ── */
+const heroEl = document.getElementById('hero');
+ScrollTrigger.create({
+  trigger: heroEl,
+  start: 'top top',
+  end: 'bottom top',
+  onUpdate: (self) => {
+    const p = self.progress;
+    gsap.set('#heroNameBig',  { y: `${p * -60}px`, opacity: 1 - p * 1.4 });
+    gsap.set('#heroSurname',  { y: `${p * -40}px`, opacity: 1 - p * 1.6 });
+    gsap.set('#heroSubRow',   { y: `${p * -30}px`, opacity: 1 - p * 1.8 });
+    gsap.set('#heroEyebrow',  { y: `${p * -20}px`, opacity: 1 - p * 2.2 });
+  }
 });
 
-heroTL
-  .to("#portraitReveal", {
-    clipPath: "polygon(0 0, 100% 0, 95% 100%, 0 100%)",
-    duration: 1.8,
-    ease: "power4.out"
-  })
+/* ── MOUSE PARALLAX on hero orbs ── */
+document.addEventListener('mousemove', (e) => {
+  if (!heroEl) return;
+  const rect = heroEl.getBoundingClientRect();
+  if (e.clientY > rect.bottom) return;
 
-  .to(".line-inner", {
-    y: "0%",
-    rotateX: 0,
-    duration: 1.2,
-    stagger: 0.15,
-    ease: "power4.out"
-  }, 0.3)
+  const cx = rect.width / 2;
+  const cy = rect.height / 2;
+  const dx = (e.clientX - rect.left - cx) / cx;
+  const dy = (e.clientY - rect.top  - cy) / cy;
 
-  .to("#heroEyebrow", {
-    opacity: 1,
-    duration: 0.8
-  }, 0.9)
+  gsap.to('.hero-orb--1', { x: dx * 40, y: dy * 30, duration: 2.0, ease: 'power2.out', overwrite: 'auto' });
+  gsap.to('.hero-orb--2', { x: dx * -30, y: dy * -20, duration: 2.4, ease: 'power2.out', overwrite: 'auto' });
+  gsap.to('.hero-orb--3', { x: dx * 20, y: dy * 25, duration: 1.8, ease: 'power2.out', overwrite: 'auto' });
+});
 
-  .to("#heroScroll", {
-    opacity: 1,
-    duration: 0.8
-  }, 1.3);
+
 
 /* ============================
    NAV — Float pill init + scroll hide/show
@@ -129,57 +223,6 @@ lenis.on('scroll', ({ scroll, direction }) => {
   }
 });
 
-/* ============================
-   HERO — CURSOR SPOTLIGHT
-============================ */
-const spotlight = document.querySelector('.hero-spotlight');
-const heroEl    = document.getElementById('hero');
-
-if (spotlight && heroEl) {
-  heroEl.addEventListener('mousemove', (e) => {
-    const rect = heroEl.getBoundingClientRect();
-    gsap.to(spotlight, {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      duration: 0.9,
-      ease: 'power2.out'
-    });
-  });
-}
-
-/* ============================
-   HERO — 3D PORTRAIT TILT (Apple-style)
-   & SUBTLE CONTENT DEPTH SHIFT
-============================ */
-document.addEventListener('mousemove', (e) => {
-  // Only run while in the hero viewport area
-  const heroBottom = (heroEl ? heroEl.getBoundingClientRect().bottom : window.innerHeight);
-  if (e.clientY > heroBottom) return;
-
-  const cx = window.innerWidth  / 2;
-  const cy = window.innerHeight / 2;
-
-  const dx = (e.clientX - cx) / cx; // -1 to 1
-  const dy = (e.clientY - cy) / cy; // -1 to 1
-
-  // Portrait — 3D card tilt (shallow, refined)
-  gsap.to('#portraitReveal', {
-    rotateY: dx * 5,
-    rotateX: -dy * 3.5,
-    duration: 1.6,
-    ease: 'power2.out',
-    overwrite: 'auto'
-  });
-
-  // Content — counter-drift for depth illusion
-  gsap.to('.hero-content', {
-    x: dx * -10,
-    y: dy * -6,
-    duration: 1.8,
-    ease: 'power2.out',
-    overwrite: 'auto'
-  });
-});
 /* ============================
    PROJECT HOVER PREVIEW
 ============================ */
@@ -313,24 +356,27 @@ document.querySelectorAll('.project-title').forEach(title => {
 });
 
 document.querySelectorAll('.social-link').forEach(link => {
-  link.addEventListener('mouseenter', () => scrambleTitle(link));
-  link.addEventListener('mouseleave', () => restoreTitle(link));
+  const nameEl = link.querySelector('.social-name');
+  if (nameEl) {
+    link.addEventListener('mouseenter', () => scrambleTitle(nameEl));
+    link.addEventListener('mouseleave', () => restoreTitle(nameEl));
+  }
 });
 
 const footerLocation = document.querySelector('.footer-link:last-child');
 
 if (footerLocation) {
   footerLocation.addEventListener('click', () => {
-    // Quick Vienna fact
+    // Quick Salzburg fact
     const facts = [
-      '🏛️ Heimat des Stephansdoms',
-      '🎭 Stadt der Musik',
+      '🏰 Heimat der Festung Hohensalzburg',
+      '🎵 Geburtsstadt Mozarts',
       '🏔️ Tor zu den Alpen'
     ];
     const randomFact = facts[Math.floor(Math.random() * facts.length)];
     footerLocation.textContent = randomFact;
     setTimeout(() => {
-      footerLocation.textContent = 'Wien, Österreich';
+      footerLocation.textContent = 'Salzburg, Österreich';
     }, 2000);
   });
 }
@@ -560,307 +606,434 @@ toggleBtn.addEventListener('click', () => {
 });
 
 /* ============================
-   SCROLL ANIMATIONS
+   SCROLL ANIMATIONS — cinematic
 ============================ */
 
-// Work header
-gsap.from('.work-header', {
-  scrollTrigger: { trigger: '.work-header', start: 'top 84%' },
-  y: 48, opacity: 0, duration: 1.0, ease: 'power3.out',
+// ── Work header: title mask reveal ──
+gsap.set('.work-title', { y: '105%' });
+gsap.set('.work-index', { opacity: 0, x: -20 });
+gsap.set('.work-intro', { opacity: 0, y: 20 });
+
+ScrollTrigger.create({
+  trigger: '.work-header',
+  start: 'top 82%',
+  once: true,
+  onEnter() {
+    const tl = gsap.timeline();
+    tl.to('.work-title',  { y: '0%', duration: 1.2, ease: 'power4.out' })
+      .to('.work-index',  { opacity: 1, x: 0, duration: 0.7, ease: 'power3.out' }, 0.1)
+      .to('.section-label', { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0.2)
+      .to('.work-intro',  { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }, 0.35);
+  }
 });
 
-// Each visible project row — stagger from left
-gsap.from('.projects-list .project-row', {
+// Wrap work-title in a mask so the reveal clips properly
+document.querySelectorAll('.work-title').forEach(el => {
+  el.parentElement.style.overflow = 'hidden';
+  el.parentElement.style.paddingBottom = '0.1em';
+});
+
+// ── Project rows: staggered slide up ──
+gsap.set('.projects-list .project-row', { opacity: 0, y: 40 });
+ScrollTrigger.create({
+  trigger: '.projects-list',
+  start: 'top 80%',
+  once: true,
+  onEnter() {
+    gsap.to('.projects-list .project-row', {
+      opacity: 1, y: 0,
+      duration: 0.9, stagger: 0.1,
+      ease: 'power3.out',
+    });
+  }
+});
+
+// ── Toggle button ──
+gsap.set('.toggle-wrap', { opacity: 0, y: 24 });
+ScrollTrigger.create({
+  trigger: '.toggle-wrap', start: 'top 90%', once: true,
+  onEnter() { gsap.to('.toggle-wrap', { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }); }
+});
+
+// ── Ghost word parallax ──
+gsap.to('.work-bg-word', {
   scrollTrigger: {
-    trigger: '.projects-list',
-    start: 'top 82%',
+    trigger: '.work-section',
+    start: 'top bottom', end: 'bottom top',
+    scrub: 2,
   },
-  x: -32, opacity: 0,
-  duration: 0.7,
-  stagger: 0.09,
-  ease: 'power3.out',
+  y: -80, ease: 'none'
 });
 
-// Toggle button
-gsap.from('.toggle-wrap', {
-  scrollTrigger: { trigger: '.toggle-wrap', start: 'top 90%' },
-  y: 24, opacity: 0, duration: 0.6, ease: 'power2.out',
+// ── Footer: title mask reveal ──
+gsap.set('#footerTitle',        { y: '105%' });
+gsap.set('#footerTitleOutline', { y: '105%' });
+gsap.set('#footerRule',         { scaleX: 0 });
+gsap.set('.footer-item',        { opacity: 0, y: 24 });
+gsap.set('.social-link',        { opacity: 0, x: 30 });
+gsap.set('.footer-bottom',      { opacity: 0 });
+
+ScrollTrigger.create({
+  trigger: '.footer',
+  start: 'top 80%',
+  once: true,
+  onEnter() {
+    const tl = gsap.timeline();
+    tl.to('#footerTitle',        { y: '0%', duration: 1.3, ease: 'power4.out' })
+      .to('#footerTitleOutline', { y: '0%', duration: 1.5, ease: 'power4.out' }, 0.15)
+      .to('#footerRule',         { scaleX: 1, duration: 1.2, ease: 'power3.inOut' }, 0.6)
+      .to('.footer-item',        { opacity: 1, y: 0, duration: 0.8, stagger: 0.1, ease: 'power3.out' }, 0.85)
+      .to('.social-link',        { opacity: 1, x: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, 0.95)
+      .to('.footer-bottom',      { opacity: 1, duration: 0.8, ease: 'power2.out' }, 1.2);
+  }
 });
 
-// Footer
-gsap.from('.footer-top', {
-  scrollTrigger: { trigger: '.footer', start: 'top 85%' },
-  y: 40, opacity: 0, duration: 1.0, ease: 'power3.out',
-});
-gsap.from('.footer-grid', {
-  scrollTrigger: { trigger: '.footer-grid', start: 'top 88%' },
-  y: 30, opacity: 0, duration: 0.9, ease: 'power3.out', delay: 0.1,
-});
-
-// Marquee subtle entrance
+// ── Marquee: slow in ──
 gsap.from('.marquee-wrap', {
   scrollTrigger: { trigger: '.marquee-wrap', start: 'top 95%' },
-  opacity: 0, duration: 0.8, ease: 'power2.out',
+  opacity: 0, duration: 1.0, ease: 'power2.out',
 });
 
-(function initGalleryOrbit() {
-  const folder = document.getElementById('folder');
-  // Only use first 14 photos
-  const photos = Array.from(document.querySelectorAll('.floating-photo')).slice(0, 14);
-  // Hide any extra photos beyond 14
-  Array.from(document.querySelectorAll('.floating-photo')).slice(14).forEach(p => p.style.display = 'none');
-  if (!folder || !photos.length) return;
 
-  const ORBIT_RADIUS    = 290;
-  const PHOTO_HALF_W    = (160 / 2) * 2.1;
-  const LABEL_GAP       = 20;
-  const FOLDER_OFFSET_Y = -55;
+(function initGalleryFilm() {
+  const gallerySection  = document.getElementById('gallery');
+  const galleryPin      = document.getElementById('galleryPin');
+  const galleryTrack    = document.getElementById('galleryTrack');
+  const trackWrap       = document.getElementById('galleryTrackWrap');
+  const galleryNumEl    = document.getElementById('galleryNum');
+  const galleryTotalEl  = document.getElementById('galleryTotal');
+  const progressBar     = document.getElementById('galleryProgressBar');
 
-  // 14 photos, evenly spaced (≈25.7° apart), starting top
-  const ANGLES_DEG = photos.map((_, i) => -90 + i * (360 / 14));
-  function toRad(d) { return d * Math.PI / 180; }
-  function getStaticXY(i) {
-    const rad = toRad(ANGLES_DEG[i]);
-    return {
-      x: Math.cos(rad) * ORBIT_RADIUS,
-      y: Math.sin(rad) * ORBIT_RADIUS + FOLDER_OFFSET_Y,
-    };
+  if (!gallerySection || !galleryTrack || !trackWrap) return;
+
+  const items = Array.from(galleryTrack.querySelectorAll('.g-item'));
+  const total = items.length;
+
+  // Update total label
+  if (galleryTotalEl) galleryTotalEl.textContent = String(total).padStart(2, '0');
+
+  // ─── DYNAMIC SECTION HEIGHT ───────────────────────────────────────────────
+  // We want the section to be tall enough so the horizontal scroll finishes.
+  // Height = 100vh (for the sticky viewport) + maxX (the remaining track width)
+  function getMaxX() {
+    return Math.max(0, galleryTrack.scrollWidth - trackWrap.offsetWidth);
   }
 
-  // z-Index by clockwise position: the photo clockwise-next to any photo is on top.
-  // Clockwise order = ascending angle. So photo[i] gets zIndex = 10 + i (higher index = more clockwise = on top).
-  // This means photo to the right of another is always above it.
-  function applyOrbitZIndex() {
-    photos.forEach((photo, i) => {
-      gsap.set(photo, { zIndex: 10 + i });
-    });
+  function setSectionHeight() {
+    const maxX = getMaxX();
+    gallerySection.style.height = `calc(100vh + ${maxX}px)`;
   }
 
-  // Peek state — 14 photos fanned out behind folder
-  const PEEK = [
-    { x: -58, y: FOLDER_OFFSET_Y - 72, r: -22 },
-    { x: -43, y: FOLDER_OFFSET_Y - 82, r: -16 },
-    { x: -28, y: FOLDER_OFFSET_Y - 88, r: -10 },
-    { x: -14, y: FOLDER_OFFSET_Y - 92, r:  -5 },
-    { x:   0, y: FOLDER_OFFSET_Y - 94, r:  -1 },
-    { x:  14, y: FOLDER_OFFSET_Y - 92, r:   3 },
-    { x:  28, y: FOLDER_OFFSET_Y - 88, r:   8 },
-    { x:  42, y: FOLDER_OFFSET_Y - 81, r:  13 },
-    { x:  55, y: FOLDER_OFFSET_Y - 72, r:  19 },
-    { x: -50, y: FOLDER_OFFSET_Y - 77, r: -19 },
-    { x:  -7, y: FOLDER_OFFSET_Y - 90, r:  -2 },
-    { x:   7, y: FOLDER_OFFSET_Y - 90, r:   2 },
-    { x: -21, y: FOLDER_OFFSET_Y - 85, r:  -8 },
-    { x:  35, y: FOLDER_OFFSET_Y - 78, r:  11 },
-  ];
-
-  let isOpen          = false;
-  let hoveredPhoto    = null;
-  let photoLeaveTimer = null;
-
-  const REP_RADIUS   = 220;
-  const REP_STRENGTH = 50;
-  const galleryStage = document.querySelector('.gallery-interactive');
-
-  // ── Folder click hint — arrow on LEFT of text
-  const folderHint = document.createElement('div');
-  folderHint.className = 'folder-hint';
-  folderHint.innerHTML =
-    '<span class="folder-hint-arrow">←</span>' +
-    '<span class="folder-hint-text">Klick zum Öffnen</span>';
-  galleryStage.appendChild(folderHint);
-  gsap.set(folderHint, { opacity: 0, x: 8 });
-  ScrollTrigger.create({
-    trigger: '.gallery-section',
-    start: 'top 70%',
-    onEnter: () => {
-      gsap.to(folderHint, { opacity: 1, x: 0, duration: 0.6, ease: 'power3.out', delay: 0.3 });
-    },
+  // Wait for images to size correctly before measuring
+  window.addEventListener('load', () => {
+    setSectionHeight();
+    buildScrollTrigger();
+    revealItems();
   });
 
-  // ── Hover label
-  const hoverLabel = document.createElement('a');
-  hoverLabel.href      = '#gallery';
-  hoverLabel.className = 'photo-hover-label';
-  hoverLabel.innerHTML = 'Galerie ansehen <span class="phl-arrow">↗</span>';
-  document.getElementById('floatingPhotos').appendChild(hoverLabel);
-  gsap.set(hoverLabel, { opacity: 0, scale: 0.88, pointerEvents: 'none' });
-
-  function setPhotoPointerEvents(enabled) {
-    photos.forEach(p => { p.style.pointerEvents = enabled ? 'auto' : 'none'; });
+  // Fallback if load already fired
+  if (document.readyState === 'complete') {
+    setSectionHeight();
   }
 
-  // ── Initial peek state
-  photos.forEach((photo, i) => {
-    gsap.set(photo, {
-      x: PEEK[i].x, y: PEEK[i].y,
-      rotation: PEEK[i].r, rotateX: 0,
-      opacity: 0.55, scale: 0.88,
-      zIndex: 10 + i,
-    });
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      setSectionHeight();
+      // Refresh ScrollTrigger so end value updates
+      ScrollTrigger.refresh();
+    }, 180);
   });
-  setPhotoPointerEvents(false);
 
-  // ── Open — mirrors the close animation: photos fly OUT from peek → orbit
-  // Close goes: orbit → peek (gsap.to with ease power3.in, stagger 0.04)
-  // Open goes:  peek → orbit (gsap.set to peek, then gsap.to orbit, same feel but power3.out)
-  function openOrbit() {
-    isOpen = true;
-    folder.classList.add('is-open');
-    gsap.to(folder, { scale: 0.82, duration: 0.55, ease: 'power3.out' });
-    gsap.to(folderHint, { opacity: 0, x: -10, duration: 0.3, ease: 'power2.in' });
+  // ─── COUNTER ANIMATION ────────────────────────────────────────────────────
+  let lastIdx = -1;
 
-    let done = 0;
-    photos.forEach((photo, i) => {
-      const { x, y } = getStaticXY(i);
-      photo._baseX = x;
-      photo._baseY = y;
+  function updateCounter(progress) {
+    const idx = Math.min(Math.round(progress * (total - 1)), total - 1);
+    if (idx === lastIdx || !galleryNumEl) return;
+    lastIdx = idx;
 
-      // Start from current peek position (already there), animate out to orbit
-      gsap.to(photo, {
-        x, y, rotation: 0, rotateX: 0,
-        opacity: 1, scale: 1,
-        zIndex: 10 + i,
-        duration: 0.55, delay: i * 0.04,
-        ease: 'power3.out', overwrite: 'auto',
-        onComplete() {
-          done++;
-          if (done === photos.length) setPhotoPointerEvents(true);
-        },
-      });
+    // Quick flash: fade out → update → fade in
+    galleryNumEl.classList.add('is-changing');
+    setTimeout(() => {
+      galleryNumEl.textContent = String(idx + 1).padStart(2, '0');
+      galleryNumEl.classList.remove('is-changing');
+    }, 80);
+  }
+
+  // ─── SCROLL TRIGGER ───────────────────────────────────────────────────────
+  let filmTrigger = null;
+
+  function buildScrollTrigger() {
+    if (filmTrigger) filmTrigger.kill();
+
+    filmTrigger = ScrollTrigger.create({
+      trigger: '#gallery',
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 1.2,
+      onUpdate(self) {
+        const maxX = getMaxX();
+        gsap.set(galleryTrack, { x: -maxX * self.progress });
+        updateCounter(self.progress);
+        if (progressBar) progressBar.style.width = `${self.progress * 100}%`;
+      },
     });
   }
 
-  // ── Close — mirrors open: orbit → peek (power3.in)
-  function closeOrbit() {
-    isOpen = false;
-    folder.classList.remove('is-open');
-    hoveredPhoto = null;
-    clearTimeout(photoLeaveTimer);
-    setPhotoPointerEvents(false);
-
-    gsap.to(hoverLabel, { opacity: 0, scale: 0.88, duration: 0.18, ease: 'power2.in', overwrite: 'auto' });
-    gsap.to(folder, { scale: 1, duration: 0.55, ease: 'power3.out' });
-    gsap.to(folderHint, { opacity: 1, x: 0, duration: 0.5, ease: 'power3.out', delay: 0.45 });
-
-    photos.forEach((photo, i) => {
-      gsap.to(photo, {
-        x: PEEK[i].x, y: PEEK[i].y,
-        rotation: PEEK[i].r, rotateX: 0,
-        opacity: 0.55, scale: 0.88,
-        zIndex: 10 + i,
-        duration: 0.5, delay: i * 0.04,
-        ease: 'power3.in', overwrite: 'auto',
-      });
-    });
-  }
-
-  folder.addEventListener('click', () => { if (!isOpen) openOrbit(); else closeOrbit(); });
-
-  // ── Repulsion — only active while a photo is hovered
-  function handleRepulsion(e) {
-    if (!isOpen || !hoveredPhoto) return;
-    const rect = galleryStage.getBoundingClientRect();
-    const mx = e.clientX - rect.left  - rect.width  / 2;
-    const my = e.clientY - rect.top   - rect.height / 2;
-
-    photos.forEach(photo => {
-      if (photo === hoveredPhoto) return;
-
-      const bx = photo._baseX;
-      const by = photo._baseY;
-      const dx = mx - bx;
-      const dy = my - by;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < REP_RADIUS && dist > 0) {
-        const t  = 1 - dist / REP_RADIUS;
-        const nx = dx / dist;
-        const ny = dy / dist;
-        gsap.to(photo, {
-          x: bx - nx * t * REP_STRENGTH,
-          y: by - ny * t * REP_STRENGTH,
-          duration: 0.55, ease: 'power2.out', overwrite: 'auto',
+  // ─── CURTAIN REVEAL (clip-path wipe) ─────────────────────────────────────
+  function revealItems() {
+    ScrollTrigger.create({
+      trigger: '#gallery',
+      start: 'top 85%',
+      once: true,
+      onEnter() {
+        items.forEach((item, i) => {
+          const wrap = item.querySelector('.g-img-wrap');
+          // 1. Fade / lift the item card
+          gsap.to(item, {
+            opacity: 1,
+            y: 0,
+            duration: 0.85,
+            delay: 0.06 * i,
+            ease: 'power3.out',
+          });
+          // 2. Clip-path curtain: slides up to reveal image
+          if (wrap) {
+            gsap.fromTo(
+              wrap,
+              { clipPath: 'inset(100% 0 0 0)' },
+              {
+                clipPath: 'inset(0% 0 0 0)',
+                duration: 1.1,
+                delay: 0.06 * i + 0.12,
+                ease: 'power4.out',
+              }
+            );
+          }
         });
-      } else {
-        gsap.to(photo, {
-          x: bx, y: by,
-          duration: 0.9, ease: 'power2.out', overwrite: 'auto',
-        });
-      }
+      },
     });
   }
 
-  galleryStage.addEventListener('mousemove', handleRepulsion);
+  // ─── MOUSE PARALLAX — subtle vertical drift on images ────────────────────
+  if (galleryPin) {
+    galleryPin.addEventListener('mousemove', (e) => {
+      const rect = galleryPin.getBoundingClientRect();
+      const dy = (e.clientY - rect.height / 2) / rect.height; // −0.5 → 0.5
 
-  galleryStage.addEventListener('mouseleave', () => {
-    if (!isOpen) return;
-    photos.forEach(photo => {
-      if (photo === hoveredPhoto) return;
-      gsap.to(photo, {
-        x: photo._baseX, y: photo._baseY,
-        duration: 0.9, ease: 'power2.out', overwrite: 'auto',
+      gsap.to('.g-img-wrap img', {
+        y: dy * 14,
+        duration: 1.6,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+    });
+
+    galleryPin.addEventListener('mouseleave', () => {
+      gsap.to('.g-img-wrap img', {
+        y: 0,
+        duration: 1.4,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+    });
+  }
+
+  // ─── CURSOR RING EXPANSION on g-item hover ────────────────────────────────
+  items.forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      gsap.to(cursorRing, {
+        width: 68, height: 68,
+        duration: 0.35, ease: 'power2.out',
+      });
+    });
+    item.addEventListener('mouseleave', () => {
+      gsap.to(cursorRing, {
+        width: 40, height: 40,
+        duration: 0.35, ease: 'power2.out',
       });
     });
   });
+})();
 
-  // ── Activate photo — scale DOWN slightly on hover
-  function activatePhoto(photo) {
-    clearTimeout(photoLeaveTimer);
-    if (!isOpen) return;
+/* ── end of gallery film ── */
+/* ============================
+   FOOTER 3D CHARACTER — cursor look-at
+============================ */
+(function initFooterCharacter() {
+  const container = document.getElementById('footerCanvas');
+  if (!container || typeof THREE === 'undefined') return;
 
-    if (hoveredPhoto && hoveredPhoto !== photo) {
-      const prev = hoveredPhoto;
-      gsap.to(prev, {
-        scale: 1, y: prev._baseY, x: prev._baseX,
-        rotateX: 0, rotateY: 0, zIndex: photos.indexOf(prev) + 10,
-        duration: 0.35, ease: 'power3.out', overwrite: 'auto',
-      });
+  const W = container.offsetWidth  || 420;
+  const H = container.offsetHeight || 360;
+
+  // ── Scene ──
+  const scene    = new THREE.Scene();
+  const camera   = new THREE.PerspectiveCamera(32, W / H, 0.1, 100);
+  camera.position.set(0, 0.5, 6.2);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+  // insert before the label span
+  container.insertBefore(renderer.domElement, container.querySelector('.footer-3d-label'));
+
+  // ── Lighting ──
+  scene.add(new THREE.AmbientLight(0xffffff, 0.08));
+
+  const rimL = new THREE.DirectionalLight(0x8899ff, 1.1);
+  rimL.position.set(-4, 3, -1);
+  scene.add(rimL);
+
+  const fillL = new THREE.DirectionalLight(0xffffff, 0.18);
+  fillL.position.set(3, 1, 4);
+  scene.add(fillL);
+
+  const topL = new THREE.DirectionalLight(0xaabbcc, 0.5);
+  topL.position.set(0, 6, 1);
+  scene.add(topL);
+
+  // ── Materials ──
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x111118, roughness: 0.72, metalness: 0.08,
+  });
+  const wireMat = new THREE.MeshBasicMaterial({
+    color: 0x2e2e48, wireframe: true, transparent: true, opacity: 0.55,
+  });
+  const eyeGlowMat = new THREE.MeshStandardMaterial({
+    color: 0xccddff, emissive: 0x8899ff, emissiveIntensity: 0.9,
+    roughness: 0.2, metalness: 0.0,
+  });
+  const pupilMat = new THREE.MeshStandardMaterial({
+    color: 0x050508, roughness: 0.9,
+  });
+
+  // ── Character group ──
+  const character = new THREE.Group();
+  scene.add(character);
+
+  // Helper: add solid + wireframe
+  function addMesh(geo, mat, wireGeo, parent, px, py, pz, sx, sy, sz) {
+    const m = new THREE.Mesh(geo, mat);
+    if (px !== undefined) m.position.set(px, py, pz);
+    if (sx !== undefined) m.scale.set(sx, sy, sz);
+    parent.add(m);
+    if (wireGeo !== false) {
+      const w = new THREE.Mesh(wireGeo || geo, wireMat);
+      w.position.copy(m.position);
+      if (sx !== undefined) w.scale.copy(m.scale);
+      parent.add(w);
     }
-
-    hoveredPhoto = photo;
-
-    // Scale down to 0.82 (smaller than resting 1.0)
-    gsap.to(photo, {
-      scale: 0.82, zIndex: 20,
-      y: photo._baseY - 8,
-      rotateX: 0, rotateY: 0,
-      duration: 0.4, ease: 'power3.out', overwrite: 'auto',
-    });
-
-    const px = gsap.getProperty(photo, 'x');
-    const py = photo._baseY - 8;
-    const onRight = px >= 0;
-    gsap.set(hoverLabel, {
-      x: onRight ? px + PHOTO_HALF_W + LABEL_GAP : px - PHOTO_HALF_W - LABEL_GAP,
-      y: py, xPercent: onRight ? 0 : -100, yPercent: -50,
-      pointerEvents: 'auto',
-    });
-    gsap.to(hoverLabel, { opacity: 1, scale: 1, duration: 0.3, delay: 0.08, ease: 'power3.out', overwrite: 'auto' });
+    return m;
   }
 
-  // ── Deactivate photo
-  function deactivatePhoto(photo) {
-    gsap.to(hoverLabel, {
-      opacity: 0, scale: 0.88, duration: 0.18, ease: 'power2.in', overwrite: 'auto',
-      onComplete: () => gsap.set(hoverLabel, { pointerEvents: 'none' }),
-    });
-    gsap.to(photo, {
-      scale: 1, y: photo._baseY, x: photo._baseX,
-      rotateX: 0, rotateY: 0, zIndex: photos.indexOf(photo) + 10,
-      duration: 0.45, ease: 'power3.out', overwrite: 'auto',
-    });
-    hoveredPhoto = null;
-  }
+  // ── HEAD ──
+  const headGroup = new THREE.Group();
+  character.add(headGroup);
 
-  photos.forEach((photo) => {
-    photo.addEventListener('mouseenter', () => { if (!isOpen) return; activatePhoto(photo); });
-    photo.addEventListener('mouseleave', () => {
-      if (!isOpen) return;
-      photoLeaveTimer = setTimeout(() => deactivatePhoto(photo), 100);
-    });
+  const headGeo = new THREE.SphereGeometry(1, 10, 8);
+  // Slightly stretch to oval skull
+  const pos = headGeo.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    pos.setY(i, pos.getY(i) * 1.18);
+    pos.setX(i, pos.getX(i) * 0.88);
+    pos.setZ(i, pos.getZ(i) * 0.9);
+  }
+  headGeo.computeVertexNormals();
+  headGroup.add(new THREE.Mesh(headGeo, bodyMat));
+  headGroup.add(new THREE.Mesh(headGeo, wireMat));
+
+  // ── EYES ──
+  function buildEye(xOffset) {
+    const g = new THREE.Group();
+    g.position.set(xOffset, 0.1, 0.83);
+    headGroup.add(g);
+
+    // iris/sclera
+    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.155, 12, 12), eyeGlowMat);
+    g.add(iris);
+
+    // pupil
+    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
+    pupil.position.z = 0.1;
+    g.add(pupil);
+  }
+  buildEye(-0.29);
+  buildEye( 0.29);
+
+  // ── NOSE ──
+  const noseMesh = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.22, 6), bodyMat);
+  noseMesh.rotation.x = Math.PI / 2;
+  noseMesh.position.set(0, -0.1, 0.89);
+  headGroup.add(noseMesh);
+
+  // ── MOUTH (subtle crease) ──
+  const mouthGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.04, 12);
+  const mouth = new THREE.Mesh(mouthGeo, bodyMat);
+  mouth.rotation.z = Math.PI / 2;
+  mouth.position.set(0, -0.4, 0.8);
+  headGroup.add(mouth);
+
+  // ── NECK ──
+  const neckMesh = addMesh(
+    new THREE.CylinderGeometry(0.24, 0.30, 0.6, 10),
+    bodyMat, null, character, 0, -1.28, 0
+  );
+
+  // ── SHOULDERS ──
+  const shoulderGeo = new THREE.BoxGeometry(2.4, 0.28, 0.7);
+  addMesh(shoulderGeo, bodyMat, shoulderGeo, character, 0, -1.72, 0);
+
+  // ── TORSO ──
+  const torsoGeo = new THREE.BoxGeometry(2.0, 1.0, 0.6);
+  addMesh(torsoGeo, bodyMat, torsoGeo, character, 0, -2.42, 0);
+
+  character.position.y = 0.5;
+
+  // ── Cursor look-at ──
+  let targetY = 0, targetX = 0;
+  let currY   = 0, currX   = 0;
+
+  // Track global mouse (works across entire page)
+  window.addEventListener('mousemove', (e) => {
+    const nx =  (e.clientX / window.innerWidth)  * 2 - 1;
+    const ny = -(e.clientY / window.innerHeight) * 2 + 1;
+    targetY = nx * 0.65;   // left/right turn
+    targetX = ny * 0.28;   // up/down tilt
   });
 
-  hoverLabel.addEventListener('mouseenter', () => { clearTimeout(photoLeaveTimer); });
-  hoverLabel.addEventListener('mouseleave', () => { if (hoveredPhoto) deactivatePhoto(hoveredPhoto); });
+  // ── Animation loop ──
+  let clock = 0;
+  function tick() {
+    requestAnimationFrame(tick);
+    clock += 0.012;
+
+    // Smooth follow
+    currY += (targetY - currY) * 0.055;
+    currX += (targetX - currX) * 0.055;
+
+    character.rotation.y = currY;
+    character.rotation.x = -currX * 0.5;
+
+    // Idle float
+    character.position.y = 0.5 + Math.sin(clock * 0.9) * 0.05;
+    // Subtle idle sway
+    character.rotation.z = Math.sin(clock * 0.55) * 0.018;
+
+    renderer.render(scene, camera);
+  }
+  tick();
+
+  // ── Resize ──
+  const ro = new ResizeObserver(() => {
+    const nW = container.offsetWidth;
+    const nH = container.offsetHeight;
+    camera.aspect = nW / nH;
+    camera.updateProjectionMatrix();
+    renderer.setSize(nW, nH);
+  });
+  ro.observe(container);
 })();
