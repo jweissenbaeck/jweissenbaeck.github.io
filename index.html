@@ -6,11 +6,17 @@
 <title>Jacob Weissenbäck — Portfolio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600;1,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 <link rel="stylesheet" href="style.css">
+<style>
+  /* ── More breathing room between divider and globe section ── */
+  .footer-split {
+    gap: clamp(3rem, 8vw, 7rem) !important;
+  }
+</style>
 </head>
 <body>
 
@@ -25,100 +31,71 @@
   <span class="preview-label" id="previewLabel"></span>
 </div>
 
-<!-- NAV -->
-<nav class="nav" id="mainNav" style="left:50%">
-  <div class="nav-logo">Portfolio<span class="nav-dot">·</span>JCKY</div>
-  <div class="nav-links">
-    <a href="#work">01 — Projekte</a>
-    <a href="#gallery">02 — Galerie</a>
-    <a href="#contact">03 — Kontakt</a>
+<!-- ========================
+     NAV — Jasmine Gunarto style: flat bar, location left, links right
+======================== -->
+<nav class="nav" id="mainNav">
+  <div class="nav-left">
+    <span class="nav-status-dot"></span>
+    <span class="nav-location">SALZBURG, AT</span>
+    <span class="nav-meta" id="navTime">-- : -- --</span>
+    <span class="nav-meta">47.8095° N, 13.0550° E</span>
   </div>
-  <div class="nav-right">
-    <a href="#" class="nav-cv">CV</a>
-    <a href="#contact" class="nav-cta">Kontaktiere mich</a>
+  <div class="nav-links">
+    <a href="#hero">Home</a>
+    <a href="#work">Projekte</a>
+    <a href="#gallery">Galerie</a>
+    <a href="#" class="nav-link-cv">CV</a>
+    <a href="#contact">Ich</a>
   </div>
 </nav>
 
 <!-- ========================
-     HERO
+     HERO — Jasmine Gunarto style
 ======================== -->
 <section class="hero" id="hero">
 
-  <!-- Animated background orbs -->
-  <div class="hero-orb hero-orb--1"></div>
-  <div class="hero-orb hero-orb--2"></div>
-  <div class="hero-orb hero-orb--3"></div>
-
-  <!-- Noise overlay -->
-  <div class="hero-noise"></div>
-
-  <!-- Grid lines -->
-  <div class="hero-grid" aria-hidden="true"></div>
-
-  <!-- Main content -->
-  <div class="hero-center">
-
-    <!-- Eyebrow -->
-    <div class="hero-eyebrow" id="heroEyebrow">
-      <span class="hero-eyebrow-line"></span>
-      <span class="hero-eyebrow-txt">Portfolio — Jacob Weißenbäck</span>
-      <span class="hero-eyebrow-line"></span>
-    </div>
-
-    <!-- Giant name reveal -->
-    <div class="hero-name-wrap" id="heroNameWrap">
-      <div class="hero-name-mask">
-        <h1 class="hero-name-big" id="heroNameBig">JACOB</h1>
-      </div>
-      <div class="hero-name-mask hero-name-mask--2">
-        <div class="hero-name-outline" id="heroNameOutline">JACOB</div>
-      </div>
-    </div>
-
-    <!-- Subtitle row -->
-    <div class="hero-subtitle-row" id="heroSubRow">
-      <div class="hero-discipline">
-        <span class="hero-disc-item" data-delay="0">Design</span>
-        <span class="hero-disc-sep">·</span>
-        <span class="hero-disc-item" data-delay="1">Motion</span>
-        <span class="hero-disc-sep">·</span>
-        <span class="hero-disc-item" data-delay="2">Vision</span>
-      </div>
-
-      <!-- Magnetic CTA -->
-      <div class="hero-cta-wrap" id="heroCTAWrap">
-        <a href="#work" class="hero-cta-btn" id="heroCTA">
-          <span class="hero-cta-inner">
-            <span class="hero-cta-label">Projekte ansehen</span>
-            <span class="hero-cta-arrow">↗</span>
-          </span>
-          <span class="hero-cta-bg"></span>
-        </a>
-      </div>
-    </div>
-
-    <!-- Weissenbäck outlined beneath -->
-    <div class="hero-surname-wrap" id="heroSurnameWrap">
-      <div class="hero-surname-mask">
-        <div class="hero-surname" id="heroSurname">WEISSENBÄCK</div>
-      </div>
-    </div>
-
+  <!-- Row 1: JACOB WEISSENBÄCK — eigene Zeile, volle Breite, kein Overlap -->
+  <div class="hero-name-row" id="heroNameRow">
+    <div class="hero-clip"><span class="hero-word hero-word--fullname" id="heroWordFullname"><span class="name-letter-wrap" id="nameLetterWrap">JACOB WEISSENBACK</span></span></div>
   </div>
 
-  <!-- Scroll indicator -->
+  <!-- Row 2: UI/UX  [Bild]  DESIGNER — alles in einem Flex-Row -->
+  <div class="hero-middle-row" id="heroMiddleRow">
+    <div class="hero-clip hero-clip--side"><span class="hero-word hero-word--role" id="heroWordRole">UI / UX</span></div>
+
+    <div class="hero-img-card" id="heroImgCard">
+      <span class="hero-img-label" id="heroImgLabel">UI / UX DESIGN</span>
+      <span class="hero-img-year" id="heroImgYear">2026</span>
+      <div class="hero-img-wrap">
+        <img src="https://picsum.photos/450/320?random=77" alt="Showreel Platzhalter">
+      </div>
+    </div>
+
+    <div class="hero-clip hero-clip--side"><span class="hero-word hero-word--designer" id="heroWordDesigner">DESIGNER</span></div>
+  </div>
+
+  <!-- Scroll Down -->
   <div class="hero-scroll-new" id="heroScroll">
-    <div class="hsn-dot"></div>
-    <span class="hsn-label">Scrollen</span>
-  </div>
-
-  <!-- Floating status badge -->
-  <div class="hero-badge" id="heroBadge">
-    <span class="hero-badge-dot"></span>
-    <span>Verfügbar für Projekte</span>
+    <span class="hsn-label">SCROLL DOWN</span>
   </div>
 
 </section>
+
+<!-- ========================
+     HERO BANNER — vollbreites Bild zwischen Hero + Projekte
+     Wird sichtbar wenn Hero-Pin endet
+======================== -->
+<div class="hero-banner" id="heroBanner" aria-hidden="true">
+  <div class="hero-banner-inner" id="heroBannerInner">
+    <img src="https://picsum.photos/450/320?random=77" alt="">
+  </div>
+</div>
+
+<!-- ========================
+     BOTTOM SHEET — alles nach dem Hero
+======================== -->
+<div id="bottomSheet" class="bottom-sheet">
 
 <!-- ========================
      MARQUEE — Kinetic ribbon
@@ -455,67 +432,72 @@
 ======================== -->
 <footer class="footer" id="contact">
 
-  <!-- Animated orbs matching hero -->
-  <div class="footer-orb footer-orb--1"></div>
-  <div class="footer-orb footer-orb--2"></div>
+  <canvas class="footer-stars" id="footerStars"></canvas>
   <div class="footer-noise"></div>
 
-  <div class="footer-inner">
+  <div class="footer-split">
 
-    <!-- Big headline -->
-    <div class="footer-top">
-      <span class="footer-index">03</span>
+    <!-- LEFT: editorial contact panel -->
+    <div class="footer-left">
+
+      <div class="footer-left-top">
+        <span class="footer-eyebrow">
+          <span class="footer-eyebrow-line"></span>
+          <span class="footer-eyebrow-txt">03 — Kontakt</span>
+        </span>
+
+        <a href="mailto:j.weissenbaeck@gmx.at" class="footer-email-cta" id="footerEmailCta">
+          <span class="footer-email-txt">j.weissenbaeck@gmx.at</span>
+          <span class="footer-email-arrow">↗</span>
+        </a>
+      </div>
+
       <div class="footer-headline-wrap">
-        <span class="section-label section-label--light">Kontakt</span>
         <div class="footer-title-mask">
-          <h2 class="footer-title" id="footerTitle">Überzeugt?</h2>
+          <h2 class="footer-title" id="footerTitle">Lass uns<br>reden.</h2>
         </div>
-        <div class="footer-title-mask">
-          <div class="footer-title-outline" id="footerTitleOutline">Überzeugt?</div>
+        <div class="footer-title-mask footer-title-mask--ghost">
+          <div class="footer-title-outline" id="footerTitleOutline">Lass uns<br>reden.</div>
         </div>
       </div>
+
+      <div class="footer-social-links">
+        <a href="mailto:j.weissenbaeck@gmx.at" class="footer-email-inline">
+          <span>j.weissenbaeck@gmx.at</span>
+          <span class="footer-social-arrow">↗</span>
+        </a>
+        <span class="footer-social-divider"></span>
+        <a href="#" class="footer-social-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          <span>Instagram</span>
+          <span class="footer-social-arrow">↗</span>
+        </a>
+        <a href="https://www.linkedin.com/in/jweissenbaeck/" class="footer-social-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+          <span>LinkedIn</span>
+          <span class="footer-social-arrow">↗</span>
+        </a>
+      </div>
+
+      <div class="footer-bottom-mono">
+        <span>© 2026 Jacob Weißenbäck</span>
+        <span>Verfügbar für Projekte</span>
+      </div>
+
     </div>
 
-    <!-- Divider -->
-    <div class="footer-rule" id="footerRule"></div>
-
-    <!-- Grid -->
-    <div class="footer-content">
-      <nav class="footer-social">
-        <a href="mailto:j.weissenbaeck@gmx.at" class="social-link">
-          <span class="social-num">01</span>
-          <span class="social-name">E-Mail</span>
-          <span class="social-arrow">↗</span>
-        </a>
-        <a href="#" class="social-link">
-          <span class="social-num">02</span>
-          <span class="social-name">Instagram</span>
-          <span class="social-arrow">↗</span>
-        </a>
-        <a href="https://www.linkedin.com/in/jweissenbaeck/" class="social-link">
-          <span class="social-num">03</span>
-          <span class="social-name">LinkedIn</span>
-          <span class="social-arrow">↗</span>
-        </a>
-      </nav>
-
-      <div class="footer-3d" id="footerCanvas">
-        <span class="footer-3d-label">Cursor verfolgen</span>
-      </div>
-    </div>
-
-    <!-- Bottom bar -->
-    <div class="footer-bottom">
-      <div class="footer-bottom-name">
-        <span class="footer-logo-big">Jacob</span>
-        <span class="footer-logo-outline">Weissenbäck</span>
-      </div>
-      <span class="footer-copy">Made with love © 2026</span>
+    <!-- RIGHT: earth globe, edge to edge -->
+    <div class="footer-right">
+      <div class="footer-3d" id="footerCanvas"></div>
     </div>
 
   </div>
+
 </footer>
 
+</div><!-- /bottom-sheet -->
+
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="script.js"></script>
 </body>
