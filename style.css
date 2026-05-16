@@ -1,41 +1,37 @@
 /* ============================
    GOOGLE FONTS — Paper Palette
 ============================ */
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600;1,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600;1,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
 /* ============================
    DESIGN TOKENS
 ============================ */
 :root {
-  /* Einheitliche Cream-Palette — eine Page, ein Gefühl */
-  --bg:          #f4efe6;
-  --bg-alt:      #f4efe6;   /* identisch — kein Sprung */
-  --bg-section:  #f4efe6;   /* Bottom Sheet = gleiche Seite */
-  --bg-dark:     #18130c;   /* tiefstes Tinte-Schwarz — Footer */
+  /* Off-Black & White */
+  --bg:          #111110;
+  --bg-dark:     #0A0A09;
 
-  --ink:         #18130c;
-  --ink-mid:     #3a3028;
-  --ink-muted:   #7a6e5e;
-  --ink-ghost:   #c0b4a2;
+  --ink:         #F0EDE8;
+  --ink-mid:     #C8C4BE;
+  --ink-muted:   #7A7570;
+  --ink-ghost:   #3A3834;
 
-  --accent:      #18130c;
-  --accent-warm: #7c4f28;
+  --accent:      #F0EDE8;
+  --accent-warm: #D4CFC8;
 
-  --border:       rgba(30,20,10, 0.08);
-  --border-mid:   rgba(30,20,10, 0.14);
-  --border-light: rgba(30,20,10, 0.04);
+  --border:       rgba(240,237,232, 0.08);
+  --border-mid:   rgba(240,237,232, 0.15);
+  --border-light: rgba(240,237,232, 0.04);
 
-  --shadow-sm: 0 1px 4px rgba(30,20,10,0.06), 0 2px 10px rgba(30,20,10,0.04);
-  --shadow-md: 0 4px 20px rgba(30,20,10,0.09), 0 1px 4px rgba(30,20,10,0.05);
-  --shadow-lg: 0 12px 40px rgba(30,20,10,0.12), 0 2px 8px rgba(30,20,10,0.06);
+  --shadow-sm: 0 1px 4px rgba(240,237,232,0.08), 0 2px 10px rgba(240,237,232,0.05);
+  --shadow-md: 0 4px 20px rgba(240,237,232,0.12), 0 1px 4px rgba(240,237,232,0.06);
+  --shadow-lg: 0 12px 40px rgba(240,237,232,0.15), 0 2px 8px rgba(240,237,232,0.08);
 
   --font-display: 'Cormorant Garamond', Georgia, serif;
   --font-hero:    'Anton', 'Barlow Condensed', Arial, sans-serif;
   --font-ui:      'DM Mono', monospace;
   --font-mono:    'DM Mono', monospace;
   --font-serif:   'Cormorant Garamond', Georgia, serif;
-  --font-agency:  'Cormorant Garamond', Georgia, serif;
-  --font-sans:    'DM Mono', monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
@@ -74,19 +70,20 @@ body::before {
 .cursor-dot {
   position: fixed; left: 0; top: 0;
   width: 5px; height: 5px;
-  background: var(--ink);
+  background: #ffffff;
   border-radius: 50%;
   pointer-events: none; z-index: 99999;
-  mix-blend-mode: multiply; will-change: transform;
+  mix-blend-mode: difference; will-change: transform;
 }
 
 .cursor-ring {
   position: fixed; left: 0; top: 0;
   width: 40px; height: 40px;
-  border: 1.5px solid rgba(30,20,10,0.5);
+  border: 1.5px solid rgba(240,237,232,0.5);
   background: transparent; border-radius: 50%;
   pointer-events: none; z-index: 99998;
   opacity: 0.75; will-change: transform;
+  mix-blend-mode: difference;
   transition: width 0.35s var(--ease-spring), height 0.35s var(--ease-spring),
               opacity 0.35s ease, border-color 0.35s ease;
 }
@@ -95,34 +92,8 @@ body:has(a:hover) .cursor-ring,
 body:has(button:hover) .cursor-ring,
 body:has(.project-row:hover) .cursor-ring {
   width: 62px; height: 62px; opacity: 1;
-  border-color: rgba(30,20,10,0.75);
+  border-color: rgba(240,237,232,0.85);
   border-radius: 40% 60% 55% 45% / 50% 45% 55% 50%;
-}
-
-/* ============================
-   PROJECT HOVER PREVIEW
-============================ */
-.project-preview {
-  position: fixed; left: 0; top: 0;
-  width: 380px; aspect-ratio: 4/3;
-  pointer-events: none; z-index: 500;
-  overflow: hidden; border: 1px solid var(--border-mid);
-  border-radius: 2px; box-shadow: var(--shadow-lg);
-}
-.project-preview img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: saturate(0.7) brightness(0.95) sepia(0.08);
-  transform: scale(1.05);
-  transition: transform 0.6s var(--ease-out-expo);
-}
-.preview-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(244,239,230,0.1) 0%, transparent 50%);
-}
-.preview-label {
-  position: absolute; bottom: 14px; left: 16px;
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em;
-  text-transform: uppercase; color: var(--ink-muted); opacity: 0.8;
 }
 
 /* ============================
@@ -132,18 +103,24 @@ body:has(.project-row:hover) .cursor-ring {
   position: fixed; top: 0; left: 0; right: 0;
   z-index: 1000; display: flex; align-items: center;
   justify-content: space-between; padding: 18px 32px;
-  background: transparent; will-change: transform, opacity;
+  background: transparent;
+  mix-blend-mode: difference;
 }
+
+/* Alle Nav-Elemente auf Weiß — difference invertiert sie automatisch */
+.nav-status-dot { background: #fff !important; }
+.nav-location, .nav-meta, .nav-links a { color: #fff !important; }
+.nav-links a::after { background: #fff !important; }
 
 .nav-left { display: flex; align-items: center; gap: 20px; }
 
 .nav-status-dot {
   width: 7px; height: 7px; border-radius: 50%;
-  background: var(--ink); flex-shrink: 0;
+  flex-shrink: 0;
 }
 
 .nav-location {
-  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 400;
   letter-spacing: 0.12em; color: var(--ink);
   text-transform: uppercase; white-space: nowrap;
 }
@@ -157,19 +134,20 @@ body:has(.project-row:hover) .cursor-ring {
 .nav-links { display: flex; align-items: center; gap: 32px; }
 
 .nav-links a {
-  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 400;
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
-  text-decoration: none; cursor: none; opacity: 1;
+  text-decoration: none; cursor: pointer; opacity: 1;
   transition: opacity 0.2s ease; position: relative;
 }
 .nav-links a:hover { opacity: 1; }
+.nav-links a:hover ~ * .cursor-dot,
+.nav:has(a:hover) ~ .cursor-dot { opacity: 0 !important; }
 .nav-links a::after {
   content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
   height: 1px; background: var(--ink); transform: scaleX(0);
   transform-origin: left; transition: transform 0.25s ease;
 }
 .nav-links a:hover::after { transform: scaleX(1); }
-.nav-logo, .nav-dot, .nav-right, .nav-cv, .nav-cta { display: none; }
 
 /* ============================
    HERO
@@ -246,27 +224,90 @@ body:has(.project-row:hover) .cursor-ring {
 .hero-tilt-layer { will-change: transform; transition: transform 0.06s linear; }
 
 /* ============================
-   HERO BANNER — normales DOM-Element nach dem Hero
-   Sichtbar wenn man dorthin scrollt, kein Overlay
+   HERO — ZOOM PARALLAX PHOTOS
+   Appear inside the pinned hero after texts exit.
+   Each item is absolutely positioned, starts opacity:0,
+   zooms outward on scroll via GSAP.
 ============================ */
-.hero-banner {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 7;   /* breites Panorama-Format */
+.hero-zp-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;               /* above middle row, below nav */
   overflow: hidden;
 }
 
-.hero-banner-inner {
+.hero-zp-item {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  transform-origin: center center;
+  opacity: 0;               /* JS fades in during Phase B */
 }
 
-.hero-banner-inner img {
+.hero-zp-wrap {
+  position: absolute;
+  overflow: hidden;
+}
+
+.hero-zp-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
-  filter: saturate(0.85) brightness(0.97);
+  filter: saturate(0.82) brightness(0.96);
+}
+
+/* ── Layout positions — scattered around the center card ── */
+
+/* Large center image — same footprint as showreel card */
+.hero-zp-center {
+  width: 32vw; height: 22vh;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Top-left — landscape */
+.hero-zp-tl {
+  width: 26vw; height: 20vh;
+  top: calc(50% - 18vh);
+  left: calc(50% - 18vw);
+  transform: translate(-50%, 0);
+}
+
+/* Top-right — portrait */
+.hero-zp-tr {
+  width: 14vw; height: 28vh;
+  top: calc(50% - 22vh);
+  left: calc(50% + 14vw);
+  transform: translate(-50%, 0);
+}
+
+/* Bottom-left — landscape */
+.hero-zp-bl {
+  width: 24vw; height: 18vh;
+  top: calc(50% + 10vh);
+  left: calc(50% - 16vw);
+  transform: translate(-50%, 0);
+}
+
+/* Bottom-right — square */
+.hero-zp-br {
+  width: 18vw; height: 18vh;
+  top: calc(50% + 8vh);
+  left: calc(50% + 14vw);
+  transform: translate(-50%, 0);
+}
+
+/* Small accent — top center-right */
+.hero-zp-sm {
+  width: 12vw; height: 12vh;
+  top: calc(50% - 14vh);
+  left: calc(50% + 4vw);
+  transform: translate(-50%, 0);
 }
 
 /* ============================
@@ -274,23 +315,17 @@ body:has(.project-row:hover) .cursor-ring {
 ============================ */
 .bottom-sheet {
   position: relative;
-  background: var(--bg-section);
+  background: var(--bg);
   border-radius: 20px 20px 0 0;
   overflow: visible; z-index: 10;
-  box-shadow: 0 -8px 40px rgba(30,20,10,0.10), 0 -2px 8px rgba(30,20,10,0.05);
+  box-shadow: 0 -8px 40px rgba(240,237,232,0.08), 0 -2px 8px rgba(240,237,232,0.04);
   clip-path: inset(100% 0 0 0 round 20px 20px 0 0);
   will-change: clip-path;
 }
 
-.bottom-sheet::before {
-  content: ''; position: sticky; top: 0; display: block;
-  width: 36px; height: 4px;
-  background: rgba(30,20,10,0.12); border-radius: 2px;
-  margin: 14px auto 0; flex-shrink: 0; z-index: 2;
-}
-
-.bottom-sheet .work-section { max-height: none; overflow: visible; padding-top: 60px; }
-.work-section { will-change: transform; }
+.bottom-sheet .work-section,
+.bottom-sheet .services-section { max-height: none; overflow: visible; padding-top: 60px; }
+.work-section, .services-section { will-change: transform; }
 
 /* ============================
    HERO IMAGE CARD
@@ -301,8 +336,7 @@ body:has(.project-row:hover) .cursor-ring {
   width: clamp(300px, 32vw, 540px);
   opacity: 0;
   will-change: transform; z-index: 4;
-  transform-origin: 50% 0;
-  /* overflow visible so scaleX can expand beyond the card bounds */
+  transform-origin: 50% 50%;
   overflow: visible;
 }
 
@@ -351,34 +385,7 @@ body:has(.project-row:hover) .cursor-ring {
 /* ============================
    MARQUEE — kinetic ribbon
 ============================ */
-.marquee-wrap {
-  background: var(--bg);
-  overflow: hidden; white-space: nowrap; position: relative;
-  border-top: 1px solid var(--border-light);
-  border-bottom: 1px solid var(--border-light);
-}
-.marquee-wrap::before, .marquee-wrap::after {
-  content: ''; position: absolute; top: 0; bottom: 0;
-  width: 160px; z-index: 2; pointer-events: none;
-}
-.marquee-wrap::before { left: 0;  background: linear-gradient(to right, var(--bg), transparent); }
-.marquee-wrap::after  { right: 0; background: linear-gradient(to left,  var(--bg), transparent); }
-.marquee-track {
-  display: inline-flex; align-items: center;
-  gap: 56px; padding: 22px 0;
-  animation: marquee 36s linear infinite;
-}
-.marquee-item {
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(0.75rem, 1.3vw, 1.1rem);
-  font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase;
-  color: rgba(24,19,12,0.22);
-}
-.m-sep { color: rgba(30,20,10,0.12); font-size: 0.6rem; flex-shrink: 0; }
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
+/* marquee removed */
 
 /* ============================
    SECTION DIVIDER — thin rule
@@ -400,11 +407,12 @@ body:has(.project-row:hover) .cursor-ring {
 .section-label--light { color: var(--ink-ghost); }
 
 /* ============================
-   WORK SECTION
+   WORK / SERVICES SECTION
 ============================ */
-.work-section {
+.work-section,
+.services-section {
   background: var(--bg);
-  padding: 140px 6% 120px;
+  padding: 100px 6% 100px;
   color: var(--ink); position: relative; overflow: hidden;
 }
 
@@ -416,13 +424,13 @@ body:has(.project-row:hover) .cursor-ring {
   font-size: clamp(200px, 26vw, 500px);
   font-weight: 400; letter-spacing: -0.02em; line-height: 1;
   color: transparent;
-  -webkit-text-stroke: 1px rgba(30,20,10,0.045);
+  -webkit-text-stroke: 1px rgba(240,237,232,0.15);
   pointer-events: none; user-select: none;
 }
 
 .work-header {
   display: flex; justify-content: space-between; align-items: flex-end;
-  padding-bottom: 72px; border-bottom: 1px solid var(--border);
+  padding-bottom: 72px;
   flex-wrap: wrap; gap: 32px; position: relative; z-index: 1;
 }
 .work-header-left { display: flex; align-items: flex-end; gap: 28px; }
@@ -474,11 +482,11 @@ body:has(.project-row:hover) .cursor-ring {
 .project-row::after {
   content: ''; position: absolute; bottom: 0; left: 0;
   width: 0%; height: 1px;
-  background: linear-gradient(90deg, rgba(30,20,10,0.15), transparent);
+  background: linear-gradient(90deg, rgba(240,237,232,0.15), transparent);
   transition: width 0.7s cubic-bezier(0.16,1,0.3,1);
 }
 .project-row:hover::after { width: 100%; }
-.project-row:hover { background: rgba(30,20,10,0.022); }
+.project-row:hover { background: rgba(240,237,232,0.04); }
 
 .project-row-inner {
   display: flex; align-items: center; justify-content: space-between;
@@ -501,7 +509,7 @@ body:has(.project-row:hover) .cursor-ring {
   font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
   font-size: clamp(1.4rem, 3.5vw, 4.8rem);
   font-weight: 400; letter-spacing: -0.01em;
-  color: rgba(24,19,12,0.45); line-height: 1;
+  color: rgba(240,237,232,0.55); line-height: 1;
   white-space: nowrap; text-transform: uppercase;
   transition: color 0.4s ease, transform 0.5s cubic-bezier(0.16,1,0.3,1);
 }
@@ -525,7 +533,7 @@ body:has(.project-row:hover) .cursor-ring {
 }
 .project-row:hover .project-tag {
   border-color: var(--border-mid); color: var(--ink-muted);
-  background: rgba(30,20,10,0.03);
+  background: rgba(240,237,232,0.03);
 }
 
 .project-arrow {
@@ -538,7 +546,7 @@ body:has(.project-row:hover) .cursor-ring {
 }
 .project-row:hover .project-arrow {
   border-color: var(--ink-muted); color: var(--ink);
-  background: rgba(30,20,10,0.03); transform: rotate(45deg);
+  background: rgba(240,237,232,0.03); transform: rotate(45deg);
 }
 
 /* ============================
@@ -562,7 +570,7 @@ body:has(.project-row:hover) .cursor-ring {
 }
 .toggle-btn:hover {
   border-color: var(--ink-muted); color: var(--ink);
-  background: rgba(30,20,10,0.03); transform: translateY(-2px);
+  background: rgba(240,237,232,0.03); transform: translateY(-2px);
 }
 .toggle-icon { position: relative; width: 12px; height: 12px; flex-shrink: 0; }
 .icon-h, .icon-v {
@@ -573,153 +581,6 @@ body:has(.project-row:hover) .cursor-ring {
 .icon-v { width: 1px; height: 12px; left: 50%; top: 0; transform: translateX(-50%); }
 .toggle-btn.is-open .icon-v { transform: translateX(-50%) rotate(90deg); opacity: 0; }
 .toggle-btn.is-open .icon-h { transform: translateY(-50%) rotate(45deg); }
-
-/* ============================
-   GALLERY SECTION
-============================ */
-.gallery-section {
-  background: var(--bg);
-  color: var(--ink); position: relative;
-}
-
-/* Ghost num — Anton statt Playfair */
-.gallery-bg-num {
-  position: absolute; top: -0.12em; right: -0.05em;
-  font-size: clamp(220px, 28vw, 420px);
-  font-weight: 400; letter-spacing: -0.04em; line-height: 1;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(30,20,10,0.045);
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  pointer-events: none; user-select: none; z-index: 0;
-}
-
-.gallery-pin {
-  position: sticky; top: 0; height: 100vh;
-  display: flex; align-items: stretch; overflow: hidden;
-}
-
-.gallery-panel {
-  width: clamp(240px, 22vw, 320px); flex-shrink: 0;
-  display: flex; align-items: center;
-  padding-left: clamp(28px, 6%, 80px); padding-right: 40px;
-  position: relative; z-index: 10; background: transparent;
-}
-
-.gallery-panel::after {
-  content: ''; position: absolute; right: 0; top: 18%; bottom: 18%; width: 1px;
-  background: linear-gradient(to bottom, transparent, rgba(30,20,10,0.08) 30%, rgba(30,20,10,0.08) 70%, transparent);
-}
-
-.gallery-panel-body { display: flex; flex-direction: column; }
-
-/* Gallery title: Anton — passend zum Hero */
-.gallery-title {
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(2.4rem, 3.8vw, 5rem);
-  font-weight: 400; letter-spacing: -0.02em; line-height: 0.88;
-  color: var(--ink); text-transform: uppercase;
-  margin-top: 16px; margin-bottom: 0;
-}
-
-.gallery-counter {
-  display: flex; align-items: baseline; gap: 0;
-  margin-top: 28px; margin-bottom: 20px;
-}
-.gallery-num {
-  font-family: var(--font-mono); font-size: clamp(2.4rem, 3.5vw, 3.8rem);
-  font-weight: 300; color: var(--ink);
-  line-height: 1; min-width: 2.2ch; display: block;
-  transition: opacity 0.15s ease;
-}
-.gallery-num.is-changing { opacity: 0; }
-.gallery-counter-right { display: flex; align-items: baseline; gap: 3px; margin-left: 4px; }
-.gallery-sep { font-family: var(--font-mono); font-size: 0.82rem; color: var(--ink-ghost); line-height: 1; }
-.gallery-total { font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-ghost); letter-spacing: 0.04em; }
-
-.gallery-intro {
-  font-size: 0.85rem; line-height: 1.85; color: var(--ink-muted);
-  font-weight: 400; margin-bottom: 28px;
-  font-family: 'Cormorant Garamond', Georgia, serif;
-  font-style: italic;
-}
-
-.gallery-cta {
-  display: inline-flex; align-items: center; gap: 10px;
-  text-decoration: none; cursor: none;
-  font-family: var(--font-mono); font-size: 9px; font-weight: 400;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--ink-muted); border: 1px solid var(--border-mid);
-  border-radius: 999px; padding: 12px 22px;
-  align-self: flex-start; position: relative; overflow: hidden;
-  transition: color 0.32s ease, border-color 0.32s ease, background 0.32s ease, transform 0.4s var(--ease-spring);
-}
-.gallery-cta::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(30,20,10,0.03) 0%, transparent 60%);
-  opacity: 0; transition: opacity 0.32s ease;
-}
-.gallery-cta:hover { color: var(--ink); border-color: var(--ink-muted); background: rgba(30,20,10,0.02); transform: translateY(-2px); }
-.gallery-cta:hover::before { opacity: 1; }
-.gallery-cta-arrow { font-size: 11px; opacity: 0.6; transition: transform 0.3s var(--ease-spring), opacity 0.3s ease; }
-.gallery-cta:hover .gallery-cta-arrow { transform: translate(2px,-2px); opacity: 1; }
-
-.gallery-scroll-hint {
-  display: flex; align-items: center; gap: 10px; margin-top: 32px;
-  font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--ink-ghost);
-}
-.gsh-line { display: block; width: 24px; height: 1px; background: rgba(30,20,10,0.12); animation: gshPulse 2.4s ease-in-out infinite; }
-@keyframes gshPulse { 0%, 100% { width: 24px; opacity: 0.5; } 50% { width: 40px; opacity: 1; } }
-
-.gallery-track-wrap { flex: 1; position: relative; overflow: hidden; display: flex; align-items: center; }
-.gallery-fade { position: absolute; top: 0; bottom: 0; width: 100px; z-index: 3; pointer-events: none; }
-.gallery-fade--left  { left: 0;  background: linear-gradient(to right, var(--bg) 0%, transparent 100%); }
-.gallery-fade--right { right: 0; background: linear-gradient(to left,  var(--bg) 0%, transparent 100%); }
-
-.gallery-track {
-  display: flex; align-items: center; gap: 18px;
-  padding: 0 80px 0 120px; will-change: transform;
-}
-
-.g-item { flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; opacity: 0; transform: translateY(24px); }
-.g-wide    { width: clamp(440px, 44vw, 600px); }
-.g-std     { width: clamp(320px, 34vw, 460px); }
-.g-portrait{ width: clamp(220px, 22vw, 310px); }
-
-.g-img-wrap {
-  height: clamp(320px, 52vh, 520px); overflow: hidden;
-  position: relative; border-radius: 1px;
-  clip-path: inset(100% 0 0 0); box-shadow: var(--shadow-md);
-}
-.g-img-wrap img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  transform: scale(1.08);
-  filter: brightness(0.92) saturate(0.80) sepia(0.05);
-  transition: transform 0.9s var(--ease-out-expo), filter 0.6s ease;
-  will-change: transform;
-}
-.g-item:hover .g-img-wrap img { transform: scale(1.0); filter: brightness(1) saturate(1) sepia(0); }
-
-.g-img-wrap::after {
-  content: ''; position: absolute; inset: 0;
-  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(30,20,10,0.010) 2px, rgba(30,20,10,0.010) 4px);
-  pointer-events: none; mix-blend-mode: multiply;
-}
-
-.g-item-meta { display: flex; justify-content: space-between; align-items: center; padding: 0 2px; opacity: 0.55; transition: opacity 0.3s ease; }
-.g-item:hover .g-item-meta { opacity: 1; }
-.g-meta-cat { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-muted); }
-.g-meta-yr  { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 0.1em; color: var(--ink-ghost); }
-
-.gallery-progress-wrap { position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: rgba(30,20,10,0.06); z-index: 10; }
-.gallery-progress-bar  { height: 100%; width: 0%; background: rgba(30,20,10,0.25); }
-
-@media (max-width: 768px) {
-  .gallery-pin { flex-direction: column; height: auto; min-height: 100vh; }
-  .gallery-panel { width: 100%; padding: 80px 6% 32px; }
-  .gallery-panel::after { display: none; }
-  .gallery-track-wrap { height: 60vw; min-height: 280px; }
-}
 
 /* ============================
    FOOTER
@@ -839,54 +700,6 @@ body:has(.project-row:hover) .cursor-ring {
 .footer-3d canvas { display: block; pointer-events: none; width: 100% !important; height: 100% !important; }
 
 /* ============================
-   EASTER EGG POPUPS
-============================ */
-.footer-egg-popup {
-  position: absolute; top: 40%; left: calc(100% + 24px);
-  z-index: 9000; pointer-events: none;
-  display: inline-flex; align-items: center; gap: 10px;
-  background: rgba(244,239,230,0.97); border: 1px solid rgba(30,20,10,0.12);
-  border-radius: 12px; padding: 16px 22px;
-  font-family: var(--font-mono); font-size: 16px; letter-spacing: 0.08em;
-  color: var(--ink); white-space: nowrap; box-shadow: var(--shadow-lg);
-  opacity: 0; transform: translateY(-45%) translateX(-10px) rotate(3deg) scale(0.94);
-  transition: opacity 0.22s ease, transform 0.22s cubic-bezier(0.22,1,0.36,1);
-}
-.footer-egg-popup.is-visible { opacity: 1; transform: translateY(-50%) translateX(0) rotate(4deg) scale(1); }
-
-.sparkle {
-  position: absolute; pointer-events: none;
-  font-size: 12px; color: #8b5e3c; opacity: 0; z-index: 8999;
-  animation: sparkleFade 1.2s ease-out forwards;
-}
-.sparkle:nth-child(1){top:-10px;left:20px;animation-delay:.1s}
-.sparkle:nth-child(2){top:10px;right:-15px;animation-delay:.2s}
-.sparkle:nth-child(3){bottom:-8px;left:40px;animation-delay:.3s}
-.sparkle:nth-child(4){top:15px;left:-12px;animation-delay:.4s}
-.sparkle:nth-child(5){bottom:12px;right:-8px;animation-delay:.5s}
-.sparkle:nth-child(6){top:-5px;right:15px;animation-delay:.6s}
-@keyframes sparkleFade {
-  0%   { opacity:0; transform:scale(0.5) rotate(0deg); }
-  20%  { opacity:1; transform:scale(1.2) rotate(90deg); }
-  80%  { opacity:1; transform:scale(1) rotate(180deg); }
-  100% { opacity:0; transform:scale(0.8) rotate(360deg); }
-}
-
-.design-egg-popup {
-  position: fixed; z-index: 9000; pointer-events: none;
-  display: flex; align-items: center; gap: 10px;
-  background: rgba(244,239,230,0.96); border: 1px solid rgba(30,20,10,0.08);
-  border-radius: 8px; padding: 8px 14px;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
-  color: var(--ink-mid); backdrop-filter: blur(12px);
-  white-space: nowrap; opacity: 0; transform: translateY(6px);
-  transition: opacity 0.18s ease, transform 0.18s ease; box-shadow: var(--shadow-sm);
-}
-.design-egg-popup.is-visible { opacity:1; transform:translateY(0); }
-.design-egg-popup .egg-correction { color:rgba(176,60,40,0.8); text-decoration:line-through; margin-right:2px; }
-.design-egg-popup .egg-suggestion { color:rgba(50,140,80,0.9); }
-
-/* ============================
    HERO NAME — LETTER EASTER EGG
 ============================ */
 .name-letter-wrap {
@@ -895,38 +708,285 @@ body:has(.project-row:hover) .cursor-ring {
 }
 
 .nl {
-  display: inline-block; position: relative; cursor: default;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s ease;
-  will-change: transform;
+  display: inline-block;
+  position: relative;
+  cursor: default;
+  user-select: none;
 }
 .nl--space { display: inline-block; width: 0.28em; }
-.nl:not(.nl--space):hover {
-  transform: translateY(-8px) rotate(var(--nl-tilt, -4deg)) scale(1.05);
-  color: var(--accent-warm); z-index: 2;
-}
-
-.nl-tip {
-  position: absolute; bottom: calc(100% + 12px); left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  white-space: nowrap; background: var(--ink); color: var(--bg);
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
-  padding: 5px 10px; border-radius: 4px; pointer-events: none; opacity: 0;
-  transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.34,1.56,0.64,1); z-index: 10;
-}
-.nl-tip::after {
-  content: ''; position: absolute; top: 100%; left: 50%;
-  transform: translateX(-50%); border: 4px solid transparent;
-  border-top-color: var(--ink);
-}
-.nl:not(.nl--space):hover .nl-tip { opacity: 1; transform: translateX(-50%) translateY(0px); }
-
-.nl:not(.nl--space):has(+ .nl:hover),
-.nl:not(.nl--space):hover + .nl:not(.nl--space) {
-  transform: translateY(-3px) rotate(var(--nl-tilt-soft, 1.5deg));
-}
 
 /* ============================
-   SCROLL REVEAL BASE
+   SERVICES — centered text, left image, right skills
 ============================ */
-.gsap-fade-up   { opacity: 0; transform: translateY(40px); }
-.gsap-fade-left { opacity: 0; transform: translateX(-30px); }
+.services-section {
+  padding: 120px 0;
+  position: relative;
+}
+
+/* Section eyebrow label */
+.svc-eyebrow {
+  position: relative;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 0 48px;
+  justify-content: center;
+}
+.svc-eyebrow-line {
+  display: block;
+  width: 36px;
+  height: 1px;
+  background: var(--ink-ghost);
+}
+.svc-eyebrow-txt {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Left image panel: absolute within services-section, GSAP controls all transforms */
+.svc-img-panel {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  width: clamp(240px, 26vw, 380px);
+  pointer-events: none;
+  z-index: 50;
+  /* opacity + transform fully controlled by GSAP */
+}
+
+.svc-img-inner {
+  position: relative;
+  width: 100%;
+  /* match SVG viewBox ratio: 280×190 ≈ 14:9.5 */
+  aspect-ratio: 280 / 190;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 12px 48px rgba(0,0,0,0.60), 0 2px 8px rgba(0,0,0,0.40);
+  clip-path: inset(50% 0 50% 0 round 6px);
+  transition: none;
+}
+
+.svc-img-inner.is-revealed {
+  clip-path: inset(0% 0 0% 0 round 6px);
+  transition: clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.svc-img {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+}
+.svc-img svg { width: 100%; height: 100%; display: block; flex-shrink: 0; }
+.svc-img.is-active { opacity: 1; }
+
+/* Centered list */
+.services-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.services-list:has(.svc-name:hover) .svc-item:not(:has(.svc-name:hover)) .svc-name {
+  color: rgba(240,237,232,0.20);
+}
+
+/* Each item: inline-flex so it wraps tightly around the text width */
+.svc-item {
+  display: inline-flex;
+  justify-content: center;
+  position: relative;
+  cursor: default;
+  transition: opacity 0.20s ease;
+  padding: 0;
+  width: 100%;
+}
+
+.svc-name {
+  display: block;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: clamp(2.8rem, 6.5vw, 8.5rem);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 0.80;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: color 0.25s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+.svc-name:hover { color: var(--ink); }
+
+/* Skills: absolute to the item's right edge, vertically centered.
+   Since .svc-item is full-width but text is centered,
+   we anchor to the text via a wrapper in JS instead — see JS notes.
+   Here we just make them invisible until JS activates them. */
+.svc-skills {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  /* left is set by JS to sit right of the text */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  white-space: nowrap;
+}
+
+.svc-skill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+/* ============================
+   SERVICES — Flip Button
+============================ */
+.svc-flip-btn {
+  position: relative;
+  display: inline-block;
+  width: 260px;
+  height: 56px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border: 1px solid rgba(240,237,232,0.18);
+  border-radius: 12px;
+  background: transparent;
+  cursor: none;
+  perspective: 800px;
+  overflow: hidden;
+  color: transparent;
+  transition: border-color 0.4s ease;
+}
+.svc-flip-btn:hover {
+  border-color: rgba(240,237,232,0.55);
+}
+.svc-flip-front,
+.svc-flip-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  backface-visibility: hidden;
+  transition: opacity 0.30s var(--ease-out-expo),
+              transform 0.42s var(--ease-out-expo);
+}
+.svc-flip-front {
+  color: var(--ink);
+  background: transparent;
+  opacity: 1;
+  transform: rotateX(0deg) translateY(0%);
+}
+.svc-flip-back {
+  color: #111110;
+  background: #F0EDE8;
+  opacity: 0;
+  transform: rotateX(-90deg) translateY(50%);
+}
+.svc-flip-btn:hover .svc-flip-front {
+  opacity: 0;
+  transform: rotateX(90deg) translateY(-50%);
+}
+.svc-flip-btn:hover .svc-flip-back {
+  opacity: 1;
+  transform: rotateX(0deg) translateY(0%);
+}
+
+/* SVG Arrow animation */
+.svc-flip-arrow {
+  flex-shrink: 0;
+  overflow: visible;
+}
+.arr-line {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 0;
+  transform-origin: left center;
+  transition: stroke-dashoffset 0.35s var(--ease-out-expo),
+              transform 0.35s var(--ease-out-expo);
+}
+.arr-head {
+  transition: transform 0.35s var(--ease-out-expo);
+  transform-origin: center center;
+}
+.svc-flip-btn:hover .arr-line {
+  stroke-dashoffset: -8;
+  transform: scaleX(1.18);
+}
+.svc-flip-btn:hover .arr-head {
+  transform: translateX(5px);
+}
+/* ============================
+   GLOBE SECTION
+============================ */
+.globe-section {
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 120px 0;
+  position: relative;
+  z-index: 10;
+}
+
+.globe-section-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.globe-section-canvas-wrap {
+  position: relative;
+  width: clamp(320px, 48vw, 620px);
+  height: clamp(320px, 48vw, 620px);
+}
+
+.globe-section-canvas-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 50%;
+}
+
+/* Salzburg tooltip label */
+.globe-section-label {
+  position: absolute;
+  pointer-events: none;
+  padding: 3px 8px;
+  background: var(--bg-dark);
+  border: 1px solid rgba(240,237,232,0.14);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(240,237,232,0.65);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 10;
+}
+.globe-section-label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(240,237,232,0.14);
+}

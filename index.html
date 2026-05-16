@@ -4,19 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jacob Weissenbäck — Portfolio</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@700;800;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600;1,700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap" rel="stylesheet">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
 <link rel="stylesheet" href="style.css">
-<style>
-  /* ── More breathing room between divider and globe section ── */
-  .footer-split {
-    gap: clamp(3rem, 8vw, 7rem) !important;
-  }
-</style>
+
 </head>
 <body>
 
@@ -24,12 +17,7 @@
 <div class="cursor-dot"  id="cursorDot"></div>
 <div class="cursor-ring" id="cursorRing"></div>
 
-<!-- PROJECT HOVER PREVIEW -->
-<div class="project-preview" id="projectPreview">
-  <img id="previewImg" src="" alt="">
-  <div class="preview-overlay"></div>
-  <span class="preview-label" id="previewLabel"></span>
-</div>
+
 
 <!-- ========================
      NAV — Jasmine Gunarto style: flat bar, location left, links right
@@ -43,8 +31,7 @@
   </div>
   <div class="nav-links">
     <a href="#hero">Home</a>
-    <a href="#work">Projekte</a>
-    <a href="#gallery">Galerie</a>
+    <a href="#work">Services</a>
     <a href="#" class="nav-link-cv">CV</a>
     <a href="#contact">Ich</a>
   </div>
@@ -65,11 +52,7 @@
     <div class="hero-clip hero-clip--side"><span class="hero-word hero-word--role" id="heroWordRole">UI / UX</span></div>
 
     <div class="hero-img-card" id="heroImgCard">
-      <span class="hero-img-label" id="heroImgLabel">UI / UX DESIGN</span>
-      <span class="hero-img-year" id="heroImgYear">2026</span>
-      <div class="hero-img-wrap">
-        <img src="https://picsum.photos/450/320?random=77" alt="Showreel Platzhalter">
-      </div>
+      <img src="https://picsum.photos/900/600?random=10" alt="Showreel" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;">
     </div>
 
     <div class="hero-clip hero-clip--side"><span class="hero-word hero-word--designer" id="heroWordDesigner">DESIGNER</span></div>
@@ -80,355 +63,259 @@
     <span class="hsn-label">SCROLL DOWN</span>
   </div>
 
-</section>
-
-<!-- ========================
-     HERO BANNER — vollbreites Bild zwischen Hero + Projekte
-     Wird sichtbar wenn Hero-Pin endet
-======================== -->
-<div class="hero-banner" id="heroBanner" aria-hidden="true">
-  <div class="hero-banner-inner" id="heroBannerInner">
-    <img src="https://picsum.photos/450/320?random=77" alt="">
+  <!-- ── Zoom Parallax Photos ── -->
+  <div class="hero-zp-stage" id="heroZpStage" aria-hidden="true">
+    <div class="hero-zp-item" data-scale="1.5" data-delay="0">
+      <div class="hero-zp-wrap hero-zp-center">
+        <img src="https://picsum.photos/640/480?random=78" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+    <div class="hero-zp-item" data-scale="1.8" data-delay="0.05">
+      <div class="hero-zp-wrap hero-zp-tl">
+        <img src="https://picsum.photos/540/360?random=79" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+    <div class="hero-zp-item" data-scale="1.6" data-delay="0.08">
+      <div class="hero-zp-wrap hero-zp-tr">
+        <img src="https://picsum.photos/480/680?random=80" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+    <div class="hero-zp-item" data-scale="1.9" data-delay="0.03">
+      <div class="hero-zp-wrap hero-zp-bl">
+        <img src="https://picsum.photos/560/400?random=81" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+    <div class="hero-zp-item" data-scale="1.7" data-delay="0.06">
+      <div class="hero-zp-wrap hero-zp-br">
+        <img src="https://picsum.photos/520/380?random=82" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+    <div class="hero-zp-item" data-scale="2.0" data-delay="0.10">
+      <div class="hero-zp-wrap hero-zp-sm">
+        <img src="https://picsum.photos/380/280?random=83" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
   </div>
-</div>
+
+</section>
 
 <!-- ========================
      BOTTOM SHEET — alles nach dem Hero
 ======================== -->
 <div id="bottomSheet" class="bottom-sheet">
 
-<!-- ========================
-     MARQUEE — Kinetic ribbon
-======================== -->
-<div class="marquee-wrap" aria-hidden="true">
-  <div class="marquee-track">
-    <span class="marquee-item">Figma</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">UI Design</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">DaVinci Resolve</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">UX Design</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">HTML</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Product Design</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">CSS</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">JavaScript</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Python</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Lightroom</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Photoshop</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Claude</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Figma</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">UI Design</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">DaVinci Resolve</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">UX Design</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">HTML</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Product Design</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">CSS</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">JavaScript</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Python</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Lightroom</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Photoshop</span>
-    <span class="m-sep">✦</span>
-    <span class="marquee-item">Claude</span>
-  </div>
-</div>
+
+
 
 <!-- ========================
-     WORK
+     SERVICES
 ======================== -->
-<section class="work-section" id="work">
+<section class="services-section" id="work">
 
-  <!-- Background text -->
-  <div class="work-bg-word" aria-hidden="true">WORK</div>
 
-  <!-- Section header -->
-  <div class="work-header">
-    <div class="work-header-left">
-      <span class="work-index">01</span>
-      <div class="work-header-text">
-        <span class="section-label">Ausgewählte Arbeiten</span>
-        <h2 class="work-title">Projekte<em>.</em></h2>
+  <!-- Left edge image (position set by JS on hover) -->
+  <div class="svc-img-panel" id="svcImgPanel" aria-hidden="true">
+    <div class="svc-img-inner">
+      <div class="svc-img" id="simg-uiux">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#0f0f0f"/>
+          <rect x="28" y="22" width="224" height="146" rx="7" fill="#1a1a1a"/>
+          <rect x="38" y="38" width="88" height="12" rx="3" fill="#3a8fff" opacity="0.85"/>
+          <rect x="38" y="56" width="60" height="7" rx="2" fill="#2a2a2a"/>
+          <rect x="38" y="67" width="80" height="7" rx="2" fill="#222"/>
+          <rect x="38" y="78" width="52" height="7" rx="2" fill="#1e1e1e"/>
+          <rect x="148" y="38" width="88" height="106" rx="5" fill="#1f1f1f"/>
+          <circle cx="192" cy="82" r="19" fill="#3a8fff" opacity="0.12"/>
+          <circle cx="192" cy="82" r="11" fill="#3a8fff" opacity="0.35"/>
+          <rect x="160" y="107" width="64" height="7" rx="2" fill="#2a2a2a"/>
+          <rect x="38" y="98" width="80" height="20" rx="5" fill="#3a8fff" opacity="0.9"/>
+          <rect x="50" y="105" width="56" height="7" rx="2" fill="#fff" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="svc-img" id="simg-product">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#0d0d0d"/>
+          <rect x="70" y="22" width="140" height="140" rx="20" fill="#191919"/>
+          <circle cx="140" cy="88" r="33" fill="none" stroke="#e0c97a" stroke-width="2"/>
+          <circle cx="140" cy="88" r="19" fill="#e0c97a" opacity="0.12"/>
+          <line x1="140" y1="55" x2="140" y2="40" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="140" y1="121" x2="140" y2="136" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="107" y1="88" x2="92" y2="88" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
+          <line x1="173" y1="88" x2="188" y2="88" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
+          <rect x="92" y="128" width="96" height="12" rx="3" fill="#1f1f1f"/>
+          <rect x="102" y="132" width="76" height="4" rx="2" fill="#e0c97a" opacity="0.45"/>
+        </svg>
+      </div>
+      <div class="svc-img" id="simg-image">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#080808"/>
+          <rect x="28" y="22" width="224" height="136" rx="5" fill="#111"/>
+          <ellipse cx="105" cy="92" rx="50" ry="50" fill="#ff6b35" opacity="0.22"/>
+          <ellipse cx="175" cy="92" rx="47" ry="47" fill="#2a9fff" opacity="0.18"/>
+          <ellipse cx="140" cy="92" rx="35" ry="35" fill="#7b2fff" opacity="0.14"/>
+          <rect x="38" y="34" width="60" height="7" rx="2" fill="#1e1e1e"/>
+          <rect x="230" y="30" width="14" height="14" rx="2" fill="#ff6b35" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="svc-img" id="simg-color">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#060606"/>
+          <rect x="22" y="22" width="78" height="130" rx="5 0 0 5" fill="#1a2a40"/>
+          <rect x="100" y="22" width="80" height="130" fill="#2d1f10"/>
+          <rect x="180" y="22" width="78" height="130" rx="0 5 5 0" fill="#102818"/>
+          <rect x="22" y="134" width="236" height="18" rx="0 0 5 5" fill="#0a0a0a"/>
+          <rect x="34" y="140" width="36" height="5" rx="2" fill="#3a6fff" opacity="0.7"/>
+          <rect x="90" y="140" width="36" height="5" rx="2" fill="#ff8c42" opacity="0.7"/>
+          <rect x="148" y="140" width="36" height="5" rx="2" fill="#42c97a" opacity="0.7"/>
+          <rect x="206" y="140" width="36" height="5" rx="2" fill="#ff4a7a" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="svc-img" id="simg-video">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#090909"/>
+          <rect x="22" y="34" width="236" height="106" rx="5" fill="#111"/>
+          <polygon points="126,72 126,102 156,87" fill="#3a8fff" opacity="0.9"/>
+          <rect x="22" y="130" width="50" height="16" rx="3" fill="#1e1e1e"/>
+          <rect x="78" y="130" width="96" height="16" rx="3" fill="#3a8fff" opacity="0.55"/>
+          <rect x="180" y="130" width="42" height="16" rx="3" fill="#1e1e1e"/>
+          <rect x="34" y="139" width="24" height="3" rx="1" fill="#444"/>
+          <rect x="84" y="139" width="76" height="3" rx="1" fill="#fff" opacity="0.45"/>
+        </svg>
+      </div>
+      <div class="svc-img" id="simg-ads">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#0b0b0b"/>
+          <rect x="28" y="18" width="224" height="146" rx="7" fill="#141414"/>
+          <rect x="42" y="34" width="106" height="56" rx="4" fill="#1f1f1f"/>
+          <rect x="52" y="44" width="48" height="5" rx="2" fill="#e0c97a" opacity="0.65"/>
+          <rect x="52" y="54" width="80" height="4" rx="2" fill="#2a2a2a"/>
+          <rect x="52" y="72" width="36" height="10" rx="3" fill="#e0c97a" opacity="0.8"/>
+          <rect x="42" y="100" width="196" height="52" rx="4" fill="#1a1a1a"/>
+          <rect x="56" y="112" width="60" height="4" rx="2" fill="#333"/>
+          <rect x="56" y="120" width="98" height="4" rx="2" fill="#2a2a2a"/>
+          <rect x="164" y="104" width="60" height="44" rx="4" fill="#1f1f1f"/>
+          <rect x="172" y="114" width="44" height="4" rx="2" fill="#3a8fff" opacity="0.55"/>
+        </svg>
+      </div>
+      <div class="svc-img" id="simg-social">
+        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
+          <rect width="280" height="190" fill="#090909"/>
+          <rect x="90" y="12" width="100" height="170" rx="14" fill="#111"/>
+          <rect x="100" y="28" width="80" height="58" rx="4" fill="#1a1a1a"/>
+          <circle cx="114" cy="44" r="7" fill="#3a8fff" opacity="0.45"/>
+          <rect x="124" y="40" width="46" height="4" rx="2" fill="#2a2a2a"/>
+          <rect x="124" y="48" width="32" height="4" rx="2" fill="#222"/>
+          <rect x="100" y="96" width="80" height="58" rx="4" fill="#1a1a1a"/>
+          <rect x="110" y="106" width="46" height="4" rx="2" fill="#e0c97a" opacity="0.55"/>
+          <rect x="110" y="116" width="62" height="4" rx="2" fill="#2a2a2a"/>
+          <rect x="110" y="132" width="26" height="9" rx="3" fill="#3a8fff" opacity="0.65"/>
+        </svg>
       </div>
     </div>
-    <p class="work-intro">Fokussiert auf<br><em>Kreativität, Nutzer</em><br>und Innovation.</p>
   </div>
 
-  <!-- Projects list -->
-  <div class="projects-list">
+  <!-- Section label -->
+  <div class="svc-eyebrow">
+    <span class="svc-eyebrow-txt">What I do</span>
+  </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=1" data-label="01 — Aug 2024">
-      <div class="project-row-inner">
-        <div class="project-left">
-          <span class="project-num">01</span>
-          <div class="project-info">
-            <h3 class="project-title">Design System</h3>
-            <span class="project-year">2025 — ongoing</span>
-          </div>
-        </div>
-        <div class="project-right">
-          <div class="project-tags">
-            <span class="project-tag">Design</span>
-            <span class="project-tag">Figma</span>
-          </div>
-          <div class="project-arrow">↗</div>
-        </div>
+  <!-- Centered list -->
+  <div class="services-list" id="servicesList">
+
+    <div class="svc-item" data-img="simg-uiux">
+      <span class="svc-name">UI / UX Design</span>
+      <div class="svc-skills">
+        <span class="svc-skill">Figma</span>
+        <span class="svc-skill">Framer</span>
+        <span class="svc-skill">Prototyping</span>
+        <span class="svc-skill">Research</span>
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=2" data-label="02 — Nov 2024">
-      <div class="project-row-inner">
-        <div class="project-left">
-          <span class="project-num">02</span>
-          <div class="project-info">
-            <h3 class="project-title">Lehrling des Monats</h3>
-            <span class="project-year">2026</span>
-          </div>
-        </div>
-        <div class="project-right">
-          <div class="project-tags">
-            <span class="project-tag">Video</span>
-            <span class="project-tag">DaVinci Resolve</span>
-          </div>
-          <div class="project-arrow">↗</div>
-        </div>
+    <div class="svc-item" data-img="simg-product">
+      <span class="svc-name">Product Design</span>
+      <div class="svc-skills">
+        <span class="svc-skill">Systems</span>
+        <span class="svc-skill">Figma</span>
+        <span class="svc-skill">Components</span>
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=3" data-label="03 — Jul 2023">
-      <div class="project-row-inner">
-        <div class="project-left">
-          <span class="project-num">03</span>
-          <div class="project-info">
-            <h3 class="project-title">Intranet</h3>
-            <span class="project-year">2025 — ongoing</span>
-          </div>
-        </div>
-        <div class="project-right">
-          <div class="project-tags">
-            <span class="project-tag">Campaign</span>
-            <span class="project-tag">Web</span>
-          </div>
-          <div class="project-arrow">↗</div>
-        </div>
+    <div class="svc-item" data-img="simg-image">
+      <span class="svc-name">Image Editing</span>
+      <div class="svc-skills">
+        <span class="svc-skill">Photoshop</span>
+        <span class="svc-skill">Lightroom</span>
+        <span class="svc-skill">Compositing</span>
       </div>
     </div>
 
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=4" data-label="04 — Nov 2023">
-      <div class="project-row-inner">
-        <div class="project-left">
-          <span class="project-num">04</span>
-          <div class="project-info">
-            <h3 class="project-title">Flux System</h3>
-            <span class="project-year">Nov 2023</span>
-          </div>
-        </div>
-        <div class="project-right">
-          <div class="project-tags">
-            <span class="project-tag">Design System</span>
-            <span class="project-tag">E-Com</span>
-          </div>
-          <div class="project-arrow">↗</div>
-        </div>
+    <div class="svc-item" data-img="simg-color">
+      <span class="svc-name">Colorgrading</span>
+      <div class="svc-skills">
+        <span class="svc-skill">DaVinci</span>
+        <span class="svc-skill">LUTs</span>
+        <span class="svc-skill">Lightroom</span>
+      </div>
+    </div>
+
+    <div class="svc-item" data-img="simg-video">
+      <span class="svc-name">Video Cutting</span>
+      <div class="svc-skills">
+        <span class="svc-skill">DaVinci Resolve</span>
+        <span class="svc-skill">Pacing</span>
+        <span class="svc-skill">Audio</span>
+      </div>
+    </div>
+
+    <div class="svc-item" data-img="simg-ads">
+      <span class="svc-name">Advertisements</span>
+      <div class="svc-skills">
+        <span class="svc-skill">Motion</span>
+        <span class="svc-skill">Copywriting</span>
+        <span class="svc-skill">Social Ads</span>
+      </div>
+    </div>
+
+    <div class="svc-item" data-img="simg-social">
+      <span class="svc-name">Social Media</span>
+      <div class="svc-skills">
+        <span class="svc-skill">Content</span>
+        <span class="svc-skill">Strategy</span>
+        <span class="svc-skill">Branding</span>
       </div>
     </div>
 
   </div>
 
-  <!-- Collapsible extras -->
-  <div class="projects-extra" id="projectsExtra">
-
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=5" data-label="05 — Mai 2023">
-      <div class="project-row-inner">
-        <div class="project-left">
-          <span class="project-num">05</span>
-          <div class="project-info">
-            <h3 class="project-title">Terra Forms</h3>
-            <span class="project-year">Mai 2023</span>
-          </div>
-        </div>
-        <div class="project-right">
-          <div class="project-tags">
-            <span class="project-tag">3D</span>
-            <span class="project-tag">Identity</span>
-          </div>
-          <div class="project-arrow">↗</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="project-row" data-img="https://picsum.photos/800/500?random=6" data-label="06 — Dez 2022">
-      <div class="project-row-inner">
-        <div class="project-left">
-          <span class="project-num">06</span>
-          <div class="project-info">
-            <h3 class="project-title">Moss Archive</h3>
-            <span class="project-year">Dez 2022</span>
-          </div>
-        </div>
-        <div class="project-right">
-          <div class="project-tags">
-            <span class="project-tag">Editorial</span>
-            <span class="project-tag">Typography</span>
-          </div>
-          <div class="project-arrow">↗</div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="toggle-wrap">
-    <button class="toggle-btn" id="projectsToggle" aria-expanded="false">
-      <span class="toggle-label">Mehr Projekte</span>
-      <span class="toggle-icon" aria-hidden="true">
-        <span class="icon-h"></span>
-        <span class="icon-v"></span>
+  <!-- View All Projects Button -->
+  <div style="display:flex;justify-content:center;padding:64px 0 0;">
+    <button class="svc-flip-btn" id="svcFlipBtn">
+      <span class="svc-flip-front">
+        View all projects
+        <svg class="svc-flip-arrow" width="28" height="12" viewBox="0 0 28 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <line class="arr-line" x1="0" y1="6" x2="22" y2="6" stroke="currentColor" stroke-width="1.2"/>
+          <polyline class="arr-head" points="20,1 27,6 20,11" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </span>
+      <span class="svc-flip-back">Have fun!</span>
     </button>
   </div>
 
 </section>
 
+
+
 <!-- ========================
-     GALLERY
+     GLOBE SECTION
 ======================== -->
-<section class="gallery-section" id="gallery">
+<section class="globe-section" id="globeSection">
 
-  <!-- Sticky pin — GSAP drives x-translation of track -->
-  <div class="gallery-pin" id="galleryPin">
-
-    <!-- Decorative background number (inside pin so it stays visible) -->
-    <div class="gallery-bg-num" aria-hidden="true">02</div>
-
-    <!-- Left editorial panel -->
-    <div class="gallery-panel">
-      <div class="gallery-panel-body">
-        <span class="section-label section-label--light">Ausgewählte Aufnahmen</span>
-        <h2 class="gallery-title">Galerie</h2>
-
-        <div class="gallery-counter">
-          <span class="gallery-num" id="galleryNum">01</span>
-          <div class="gallery-counter-right">
-            <span class="gallery-sep">/</span>
-            <span class="gallery-total" id="galleryTotal">12</span>
-          </div>
-        </div>
-
-        <p class="gallery-intro">Fotografien, Bildbearbeitungen<br>und visuelle Experimente.</p>
-
-        <a href="#" class="gallery-cta">
-          <span>Galerie ansehen</span>
-          <span class="gallery-cta-arrow">↗</span>
-        </a>
-
-        <div class="gallery-scroll-hint">
-          <span class="gsh-line"></span>
-          <span>Scrollen</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Horizontal track wrapper -->
-    <div class="gallery-track-wrap" id="galleryTrackWrap">
-      <div class="gallery-fade gallery-fade--left"></div>
-
-      <div class="gallery-track" id="galleryTrack">
-
-        <div class="g-item g-wide">
-          <div class="g-img-wrap"><img src="https://picsum.photos/960/640?random=41" alt="Editorial"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Editorial</span><span class="g-meta-yr">2025</span></div>
-        </div>
-
-        <div class="g-item g-portrait">
-          <div class="g-img-wrap"><img src="https://picsum.photos/480/720?random=42" alt="Portrait"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Portraits</span><span class="g-meta-yr">2024</span></div>
-        </div>
-
-        <div class="g-item g-std">
-          <div class="g-img-wrap"><img src="https://picsum.photos/720/540?random=43" alt="Architektur"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Architektur</span><span class="g-meta-yr">2024</span></div>
-        </div>
-
-        <div class="g-item g-portrait">
-          <div class="g-img-wrap"><img src="https://picsum.photos/480/720?random=44" alt="Still Life"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Still Life</span><span class="g-meta-yr">2023</span></div>
-        </div>
-
-        <div class="g-item g-wide">
-          <div class="g-img-wrap"><img src="https://picsum.photos/960/640?random=45" alt="Landschaft"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Landschaft</span><span class="g-meta-yr">2024</span></div>
-        </div>
-
-        <div class="g-item g-std">
-          <div class="g-img-wrap"><img src="https://picsum.photos/720/540?random=46" alt="Abstract"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Abstract</span><span class="g-meta-yr">2023</span></div>
-        </div>
-
-        <div class="g-item g-portrait">
-          <div class="g-img-wrap"><img src="https://picsum.photos/480/720?random=47" alt="Documentary"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Documentary</span><span class="g-meta-yr">2024</span></div>
-        </div>
-
-        <div class="g-item g-wide">
-          <div class="g-img-wrap"><img src="https://picsum.photos/960/640?random=48" alt="Urban"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Urban</span><span class="g-meta-yr">2025</span></div>
-        </div>
-
-        <div class="g-item g-std">
-          <div class="g-img-wrap"><img src="https://picsum.photos/720/540?random=49" alt="Nature"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Nature</span><span class="g-meta-yr">2024</span></div>
-        </div>
-
-        <div class="g-item g-portrait">
-          <div class="g-img-wrap"><img src="https://picsum.photos/480/720?random=50" alt="Fashion"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Fashion</span><span class="g-meta-yr">2025</span></div>
-        </div>
-
-        <div class="g-item g-wide">
-          <div class="g-img-wrap"><img src="https://picsum.photos/960/640?random=51" alt="Conceptual"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Conceptual</span><span class="g-meta-yr">2023</span></div>
-        </div>
-
-        <div class="g-item g-std">
-          <div class="g-img-wrap"><img src="https://picsum.photos/720/540?random=52" alt="Street"></div>
-          <div class="g-item-meta"><span class="g-meta-cat">Street</span><span class="g-meta-yr">2024</span></div>
-        </div>
-
-      </div><!-- /gallery-track -->
-
-      <div class="gallery-fade gallery-fade--right"></div>
-    </div><!-- /gallery-track-wrap -->
-
-    <!-- Bottom progress -->
-    <div class="gallery-progress-wrap">
-      <div class="gallery-progress-bar" id="galleryProgressBar"></div>
-    </div>
-
-  </div><!-- /gallery-pin -->
+  <div class="globe-section-inner">
+    <div class="globe-section-canvas-wrap" id="globeSectionCanvas"></div>
+  </div>
 
 </section>
-
-<!-- ========================
-     FOOTER / CONTACT
 ======================== -->
 <footer class="footer" id="contact">
 
