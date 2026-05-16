@@ -413,7 +413,20 @@ body:has(.project-row:hover) .cursor-ring {
 .services-section {
   background: var(--bg);
   padding: 100px 6% 100px;
-  color: var(--ink); position: relative; overflow: hidden;
+  color: var(--ink); position: relative; overflow: visible;
+}
+
+/* Fade out bottom of services into the globe section below */
+.services-section::after {
+  content: '';
+  position: absolute;
+  bottom: -80px;
+  left: 0;
+  right: 0;
+  height: 160px;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 5;
 }
 
 /* Ghost word — Anton statt Playfair, passend zum Hero */
@@ -940,9 +953,48 @@ body:has(.project-row:hover) .cursor-ring {
   padding: 120px 0;
   position: relative;
   z-index: 10;
+  overflow: hidden;
+}
+
+/* Smooth fade INTO services above — gradient mask on top edge */
+.globe-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 220px;
+  background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Smooth fade OUT at bottom edge */
+.globe-section::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120px;
+  background: linear-gradient(to top, var(--bg) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ASCII background canvas fills the whole section behind the globe */
+.globe-section-ascii-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
 
 .globe-section-inner {
+  position: relative;
+  z-index: 4;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -952,8 +1004,8 @@ body:has(.project-row:hover) .cursor-ring {
 
 .globe-section-canvas-wrap {
   position: relative;
-  width: clamp(320px, 48vw, 620px);
-  height: clamp(320px, 48vw, 620px);
+  width: clamp(260px, 36vw, 500px);
+  height: clamp(260px, 36vw, 500px);
 }
 
 .globe-section-canvas-wrap canvas {
@@ -989,4 +1041,90 @@ body:has(.project-row:hover) .cursor-ring {
   transform: translateX(-50%);
   border: 5px solid transparent;
   border-top-color: rgba(240,237,232,0.14);
+}
+
+/* ============================
+   FOOTER NAME BANNER
+   absolute inside .globe-section — no extra height added
+============================ */
+.footer-name-banner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 10;
+  line-height: 0;
+}
+
+.footer-name-text {
+  display: inline-block;
+  font-family: 'Barlow Condensed', 'Anton', Arial, sans-serif;
+  font-weight: 900;
+  font-size: 15vw;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform-origin: left bottom;
+  margin-bottom: -0.06em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(200, 200, 205, 0.55);
+}
+
+.globe-section {
+  min-height: 100vh;
+}
+
+.globe-section-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  padding: 0 6vw;
+  padding-bottom: 12vh;
+  position: relative;
+}
+
+.globe-text-left {
+  position: absolute;
+  left: 6vw;
+  top: calc(50% - 6vh);
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.04em;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
+  max-width: 44vw;
+}
+
+.globe-text-clip {
+  overflow: hidden;
+  line-height: 0.88;
+}
+
+.globe-display-line {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(4rem, 8vw, 10rem);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  line-height: 0.88;
+  color: var(--ink);
+  text-transform: lowercase;
+  white-space: nowrap;
+  will-change: transform;
+  transform: translateY(110%);
+}
+
+.globe-section-canvas-wrap {
+  flex-shrink: 0;
+  will-change: transform;
+  transform-origin: center center;
 }

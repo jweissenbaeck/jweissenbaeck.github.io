@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jacob Weissenbäck — Portfolio</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
 <link rel="stylesheet" href="style.css">
 
 </head>
@@ -311,81 +311,28 @@
 ======================== -->
 <section class="globe-section" id="globeSection">
 
-  <div class="globe-section-inner">
+  <div class="globe-section-inner" id="globeSectionInner">
+
+    <div class="globe-text-left" id="globeTextLeft">
+      <div class="globe-text-clip"><span class="globe-display-line" id="globeLine1">display1</span></div>
+      <div class="globe-text-clip"><span class="globe-display-line" id="globeLine2">display2</span></div>
+    </div>
+
     <div class="globe-section-canvas-wrap" id="globeSectionCanvas"></div>
+
+  </div>
+
+  <!-- NAME BANNER — absolute flush bottom, no extra height -->
+  <div class="footer-name-banner" aria-hidden="true">
+    <span class="footer-name-text">JACOB WEISSENBACK</span>
   </div>
 
 </section>
-======================== -->
-<footer class="footer" id="contact">
-
-  <canvas class="footer-stars" id="footerStars"></canvas>
-  <div class="footer-noise"></div>
-
-  <div class="footer-split">
-
-    <!-- LEFT: editorial contact panel -->
-    <div class="footer-left">
-
-      <div class="footer-left-top">
-        <span class="footer-eyebrow">
-          <span class="footer-eyebrow-line"></span>
-          <span class="footer-eyebrow-txt">03 — Kontakt</span>
-        </span>
-
-        <a href="mailto:j.weissenbaeck@gmx.at" class="footer-email-cta" id="footerEmailCta">
-          <span class="footer-email-txt">j.weissenbaeck@gmx.at</span>
-          <span class="footer-email-arrow">↗</span>
-        </a>
-      </div>
-
-      <div class="footer-headline-wrap">
-        <div class="footer-title-mask">
-          <h2 class="footer-title" id="footerTitle">Lass uns<br>reden.</h2>
-        </div>
-        <div class="footer-title-mask footer-title-mask--ghost">
-          <div class="footer-title-outline" id="footerTitleOutline">Lass uns<br>reden.</div>
-        </div>
-      </div>
-
-      <div class="footer-social-links">
-        <a href="mailto:j.weissenbaeck@gmx.at" class="footer-email-inline">
-          <span>j.weissenbaeck@gmx.at</span>
-          <span class="footer-social-arrow">↗</span>
-        </a>
-        <span class="footer-social-divider"></span>
-        <a href="#" class="footer-social-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-          <span>Instagram</span>
-          <span class="footer-social-arrow">↗</span>
-        </a>
-        <a href="https://www.linkedin.com/in/jweissenbaeck/" class="footer-social-btn">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-          <span>LinkedIn</span>
-          <span class="footer-social-arrow">↗</span>
-        </a>
-      </div>
-
-      <div class="footer-bottom-mono">
-        <span>© 2026 Jacob Weißenbäck</span>
-        <span>Verfügbar für Projekte</span>
-      </div>
-
-    </div>
-
-    <!-- RIGHT: earth globe, edge to edge -->
-    <div class="footer-right">
-      <div class="footer-3d" id="footerCanvas"></div>
-    </div>
-
-  </div>
-
-</footer>
 
 </div><!-- /bottom-sheet -->
 
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+<script src="script.js" defer></script>
 </body>
 </html>
