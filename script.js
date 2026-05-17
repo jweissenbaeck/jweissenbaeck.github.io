@@ -8,7 +8,7 @@
   if (!loader) return;
 
   // Block scroll while loading
-  document.body.style.overflow = 'hidden';
+  document.documentElement.style.overflow = 'hidden';
 
   let progress = 0;
   let done     = false;
@@ -26,6 +26,12 @@
 
     // Kurze Pause bei 100%, dann Loader ausblenden
     setTimeout(() => {
+      // Startzustände SOFORT setzen bevor Loader wegfadet — kein Flash möglich
+      const nameEl     = document.getElementById('heroWordFullname');
+      const subtitleEl = document.querySelector('.hero-subtitle');
+      if (nameEl)     nameEl.style.transform     = 'translateY(110%)';
+      if (subtitleEl) subtitleEl.style.transform = 'translateY(110%)';
+
       // Loader nach oben wegsliden
       loader.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1)';
       loader.style.opacity    = '0';
@@ -36,15 +42,16 @@
         loader.style.display = 'none';
 
         // Scroll erst jetzt freigeben
-        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
 
-        // Hero-Reveal starten nach Loader-Exit
+        // Hero-Reveal starten — inline styles vorher entfernen damit GSAP übernimmt
+        if (nameEl)     nameEl.style.transform     = '';
+        if (subtitleEl) subtitleEl.style.transform = '';
+
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            if (typeof window.__heroInit === 'function') {
-              window.__heroInit();
-            }
-          });
+          if (typeof window.__heroInit === 'function') {
+            window.__heroInit();
+          }
         });
       }, 700);
     }, 250);
@@ -96,6 +103,32 @@ gsap.ticker.add((time) => {
   lenis.raf(time * 1000);
 });
 gsap.ticker.lagSmoothing(0);
+
+/* ============================
+   NAV — Click to scroll via Lenis
+   Native anchors break with pinned GSAP sections — lenis.scrollTo fixes offsets
+============================ */
+document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(link => {
+  link.addEventListener('click', (e) => {
+    let href = link.getAttribute('href');
+    if (!href || href === '#') return;
+
+    // #contact → globeSection (the actual footer section id)
+    if (href === '#contact') href = '#globeSection';
+
+    const target = document.querySelector(href);
+    if (!target) return;
+    e.preventDefault();
+
+    // START: scroll to very top so hero animation resets to beginning
+    if (href === '#hero') {
+      lenis.scrollTo(0, { duration: 2.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
+      return;
+    }
+
+    lenis.scrollTo(target, { offset: 0, duration: 2.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
+  });
+});
 
 /* ============================
    CUSTOM CURSOR (FIXED)
@@ -163,34 +196,34 @@ const heroInit = () => {
   const elName  = document.getElementById('heroWordFullname');
   const imgCard = document.getElementById('heroImgCard');
 
-  // Fit name width to image card width
+  // Startzustände SOFORT via GSAP setzen — verhindert jeden Flash
+  gsap.set('#heroWordFullname', { y: '110%' });
+  gsap.set('#heroImgCard',      { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
+  gsap.set('.hero-subtitle',    { y: '-110%' });
+
+  // Fit name to exactly 1/3 viewport width
   const fitFullname = () => {
-    if (!elName || !imgCard) return;
-    const imgW = imgCard.offsetWidth || document.documentElement.clientWidth * 0.26;
-    let lo = 10, hi = imgW * 3;
+    if (!elName) return;
+    const targetW = document.documentElement.clientWidth / 3;
+    let lo = 10, hi = targetW * 2;
     elName.style.visibility = 'hidden';
     for (let i = 0; i < 40; i++) {
       const mid = (lo + hi) / 2;
       elName.style.fontSize = mid + 'px';
-      if (elName.scrollWidth <= imgW) lo = mid;
+      if (elName.scrollWidth <= targetW) lo = mid;
       else hi = mid;
     }
     elName.style.fontSize = lo + 'px';
     elName.style.visibility = '';
   };
 
-  document.fonts.ready.then(() => { fitFullname(); });
+  fitFullname();
   window.addEventListener('resize', fitFullname);
-
-  // Initial states
-  gsap.set('#heroWordFullname', { y: '110%' });
-  gsap.set('#heroImgCard', { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
-  gsap.set('.hero-subtitle', { y: '110%' });
 
   const heroTL = gsap.timeline({ delay: 0.0 });
   heroTL
-    .to('#heroWordFullname', { y: '0%', duration: 1.1, ease: 'power4.out' }, 0.05)
-    .to('.hero-subtitle',    { y: '0%', duration: 0.85, ease: 'power3.out' }, 1.1);
+    .to('#heroWordFullname', { y: '0%', duration: 0.75, ease: 'power4.out' }, 0.05)
+    .to('.hero-subtitle',    { y: '0%', duration: 0.6,  ease: 'power3.out' }, 0.65);
 };
 
 /* ============================
@@ -203,7 +236,7 @@ const heroInit = () => {
   const chars = [...'JACOB WEISSENBACK'];
   wrap.textContent = '';
 
-  chars.forEach((ch, i) => {
+  chars.forEach((ch) => {
     if (ch === ' ') {
       const sp = document.createElement('span');
       sp.className = 'nl nl--space';
@@ -211,13 +244,9 @@ const heroInit = () => {
       wrap.appendChild(sp);
       return;
     }
-
     const span = document.createElement('span');
     span.className = 'nl';
     span.textContent = ch;
-
-
-
     wrap.appendChild(span);
   });
 })();
@@ -277,7 +306,7 @@ window.__heroInit = heroInit;
     cardRect = imgCard.getBoundingClientRect();
   }
 
-  gsap.set(panel, { clipPath: 'inset(100% 0 0 0 round 20px 20px 0 0)' });
+  gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
 
   function update(p) {
     if (pinLeft) return;
@@ -287,7 +316,7 @@ window.__heroInit = heroInit;
     // Phase A [0 → 0.40] — per-letter float dissolve
     // Letters float upward + blur out, staggered from center outward
     // ────────────────────────────────────────────────────
-    const pA = ph(p, 0, 0.40, eIO);
+    const pA = ph(p, 0.04, 0.40, eIO);
 
     const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
     const total   = letters.length;
@@ -302,10 +331,9 @@ window.__heroInit = heroInit;
       const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOut
 
       gsap.set(el, {
-        y:              -e * 90,
+        y:              -e * 60,
         opacity:        1 - e,
-        filter:         `blur(${e * 20}px)`,
-        letterSpacing:  `${e * 0.4}em`,
+        filter:         `blur(${e * 8}px)`,
         display:        'inline-block',
         transformOrigin:'50% 100%',
       });
@@ -383,18 +411,18 @@ window.__heroInit = heroInit;
 
     // ── Phase C [0.80 → 1.00]: Bottom Sheet slides up ──
     if (p < 0.80) {
-      gsap.set(panel, { clipPath: 'inset(100% 0 0 0 round 20px 20px 0 0)' });
+      gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
     } else {
       const pC       = ph(p, 0.80, 1.00, eIO);
       const insetTop = c01(1 - pC) * 100;
-      gsap.set(panel, { clipPath: `inset(${insetTop}% 0 0 0 round 20px 20px 0 0)` });
+      gsap.set(panel, { clipPath: `inset(${insetTop}% 0 0 0)` });
     }
   }
 
   function resetAll() {
     gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
     const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
-    letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none', letterSpacing: '' }));
+    letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none' }));
     gsap.set([roleEl, designerEl], { opacity: 1 });
     gsap.set(imgCard, { opacity: 0, xPercent: -50, scale: 1 });
     const subtitleEl = document.querySelector('.hero-subtitle');
@@ -417,7 +445,7 @@ window.__heroInit = heroInit;
     end:           '+=230%',
     pin:           true,
     anticipatePin: 1,
-    scrub:         1.0,
+    scrub:         0.4,
     onUpdate(self) { update(self.progress); },
     onLeave() {
       pinLeft = true;
@@ -433,7 +461,7 @@ window.__heroInit = heroInit;
       pinLeft = false;
       measure();
       resetAll();
-      gsap.set(panel, { clipPath: 'inset(100% 0 0 0 round 20px 20px 0 0)' });
+      gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
     },
   });
 
@@ -464,11 +492,9 @@ setInterval(updateNavTime, 1000);
 ============================ */
 (function initNavActiveState() {
   const links = [...document.querySelectorAll('.nav-link-1820[data-section]')];
-  const sections = {
-    hero:    document.getElementById('hero'),
-    work:    document.getElementById('work'),
-    contact: document.getElementById('globeSection') || document.getElementById('contact'),
-  };
+
+  const workEl    = document.getElementById('work');
+  const contactEl = document.getElementById('globeSection') || document.getElementById('contact');
 
   function setActive(sectionId) {
     links.forEach(link => {
@@ -477,35 +503,32 @@ setInterval(updateNavTime, 1000);
     });
   }
 
-  // Default: hero active
   setActive('hero');
 
-  // Use ScrollTrigger for accuracy
-  Object.entries(sections).forEach(([id, el]) => {
-    if (!el) return;
-    ScrollTrigger.create({
-      trigger:   el,
-      start:     'top 55%',
-      end:       'bottom 45%',
-      onEnter:   () => setActive(id),
-      onEnterBack: () => setActive(id),
-    });
-  });
+  // Use raw scroll position so pinned hero doesn't confuse things.
+  // We measure the real top of each section on every scroll tick.
+  function onScroll({ scroll }) {
+    const vh = window.innerHeight;
 
-  // Hero: re-activate when scrolled back to very top
-  ScrollTrigger.create({
-    trigger: document.getElementById('hero'),
-    start:   'top top',
-    end:     'bottom top',
-    onLeave: () => {
-      // Don't deactivate hero — section tracker handles it
-    },
-    onEnterBack: () => setActive('hero'),
-  });
+    const workTop    = workEl    ? workEl.getBoundingClientRect().top    : Infinity;
+    const contactTop = contactEl ? contactEl.getBoundingClientRect().top : Infinity;
+
+    if (contactTop <= vh * 0.55) {
+      setActive('contact');
+    } else if (workTop <= vh * 0.55) {
+      setActive('work');
+    } else {
+      setActive('hero');
+    }
+  }
+
+  lenis.on('scroll', onScroll);
+
+  // Nav state is fully handled by lenis scroll listener above
 })();
 
 /* ============================
-   SERVICES HOVER
+   WHAT I DO HOVER
    - Image panel: fixed left edge, top = row center (viewport Y)
    - Skills: absolute to item, left computed from text right edge
    - Scramble on name
@@ -1303,8 +1326,8 @@ ScrollTrigger.create({
 
   function applyProgress(p) {
     gsap.set(canvasWrap, {
-      x:     ph(p, 0.30, 1.00) * getTargetX(),
-      scale: 1 + ph(p, 0.30, 1.00) * 0.18,
+      x:     ph(p, 0.00, 1.00) * getTargetX(),
+      scale: 1 + ph(p, 0.00, 1.00) * 0.18,
     });
     gsap.set(textLeft, { opacity: ph(p, 0.60, 0.90) });
     gsap.set(line1,    { y: (1 - ph(p, 0.65, 0.92)) * 110 + '%' });
@@ -1321,11 +1344,11 @@ ScrollTrigger.create({
   ScrollTrigger.create({
     trigger:       section,
     start:         'top top',
-    end:           '+=100%',
+    end:           '+=180%',
     pin:           true,
     pinSpacing:    true,
     anticipatePin: 1,
-    scrub:         true,
+    scrub:         2.5,
     onUpdate(self)  { applyProgress(self.progress); },
     onLeaveBack() {
       gsap.set(canvasWrap, { x: 0, scale: 1 });
@@ -1408,4 +1431,28 @@ ScrollTrigger.create({
       });
     });
   });
+})();
+/* ============================
+   NAV LOGO — hide only in what i do section
+============================ */
+(function initLogoVisibility() {
+  const logoName = document.getElementById('navLogoName');
+  const logoSub  = document.getElementById('navLogoSub');
+  const section  = document.getElementById('work');
+  if (!logoName || !logoSub || !section) return;
+
+  const observer = new IntersectionObserver(([entry]) => {
+    const inside = entry.isIntersecting;
+    gsap.to([logoName, logoSub], {
+      opacity:  inside ? 0 : 1,
+      y:        inside ? -6 : 0,
+      duration: 0.35,
+      ease:     'power2.out',
+    });
+  }, {
+    // Element gilt als "in Section" wenn min. 10% sichtbar sind
+    threshold: 0.10,
+  });
+
+  observer.observe(section);
 })();

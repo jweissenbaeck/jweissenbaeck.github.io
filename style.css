@@ -43,7 +43,7 @@
 ============================ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 ::selection { background: var(--ink); color: var(--bg); }
-html { scroll-behavior: auto; }
+html { scroll-behavior: auto; scrollbar-gutter: stable; }
 
 body {
   font-family: var(--font-ui);
@@ -127,39 +127,26 @@ body:has(.project-row:hover) .cursor-ring {
   text-decoration: none; cursor: none;
   line-height: 1.85;
   position: relative;
-  transition: letter-spacing 0.25s ease;
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
   display: flex; align-items: center; gap: 0;
+  text-underline-offset: 3px;
 }
 
-/* Active section = full white */
+/* Active = full opacity, no hover effect */
 .nav-link-1820.is-active {
-  color: #fff;
-}
-
-/* Hover: slight glow + spacing nudge, only non-disabled */
-.nav-link-1820:not(.nav-link--disabled):hover {
-  color: #fff;
-  letter-spacing: 0.22em;
-}
-
-/* Hover indicator dot */
-.nav-link-1820:not(.nav-link--disabled)::before {
-  content: '';
-  display: inline-block;
-  width: 4px; height: 4px; border-radius: 50%;
-  background: #fff;
-  margin-right: 0px;
-  opacity: 0;
-  transform: scale(0);
-  transition: opacity 0.22s ease, transform 0.22s var(--ease-spring), margin-right 0.22s ease;
-  flex-shrink: 0;
-}
-.nav-link-1820:not(.nav-link--disabled):hover::before,
-.nav-link-1820.is-active::before {
   opacity: 1;
-  transform: scale(1);
-  margin-right: 7px;
+  pointer-events: none;
 }
+
+/* Inactive hover = underline + slight opacity bump */
+.nav-link-1820:not(.is-active):hover {
+  opacity: 0.55;
+  text-decoration: underline;
+}
+
+/* Remove old dot indicator */
+.nav-link-1820::before { display: none; }
 
 /* Disabled state */
 .nav-link--disabled {
@@ -313,14 +300,19 @@ body:has(.project-row:hover) .cursor-ring {
   pointer-events: none;
 }
 
-.hero-title-clip { overflow: visible; }
+.hero-title-clip {
+  overflow: hidden;
+  padding-top: 1.5em;    /* gibt dem Text Raum nach oben beim Scroll-Effekt */
+  margin-top: -1.5em;    /* kompensiert den Padding damit Layout gleich bleibt */
+  padding-bottom: 0.15em;
+}
 .hero-subtitle-row { overflow: hidden; }
 
 .hero-subtitle {
   display: block;
   font-family: var(--font-mono); font-size: clamp(0.65rem, 1vw, 0.95rem);
-  font-weight: 400; letter-spacing: 0.1em; color: rgba(240,237,232,0.6);
-  text-transform: none; will-change: transform; transform: translateY(110%);
+  font-weight: 400; letter-spacing: 0.1em; color: var(--ink-muted);
+  text-transform: none; will-change: transform; transform: translateY(-110%);
 }
 
 /* ── hero-word: original Anton style ── */
@@ -337,7 +329,7 @@ body:has(.project-row:hover) .cursor-ring {
   display: block; white-space: nowrap;
   mix-blend-mode: difference;
   color: #ffffff;
-  font-size: clamp(4rem, 13vw, 16rem);
+  font-size: clamp(2rem, 8.5vw, 10rem); /* JS überschreibt auf exakt 1/3vw Breite */
 }
 
 /* Legacy hidden */
@@ -443,10 +435,10 @@ body:has(.project-row:hover) .cursor-ring {
 .bottom-sheet {
   position: relative;
   background: var(--bg);
-  border-radius: 20px 20px 0 0;
+  border-radius: 0;
   overflow: visible; z-index: 10;
   box-shadow: 0 -8px 40px rgba(240,237,232,0.08), 0 -2px 8px rgba(240,237,232,0.04);
-  clip-path: inset(100% 0 0 0 round 20px 20px 0 0);
+  clip-path: inset(100% 0 0 0);
   will-change: clip-path;
 }
 
@@ -537,7 +529,7 @@ body:has(.project-row:hover) .cursor-ring {
 .section-label--light { color: var(--ink-ghost); }
 
 /* ============================
-   WORK / SERVICES SECTION
+   WORK / WHAT I DO SECTION
 ============================ */
 .work-section,
 .services-section {
@@ -859,7 +851,7 @@ body:has(.project-row:hover) .cursor-ring {
 .nl--space { display: inline-block; width: 0.28em; }
 
 /* ============================
-   SERVICES — centered text, left image, right skills
+   WHAT I DO — centered text, left image, right skills
 ============================ */
 .services-section {
   padding: 120px 0;
@@ -987,13 +979,13 @@ body:has(.project-row:hover) .cursor-ring {
 
 .svc-skill {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-muted);
 }
 /* ============================
-   SERVICES — Flip Button
+   WHAT I DO — Flip Button
 ============================ */
 .svc-flip-btn {
   position: relative;
@@ -1080,7 +1072,6 @@ body:has(.project-row:hover) .cursor-ring {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 120px 0;
   position: relative;
   z-index: 10;
   overflow: hidden;
@@ -1149,12 +1140,12 @@ body:has(.project-row:hover) .cursor-ring {
 .globe-section-label {
   position: absolute;
   pointer-events: none;
-  padding: 3px 8px;
+  padding: 6px 12px;
   background: var(--bg-dark);
   border: 1px solid rgba(240,237,232,0.14);
   border-radius: 4px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: rgba(240,237,232,0.65);
@@ -1228,7 +1219,6 @@ body:has(.project-row:hover) .cursor-ring {
   flex-direction: column;
   gap: 0.04em;
   opacity: 0;
-  pointer-events: none;
   will-change: opacity;
   max-width: 44vw;
 }
@@ -1240,14 +1230,14 @@ body:has(.project-row:hover) .cursor-ring {
 
 .globe-display-line {
   display: block;
-  font-family: var(--font-display);
-  font-size: clamp(4rem, 8vw, 10rem);
-  font-weight: 300;
-  font-style: italic;
-  letter-spacing: -0.02em;
+  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
+  font-size: clamp(3rem, 6vw, 8rem);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: -0.01em;
   line-height: 0.88;
   color: var(--ink);
-  text-transform: lowercase;
+  text-transform: uppercase;
   white-space: nowrap;
   will-change: transform;
   transform: translateY(110%);
@@ -1264,50 +1254,35 @@ body:has(.project-row:hover) .cursor-ring {
 .globe-contact-block {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 2.2em;
+  gap: 0;
+  margin-top: 2.4em;
 }
 
 .globe-contact-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 14px;
-  border-radius: 8px;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid rgba(240,237,232,0.07);
   text-decoration: none;
-  color: var(--ink-muted);
-  border: 1px solid transparent;
-  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, gap 0.3s var(--ease-out-expo);
+  color: rgba(240,237,232,0.45);
+  background: transparent;
+  border-radius: 0;
+  transition: color 0.22s ease;
   position: relative;
   cursor: none;
-  will-change: transform, opacity;
+  will-change: opacity;
 }
 
-.globe-contact-item::before {
-  content: attr(data-label);
-  position: absolute;
-  right: 42px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-family: var(--font-mono);
-  font-size: 7px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
+.globe-contact-item:first-child {
+  border-top: 1px solid rgba(240,237,232,0.07);
 }
+
+.globe-contact-item::before { display: none; }
+.globe-contact-item::after  { display: none; }
 
 .globe-contact-item:hover {
   color: var(--ink);
-  border-color: var(--border-mid);
-  background: rgba(240,237,232,0.04);
-  gap: 16px;
-}
-
-.globe-contact-item:hover::before {
-  opacity: 1;
 }
 
 .globe-contact-icon {
@@ -1316,42 +1291,42 @@ body:has(.project-row:hover) .cursor-ring {
   justify-content: center;
   flex-shrink: 0;
   color: currentColor;
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
+  transition: color 0.22s ease;
 }
 
 .globe-contact-item:hover .globe-contact-icon {
-  opacity: 1;
+  color: var(--ink);
 }
 
 .globe-contact-text {
   font-family: var(--font-mono);
-  font-size: clamp(10px, 0.95vw, 13px);
-  letter-spacing: 0.06em;
+  font-size: clamp(11px, 1vw, 13px);
+  letter-spacing: 0.08em;
   white-space: nowrap;
+  color: currentColor;
   flex: 1;
 }
 
 .globe-contact-arrow {
-  font-size: 12px;
+  font-size: 11px;
   opacity: 0;
-  transform: translate(-4px, 4px);
-  transition: opacity 0.22s ease, transform 0.28s var(--ease-out-expo);
+  transform: translate(-3px, 3px);
+  transition: opacity 0.2s ease, transform 0.25s var(--ease-out-expo);
   flex-shrink: 0;
 }
 
 .globe-contact-item:hover .globe-contact-arrow {
-  opacity: 0.7;
+  opacity: 0.5;
   transform: translate(0, 0);
 }
 
-/* Featured item (read.cv) — subtle warm tint */
+/* Featured item (read.cv) */
 .globe-contact-item--featured {
-  color: var(--ink-mid);
+  color: rgba(240,237,232,0.55);
 }
 
 .globe-contact-item--featured .globe-contact-icon {
-  opacity: 0.85;
+  opacity: 1;
 }
 
 /* ============================
