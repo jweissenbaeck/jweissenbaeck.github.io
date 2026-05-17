@@ -1,4 +1,81 @@
 /* ============================
+   PAGE LOADER
+============================ */
+(function initLoader() {
+  const loader  = document.getElementById('pageLoader');
+  const bar     = document.getElementById('loaderBar');
+  const pct     = document.getElementById('loaderPercent');
+  if (!loader) return;
+
+  // Block scroll while loading
+  document.body.style.overflow = 'hidden';
+
+  let progress = 0;
+  let done     = false;
+
+  function setProgress(p) {
+    progress = Math.min(100, Math.max(progress, p));
+    if (bar) bar.style.width = progress + '%';
+    if (pct) pct.textContent = Math.floor(progress);
+  }
+
+  function hideLoader() {
+    if (done) return;
+    done = true;
+    setProgress(100);
+
+    // Kurze Pause bei 100%, dann Loader ausblenden
+    setTimeout(() => {
+      // Loader nach oben wegsliden
+      loader.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1)';
+      loader.style.opacity    = '0';
+      loader.style.transform  = 'translateY(-12px)';
+
+      setTimeout(() => {
+        loader.classList.add('is-hidden');
+        loader.style.display = 'none';
+
+        // Scroll erst jetzt freigeben
+        document.body.style.overflow = '';
+
+        // Hero-Reveal starten nach Loader-Exit
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (typeof window.__heroInit === 'function') {
+              window.__heroInit();
+            }
+          });
+        });
+      }, 700);
+    }, 250);
+  }
+
+  // Fake-trickle: quickly to 80%, then wait for real load
+  let trickle = 0;
+  const trickleInterval = setInterval(() => {
+    trickle += Math.random() * 12;
+    if (trickle >= 80) { trickle = 80; clearInterval(trickleInterval); }
+    setProgress(trickle);
+  }, 120);
+
+  // Real load event
+  if (document.readyState === 'complete') {
+    clearInterval(trickleInterval);
+    hideLoader();
+  } else {
+    window.addEventListener('load', () => {
+      clearInterval(trickleInterval);
+      setProgress(90);
+      // Wait for fonts too
+      document.fonts.ready.then(() => {
+        setProgress(97);
+        setTimeout(hideLoader, 180);
+      });
+    });
+  }
+})();
+
+/* ============================
    INIT
 ============================ */
 gsap.registerPlugin(ScrollTrigger);
@@ -110,11 +187,10 @@ const heroInit = () => {
   gsap.set('#heroImgCard', { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
   gsap.set('.hero-subtitle', { y: '110%' });
 
-  const heroTL = gsap.timeline({ delay: 0.1 });
+  const heroTL = gsap.timeline({ delay: 0.0 });
   heroTL
-    // heroImgCard intentionally NOT animated here — it fades in with the parallax photos on scroll
-    .to('#heroWordFullname', { y: '0%', duration: 1.2, ease: 'power4.out' }, 0.2)
-    .to('.hero-subtitle',    { y: '0%', duration: 0.8, ease: 'power3.out' }, 0.4);
+    .to('#heroWordFullname', { y: '0%', duration: 1.1, ease: 'power4.out' }, 0.05)
+    .to('.hero-subtitle',    { y: '0%', duration: 0.85, ease: 'power3.out' }, 1.1);
 };
 
 /* ============================
@@ -146,8 +222,8 @@ const heroInit = () => {
   });
 })();
 
-// Warte auf Fonts, dann init — kein arbiträres setTimeout
-document.fonts.ready.then(() => requestAnimationFrame(heroInit));
+// heroInit wird vom Loader aufgerufen, sobald der Ladescreen fertig ist
+window.__heroInit = heroInit;
 
 
 

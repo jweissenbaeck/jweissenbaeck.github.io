@@ -290,8 +290,8 @@ body:has(.project-row:hover) .cursor-ring {
 
 .hero-img-wrap img {
   width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: saturate(0.85) brightness(0.97); transform: scale(1.04);
-  transition: transform 0.8s var(--ease-out-expo), filter 0.5s ease;
+  filter: saturate(0.85) brightness(0.97); transform: scale(1);
+  transition: filter 0.5s ease;
 }
 .hero-img-card:hover .hero-img-wrap img { transform: scale(1); filter: saturate(1) brightness(1); }
 
@@ -337,7 +337,7 @@ body:has(.project-row:hover) .cursor-ring {
   display: block; white-space: nowrap;
   mix-blend-mode: difference;
   color: #ffffff;
-  font-size: clamp(3.5rem, 11vw, 14rem);
+  font-size: clamp(4rem, 13vw, 16rem);
 }
 
 /* Legacy hidden */
@@ -494,8 +494,8 @@ body:has(.project-row:hover) .cursor-ring {
 
 .hero-img-wrap img {
   width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: saturate(0.85) brightness(0.97); transform: scale(1.04);
-  transition: transform 0.8s var(--ease-out-expo), filter 0.5s ease;
+  filter: saturate(0.85) brightness(0.97); transform: scale(1);
+  transition: filter 0.5s ease;
 }
 .hero-img-card:hover .hero-img-wrap img { transform: scale(1); filter: saturate(1) brightness(1); }
 
@@ -1365,3 +1365,68 @@ body:has(.project-row:hover) .cursor-ring {
   pointer-events: none;
   z-index: 0;
 }
+/* ============================
+   PAGE LOADER
+============================ */
+#pageLoader {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-dark);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+
+#pageLoader.is-hidden {
+  pointer-events: none;
+}
+
+.loader-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: clamp(240px, 40vw, 480px);
+}
+
+.loader-name {
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1vw, 12px);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.loader-bar-wrap {
+  width: 100%;
+  height: 1px;
+  background: var(--ink-ghost);
+  position: relative;
+  overflow: hidden;
+}
+
+.loader-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0%;
+  background: var(--ink);
+  transition: width 0.1s linear;
+}
+
+.loader-percent {
+  font-family: var(--font-mono);
+  font-size: clamp(52px, 10vw, 110px);
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  color: var(--ink);
+  line-height: 1;
+  min-width: 3ch;
+  text-align: right;
+  align-self: flex-end;
+}
+
+/* Elemente sind versteckt bis heroInit sie animiert */
+#heroWordFullname { transform: translateY(110%); }
+.hero-subtitle    { transform: translateY(110%); }
