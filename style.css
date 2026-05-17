@@ -97,60 +97,146 @@ body:has(.project-row:hover) .cursor-ring {
 }
 
 /* ============================
-   NAV
+   NAV — 1820 style
 ============================ */
 .nav {
   position: fixed; top: 0; left: 0; right: 0;
-  z-index: 1000; display: flex; align-items: center;
-  justify-content: space-between; padding: 18px 32px;
+  z-index: 1000; display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  padding: 20px 28px 0;
   background: transparent;
-  mix-blend-mode: difference;
+  pointer-events: none;
 }
 
-/* Alle Nav-Elemente auf Weiß — difference invertiert sie automatisch */
-.nav-status-dot { background: #fff !important; }
-.nav-location, .nav-meta, .nav-links a { color: #fff !important; }
-.nav-links a::after { background: #fff !important; }
+.nav > * { pointer-events: all; }
 
-.nav-left { display: flex; align-items: center; gap: 20px; }
+/* Left: stacked vertical links */
+.nav-left {
+  display: flex; flex-direction: column; gap: 2px;
+  align-items: flex-start;
+}
 
-.nav-status-dot {
-  width: 7px; height: 7px; border-radius: 50%;
+.nav-link-1820 {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.38);
+  text-decoration: none; cursor: none;
+  line-height: 1.85;
+  position: relative;
+  transition: color 0.25s ease, letter-spacing 0.25s ease;
+  display: flex; align-items: center; gap: 0;
+}
+
+/* Active section = full white */
+.nav-link-1820.is-active {
+  color: #fff;
+}
+
+/* Hover: slight glow + spacing nudge, only non-disabled */
+.nav-link-1820:not(.nav-link--disabled):hover {
+  color: #fff;
+  letter-spacing: 0.22em;
+}
+
+/* Hover indicator dot */
+.nav-link-1820:not(.nav-link--disabled)::before {
+  content: '';
+  display: inline-block;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: #fff;
+  margin-right: 0px;
+  opacity: 0;
+  transform: scale(0);
+  transition: opacity 0.22s ease, transform 0.22s var(--ease-spring), margin-right 0.22s ease;
   flex-shrink: 0;
 }
-
-.nav-location {
-  font-family: var(--font-mono); font-size: 13px; font-weight: 400;
-  letter-spacing: 0.12em; color: var(--ink);
-  text-transform: uppercase; white-space: nowrap;
+.nav-link-1820:not(.nav-link--disabled):hover::before,
+.nav-link-1820.is-active::before {
+  opacity: 1;
+  transform: scale(1);
+  margin-right: 7px;
 }
 
-.nav-meta {
-  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
-  letter-spacing: 0.08em; color: var(--ink);
-  white-space: nowrap; opacity: 0.85;
+/* Disabled state */
+.nav-link--disabled {
+  opacity: 0.22;
+  pointer-events: none;
 }
 
-.nav-links { display: flex; align-items: center; gap: 32px; }
+/* Center: logo box */
+.nav-center-logo {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  justify-self: center;
+}
 
-.nav-links a {
-  font-family: var(--font-mono); font-size: 13px; font-weight: 400;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink);
-  text-decoration: none; cursor: pointer; opacity: 1;
-  transition: opacity 0.2s ease; position: relative;
+.nav-logo-box {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.22em; color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.85);
+  padding: 4px 10px; line-height: 1.2;
+  transition: opacity 0.5s ease;
 }
-.nav-links a:hover { opacity: 1; }
-.nav-links a:hover ~ * .cursor-dot,
-.nav:has(a:hover) ~ .cursor-dot { opacity: 0 !important; }
-.nav-links a::after {
-  content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
-  height: 1px; background: var(--ink); transform: scaleX(0);
-  transform-origin: left; transition: transform 0.25s ease;
+
+.nav-logo-sub {
+  font-family: var(--font-mono); font-size: 7px; font-weight: 400;
+  letter-spacing: 0.28em; color: rgba(255,255,255,0.75);
+  text-transform: uppercase;
+  transition: opacity 0.5s ease;
 }
-.nav-links a:hover::after { transform: scaleX(1); }
+
+/* Right: action buttons */
+.nav-right {
+  display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+}
+
+.nav-btn-talk {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #111;
+  background: #fff; border: none; padding: 7px 14px;
+  cursor: none; text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+  display: inline-block;
+}
+.nav-btn-talk:hover { background: rgba(255,255,255,0.85); }
+
+.nav-btn-menu {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
+  background: transparent; border: 1.5px solid rgba(255,255,255,0.6);
+  padding: 6px 14px; cursor: none; text-decoration: none;
+  display: inline-block;
+  transition: border-color 0.2s ease;
+}
+.nav-btn-menu:hover { border-color: #fff; }
+
+/* Legacy nav-links refs */
+.nav-links a { display: none; }
+.nav-status-dot, .nav-location, .nav-meta { display: none; }
 
 /* ============================
-   HERO
+   HERO LOGO SCROLL ELEMENT
+   Mirrors the nav logo — fades out with title on scroll
+============================ */
+.hero-logo-scroll {
+  position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+  z-index: 10; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  pointer-events: none; will-change: opacity, transform;
+}
+.hero-logo-name {
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.22em; color: #fff;
+  border: 1.5px solid rgba(255,255,255,0.85);
+  padding: 4px 10px; line-height: 1.2; display: inline-block;
+}
+.hero-logo-sub {
+  font-family: var(--font-mono); font-size: 7px; font-weight: 400;
+  letter-spacing: 0.28em; color: rgba(255,255,255,0.75);
+  text-transform: uppercase;
+}
+
+/* ============================
+   HERO — original structure + 1820 title overlay
 ============================ */
 .hero {
   height: 100vh; min-height: 640px;
@@ -161,39 +247,74 @@ body:has(.project-row:hover) .cursor-ring {
   position: relative; overflow: visible; gap: 0;
 }
 
-.hero::after {
-  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-  height: 120px;
-  background: linear-gradient(to bottom, transparent, var(--bg));
-  z-index: 2; pointer-events: none;
-}
-
-.hero-name-row {
-  width: 100%; overflow: visible; line-height: 0.88;
-  display: block; padding: 0 1.5vw; flex-shrink: 0;
-  box-sizing: border-box; margin-top: 3vh; position: relative;
-}
-
+/* ── Middle row: contains the original image card ── */
 .hero-middle-row {
-  position: relative; display: flex; align-items: center;
-  width: 100%; flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  flex: 1;
 }
 
-.hero-middle-row .hero-img-card {
-  position: absolute !important;
+/* ── Original image card — restored exactly ── */
+.hero-img-card {
+  position: absolute;
   left: 50%;
-  /* translateX(-50%) wird von GSAP übernommen via xPercent: -50 */
   top: auto;
+  flex-shrink: 0;
+  display: flex; flex-direction: column;
+  width: clamp(240px, 26vw, 440px);
+  opacity: 0;
+  will-change: transform; z-index: 4;
+  transform-origin: 50% 50%;
+  overflow: visible;
 }
 
-.hero-middle-row .hero-clip--side:first-child {
-  width: 50%; display: flex; justify-content: center; padding-right: 17vw;
-}
-.hero-middle-row .hero-clip--side:last-child {
-  width: 50%; margin-left: auto; display: flex;
-  justify-content: center; padding-left: 17vw;
+.hero-img-wrap {
+  width: 100%; aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 0; box-shadow: var(--shadow-lg);
 }
 
+.hero-img-card.is-animating .hero-img-wrap { box-shadow: none; }
+
+.hero-img-wrap img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: saturate(0.85) brightness(0.97); transform: scale(1.04);
+  transition: transform 0.8s var(--ease-out-expo), filter 0.5s ease;
+}
+.hero-img-card:hover .hero-img-wrap img { transform: scale(1); filter: saturate(1) brightness(1); }
+
+/* ── Name row placeholder (needed by layout) ── */
+.hero-name-row {
+  position: absolute;
+  inset: 0; z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; pointer-events: none;
+}
+
+/* ── Title + subtitle: absolute overlay centered over entire hero ── */
+.hero-center-block {
+  position: absolute;
+  inset: 0; z-index: 7;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; text-align: center;
+  pointer-events: none;
+}
+
+.hero-title-clip { overflow: hidden; }
+.hero-subtitle-row { overflow: hidden; }
+
+.hero-subtitle {
+  display: block;
+  font-family: var(--font-mono); font-size: clamp(0.65rem, 1vw, 0.95rem);
+  font-weight: 400; letter-spacing: 0.1em; color: rgba(240,237,232,0.6);
+  text-transform: none; will-change: transform; transform: translateY(110%);
+}
+
+/* ── hero-word: original Anton style ── */
 .hero-word {
   font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
   font-weight: 400; font-style: normal;
@@ -203,25 +324,23 @@ body:has(.project-row:hover) .cursor-ring {
   will-change: transform; transform: translateY(110%);
 }
 
-.hero-word--fullname { display: block; white-space: nowrap; font-size: 20vw; line-height: 0.88; }
-
-.hero-word--role,
-.hero-word--designer {
-  display: block; font-size: clamp(1.6rem, 5vw, 7.5rem);
-  white-space: nowrap; font-weight: 300;
+.hero-word--fullname {
+  display: block; white-space: nowrap;
+  mix-blend-mode: difference;
+  color: #ffffff;
+  font-size: clamp(3rem, 8.5vw, 10rem);
 }
 
-.hero-clip { overflow: hidden; display: block; line-height: 0.88; }
-.hero-clip:has(#heroWordFullname) { overflow: visible; }
-.hero-clip--side { overflow: visible !important; }
+/* Legacy hidden */
+.hero::after { display: none; }
+.hero-info-bar, .hero-scroll-new, .hero-particles,
+.hero-orb, .hero-noise, .hero-grid, .hero-pagination { display: none; }
 
-.hero-img-label { will-change: transform; }
-#heroImgYear { will-change: transform; }
-
-.hero-orb, .hero-noise, .hero-grid, .hero-center, .hero-eyebrow,
-.hero-name-wrap, .hero-name-big, .hero-name-outline, .hero-name-mask,
-.hero-surname-wrap, .hero-surname, .hero-badge { display: none; }
-.hero-tilt-layer { will-change: transform; transition: transform 0.06s linear; }
+/* ============================
+   HERO IMAGE CARD — compat labels
+============================ */
+.hero-img-label, .hero-img-year { display: none; }
+.hero-img-overlay { display: none; }
 
 /* ============================
    HERO — ZOOM PARALLAX PHOTOS
@@ -263,7 +382,7 @@ body:has(.project-row:hover) .cursor-ring {
 
 /* ── Layout positions — scattered around the center card ── */
 
-/* Large center image — same footprint as showreel card */
+/* Large center image — same footprint as original zp center */
 .hero-zp-center {
   width: 32vw; height: 22vh;
   top: 50%; left: 50%;
@@ -331,9 +450,12 @@ body:has(.project-row:hover) .cursor-ring {
    HERO IMAGE CARD
 ============================ */
 .hero-img-card {
-  position: relative; flex-shrink: 0;
+  position: absolute;
+  left: 50%;
+  top: auto;
+  flex-shrink: 0;
   display: flex; flex-direction: column;
-  width: clamp(300px, 32vw, 540px);
+  width: clamp(240px, 26vw, 440px);
   opacity: 0;
   will-change: transform; z-index: 4;
   transform-origin: 50% 50%;
@@ -356,10 +478,8 @@ body:has(.project-row:hover) .cursor-ring {
   width: 100%; aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 0; box-shadow: var(--shadow-lg);
-  /* clip the image inside but allow the card to scale outward */
 }
 
-/* During scroll animation, the card parent scales — the wrap clips internally */
 .hero-img-card.is-animating .hero-img-wrap {
   box-shadow: none;
 }
@@ -372,9 +492,11 @@ body:has(.project-row:hover) .cursor-ring {
 .hero-img-card:hover .hero-img-wrap img { transform: scale(1); filter: saturate(1) brightness(1); }
 
 .hero-scroll-new {
-  position: absolute; bottom: 28px; left: 50%;
-  transform: translateX(-50%); z-index: 10; opacity: 0;
+  position: absolute; bottom: 28px; right: 3vw;
+  z-index: 10; opacity: 0;
 }
+
+.hero-bottom-rule { display: none; }
 
 .hsn-label {
   font-family: var(--font-mono); font-size: 13px; font-weight: 700;
@@ -1127,4 +1249,111 @@ body:has(.project-row:hover) .cursor-ring {
   flex-shrink: 0;
   will-change: transform;
   transform-origin: center center;
+}
+/* ============================
+   GLOBE — CONTACT BLOCK
+============================ */
+.globe-contact-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2.2em;
+}
+
+.globe-contact-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--ink-muted);
+  border: 1px solid transparent;
+  transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease, gap 0.3s var(--ease-out-expo);
+  position: relative;
+  cursor: none;
+  will-change: transform, opacity;
+}
+
+.globe-contact-item::before {
+  content: attr(data-label);
+  position: absolute;
+  right: 42px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 7px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-ghost);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.globe-contact-item:hover {
+  color: var(--ink);
+  border-color: var(--border-mid);
+  background: rgba(240,237,232,0.04);
+  gap: 16px;
+}
+
+.globe-contact-item:hover::before {
+  opacity: 1;
+}
+
+.globe-contact-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: currentColor;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.globe-contact-item:hover .globe-contact-icon {
+  opacity: 1;
+}
+
+.globe-contact-text {
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 0.95vw, 13px);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.globe-contact-arrow {
+  font-size: 12px;
+  opacity: 0;
+  transform: translate(-4px, 4px);
+  transition: opacity 0.22s ease, transform 0.28s var(--ease-out-expo);
+  flex-shrink: 0;
+}
+
+.globe-contact-item:hover .globe-contact-arrow {
+  opacity: 0.7;
+  transform: translate(0, 0);
+}
+
+/* Featured item (read.cv) — subtle warm tint */
+.globe-contact-item--featured {
+  color: var(--ink-mid);
+}
+
+.globe-contact-item--featured .globe-contact-icon {
+  opacity: 0.85;
+}
+
+/* ============================
+   HERO — PARTICLES
+============================ */
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
 }
