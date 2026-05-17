@@ -19,6 +19,7 @@
 
 
 
+
 <!-- ========================
      NAV — 1820 Productions style
 ======================== -->
@@ -26,7 +27,7 @@
   <div class="nav-left">
     <a href="#hero"    class="nav-link-1820" data-section="hero">START</a>
     <a href="#work"    class="nav-link-1820" data-section="work">SERVICES</a>
-    <a href="#"        class="nav-link-1820 nav-link--disabled" data-section="about">ABOUT</a>
+    <a href="#"        class="nav-link-1820" data-section="about">ABOUT</a>
     <a href="#contact" class="nav-link-1820" data-section="contact">CONTACT</a>
   </div>
   <div class="nav-center-logo">
@@ -68,11 +69,8 @@
     </div>
   </div>
 
-  <!-- Logo also disappears on scroll (same timing as name) -->
-  <div class="hero-logo-scroll" id="heroLogoScroll" aria-hidden="true">
-    <span class="hero-logo-name">JCKY</span>
-    <span class="hero-logo-sub">PORTFOLIO</span>
-  </div>
+  <!-- ASCII background particles -->
+  <canvas id="heroParticles" class="hero-particles"></canvas>
 
   <!-- Hidden compat elements -->
   <span id="heroWordDesigner" style="display:none;opacity:1;"></span>
@@ -80,36 +78,49 @@
 
   <!-- ── Zoom Parallax Photos ── -->
   <div class="hero-zp-stage" id="heroZpStage" aria-hidden="true">
-    <div class="hero-zp-item" data-scale="1.5" data-delay="0">
-      <div class="hero-zp-wrap hero-zp-center">
-        <img src="https://picsum.photos/640/480?random=78" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
-      </div>
-    </div>
-    <div class="hero-zp-item" data-scale="1.8" data-delay="0.05">
+
+    <!-- LINKS -->
+    <div class="hero-zp-item" data-scale="1.6" data-delay="0.00">
       <div class="hero-zp-wrap hero-zp-tl">
         <img src="https://picsum.photos/540/360?random=79" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
-    <div class="hero-zp-item" data-scale="1.6" data-delay="0.08">
+
+    <!-- RECHTS -->
+    <div class="hero-zp-item" data-scale="1.7" data-delay="0.04">
       <div class="hero-zp-wrap hero-zp-tr">
         <img src="https://picsum.photos/480/680?random=80" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
-    <div class="hero-zp-item" data-scale="1.9" data-delay="0.03">
+
+    <!-- OBEN-LINKS -->
+    <div class="hero-zp-item" data-scale="1.8" data-delay="0.08">
       <div class="hero-zp-wrap hero-zp-bl">
         <img src="https://picsum.photos/560/400?random=81" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
-    <div class="hero-zp-item" data-scale="1.7" data-delay="0.06">
-      <div class="hero-zp-wrap hero-zp-br">
-        <img src="https://picsum.photos/520/380?random=82" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
-      </div>
-    </div>
-    <div class="hero-zp-item" data-scale="2.0" data-delay="0.10">
+
+    <!-- OBEN-RECHTS -->
+    <div class="hero-zp-item" data-scale="1.9" data-delay="0.06">
       <div class="hero-zp-wrap hero-zp-sm">
         <img src="https://picsum.photos/380/280?random=83" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
+
+    <!-- UNTEN-LINKS -->
+    <div class="hero-zp-item" data-scale="1.7" data-delay="0.05">
+      <div class="hero-zp-wrap hero-zp-br">
+        <img src="https://picsum.photos/520/380?random=82" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+
+    <!-- UNTEN-RECHTS -->
+    <div class="hero-zp-item" data-scale="1.8" data-delay="0.09">
+      <div class="hero-zp-wrap hero-zp-br2">
+        <img src="https://picsum.photos/500/360?random=84" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+      </div>
+    </div>
+
   </div>
 
 </section>

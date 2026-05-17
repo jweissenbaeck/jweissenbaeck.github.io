@@ -86,7 +86,7 @@ const heroInit = () => {
   const elName  = document.getElementById('heroWordFullname');
   const imgCard = document.getElementById('heroImgCard');
 
-  // Fit name width to image card width (original behavior)
+  // Fit name width to image card width
   const fitFullname = () => {
     if (!elName || !imgCard) return;
     const imgW = imgCard.offsetWidth || document.documentElement.clientWidth * 0.26;
@@ -107,16 +107,14 @@ const heroInit = () => {
 
   // Initial states
   gsap.set('#heroWordFullname', { y: '110%' });
-  gsap.set('#heroImgCard', { opacity: 0, y: 20, xPercent: -50, transformOrigin: '50% 50%' });
+  gsap.set('#heroImgCard', { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
   gsap.set('.hero-subtitle', { y: '110%' });
-  gsap.set('#heroLogoScroll', { opacity: 0, y: -8 });
 
   const heroTL = gsap.timeline({ delay: 0.1 });
   heroTL
-    .to('#heroImgCard',      { opacity: 1, y: 0, xPercent: -50, duration: 0.9, ease: 'power3.out' }, 0)
+    // heroImgCard intentionally NOT animated here — it fades in with the parallax photos on scroll
     .to('#heroWordFullname', { y: '0%', duration: 1.2, ease: 'power4.out' }, 0.2)
-    .to('.hero-subtitle',    { y: '0%', duration: 0.8, ease: 'power3.out' }, 0.4)
-    .to('#heroLogoScroll',   { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0.5);
+    .to('.hero-subtitle',    { y: '0%', duration: 0.8, ease: 'power3.out' }, 0.4);
 };
 
 /* ============================
@@ -162,15 +160,14 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
 (function initHeroParticles() {
   const canvas = document.getElementById('heroParticles');
   if (!canvas) return;
-  const ctx    = canvas.getContext('2d');
+  const ctx  = canvas.getContext('2d');
+  const hero = document.getElementById('hero');
+  if (!hero) return;
 
-  const QUANTITY  = 120;
+  const QUANTITY  = 40;
   const STATICITY = 50;
   const EASE      = 50;
-  const BASE_SIZE = 0.4;
   const COLOR     = [240, 237, 232];
-  const VX        = 0;
-  const VY        = 0;
 
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
   let W = 0, H = 0;
@@ -178,8 +175,8 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
   let circles = [];
 
   function resize() {
-    W = canvas.offsetWidth;
-    H = canvas.offsetHeight;
+    W = hero.offsetWidth;
+    H = hero.offsetHeight;
     canvas.width  = W * dpr;
     canvas.height = H * dpr;
     canvas.style.width  = W + 'px';
@@ -189,7 +186,7 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
     for (let i = 0; i < QUANTITY; i++) circles.push(makeCircle());
   }
 
-  const ASCII_CHARS = '⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿⠁⠂⠄⠈⠐⠠⡀⢀⠃⠅⠘⠨⠊⠋⠌⠍⠎⠏⠑⠒⠓⠔⠕⠖⠗⠙⠚⠛⠜⠝⠞⠟⠡⠢⠣⠤⠥⠦⠧⠩⠪⠫⠬⠭⠮⠯⠱⠲⠳⠴⠵⠶⠷⠹⠺⠻⠼⠽⠾⠿⡁⡂⡃⡄⡅⡆⡇⡉⡊⡋⡌⡍⡎⡏⡑⡒⡓⡔⡕⡖⡗⡙⡚⡛⡜⡝⡞⡟⡡⡢⡣⡤⡥⡦⡧⡩⡪⡫⡬⡭⡮⡯⡱⡲⡳⡴⡵⡶⡷⡹⡺⡻⡼⡽⡾⡿⢁⢂⢃⢄⢅⢆⢇⢉⢊⢋⢌⢍⢎⢏⢑⢒⢓⢔⢕⢖⢗⢙⢚⢛⢜⢝⢞⢟⢡⢢⢣⢤⢥⢦⢧⢩⢪⢫⢬⢭⢮⢯⢱⢲⢳⢴⢵⢶⢷⢹⢺⢻⢼⢽⢾⢿⣀⣁⣂⣃⣄⣅⣆⣇⣉⣊⣋⣌⣍⣎⣏⣑⣒⣓⣔⣕⣖⣗⣙⣚⣛⣜⣝⣞⣟⣡⣢⣣⣤⣥⣦⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿';
+  const ASCII_CHARS = '░▒▓⣿⣾⣽⣼⣻⣺⢿⡿@#$%&';
 
   function makeCircle() {
     return {
@@ -197,31 +194,18 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
       y:           Math.random() * H,
       translateX:  0,
       translateY:  0,
-      size:        Math.floor(Math.random() * 2) + BASE_SIZE,
+      size:        14 + Math.random() * 10,
       char:        ASCII_CHARS[Math.floor(Math.random() * ASCII_CHARS.length)],
       alpha:       0,
-      targetAlpha: parseFloat((Math.random() * 0.12 + 0.03).toFixed(2)),
-      dx:          (Math.random() - 0.5) * 0.1,
-      dy:          (Math.random() - 0.5) * 0.1,
+      targetAlpha: parseFloat((Math.random() * 0.18 + 0.08).toFixed(2)),
+      dx:          (Math.random() - 0.5) * 0.3,
+      dy:          (Math.random() - 0.5) * 0.3,
       magnetism:   0.1 + Math.random() * 4,
     };
   }
 
   function remapValue(v, s1, e1, s2, e2) {
-    const r = ((v - s1) * (e2 - s2)) / (e1 - s1) + s2;
-    return r > 0 ? r : 0;
-  }
-
-  function drawCircle(c) {
-    const fontSize = Math.max(8, c.size * 6);
-    ctx.save();
-    ctx.translate(c.translateX, c.translateY);
-    ctx.font = fontSize + 'px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = "rgba(" + COLOR[0] + "," + COLOR[1] + "," + COLOR[2] + "," + c.alpha + ")";
-    ctx.fillText(c.char, c.x, c.y);
-    ctx.restore();
+    return Math.max(0, ((v - s1) * (e2 - s2)) / (e1 - s1) + s2);
   }
 
   function animate() {
@@ -230,31 +214,32 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
     for (let i = circles.length - 1; i >= 0; i--) {
       const c = circles[i];
 
-      const edge = [
-        c.x + c.translateX - c.size,
-        W - c.x - c.translateX - c.size,
-        c.y + c.translateY - c.size,
-        H - c.y - c.translateY - c.size,
-      ];
-      const closest  = edge.reduce((a, b) => Math.min(a, b));
-      const remapped = parseFloat(remapValue(closest, 0, 20, 0, 1).toFixed(2));
+      const edge    = [c.x + c.translateX, W - c.x - c.translateX, c.y + c.translateY, H - c.y - c.translateY];
+      const closest = edge.reduce((a, b) => Math.min(a, b));
+      const remapped = parseFloat(remapValue(closest, 0, 40, 0, 1).toFixed(2));
 
       if (remapped > 1) {
-        c.alpha += 0.02;
+        c.alpha += 0.015;
         if (c.alpha > c.targetAlpha) c.alpha = c.targetAlpha;
       } else {
         c.alpha = c.targetAlpha * remapped;
       }
 
-      c.x += c.dx + VX;
-      c.y += c.dy + VY;
-
+      c.x += c.dx;
+      c.y += c.dy;
       c.translateX += (mouseX / (STATICITY / c.magnetism) - c.translateX) / EASE;
       c.translateY += (mouseY / (STATICITY / c.magnetism) - c.translateY) / EASE;
 
-      drawCircle(c);
+      ctx.save();
+      ctx.translate(c.translateX, c.translateY);
+      ctx.font = `${c.size}px 'DM Mono', monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = `rgba(${COLOR[0]},${COLOR[1]},${COLOR[2]},${c.alpha})`;
+      ctx.fillText(c.char, c.x, c.y);
+      ctx.restore();
 
-      if (c.x < -c.size || c.x > W + c.size || c.y < -c.size || c.y > H + c.size) {
+      if (c.x < -40 || c.x > W + 40 || c.y < -40 || c.y > H + 40) {
         circles.splice(i, 1);
         circles.push(makeCircle());
       }
@@ -263,8 +248,8 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
     requestAnimationFrame(animate);
   }
 
-  window.addEventListener('mousemove', function(e) {
-    const rect = canvas.getBoundingClientRect();
+  window.addEventListener('mousemove', (e) => {
+    const rect = hero.getBoundingClientRect();
     mouseX = e.clientX - rect.left - W / 2;
     mouseY = e.clientY - rect.top  - H / 2;
   }, { passive: true });
@@ -273,6 +258,7 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
   window.addEventListener('resize', resize);
   animate();
 })();
+
 
 /* ── SCROLL SYSTEM — Awwwards Choreography ──────────────────────────────
    Phase A [0.00 → 0.40]
@@ -326,28 +312,41 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
     if (pinLeft) return;
     if (!cardRect) return;
 
-    const logoEl = document.getElementById('heroLogoScroll');
-
     // ────────────────────────────────────────────────────
-    // Phase A [0 → 0.40] — title + logo exit
+    // Phase A [0 → 0.40] — per-letter float dissolve
+    // Letters float upward + blur out, staggered from center outward
     // ────────────────────────────────────────────────────
     const pA = ph(p, 0, 0.40, eIO);
 
-    // Name flies right + fades (original behavior)
-    gsap.set(nameEl, {
-      xPercent: pA * 60,
-      opacity: c01(1 - pA * 1.8),
+    const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
+    const total   = letters.length;
+    const center  = (total - 1) / 2;
+
+    letters.forEach((el, i) => {
+      // Distance from center (0 = center letter, 1 = edge letters)
+      const distFromCenter = Math.abs(i - center) / center;
+      // Center letters exit LAST — edges go first, wave inward
+      const staggerDelay = (1 - distFromCenter) * 0.30;
+      const t = Math.max(0, Math.min(1, (pA - staggerDelay) / (1 - staggerDelay)));
+      const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOut
+
+      gsap.set(el, {
+        y:              -e * 90,
+        opacity:        1 - e,
+        filter:         `blur(${e * 20}px)`,
+        letterSpacing:  `${e * 0.4}em`,
+        display:        'inline-block',
+        transformOrigin:'50% 100%',
+      });
     });
 
-    // Logo fades up with name
-    if (logoEl) gsap.set(logoEl, {
-      opacity: c01(1 - pA * 2.0),
-      yPercent: pA * -40,
-    });
-
-    // Subtitle fades
+    // Subtitle fades + drifts up in sync
     const subtitleEl = document.querySelector('.hero-subtitle');
-    if (subtitleEl) gsap.set(subtitleEl, { opacity: c01(1 - pA * 2.5) });
+    if (subtitleEl) gsap.set(subtitleEl, {
+      y:       -pA * 30,
+      opacity: c01(1 - pA * 3.5),
+      filter:  `blur(${pA * 8}px)`,
+    });
 
     gsap.set(roleEl,     { opacity: 1 });
     gsap.set(designerEl, { opacity: 1 });
@@ -356,16 +355,30 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
     const pB        = ph(p, 0.35, 0.78, eIO);
     const pCardZoom = ph(p, 0.78, 1.00, eIO);
 
-    // ── Original image card — zooms from card size to full viewport ──
+    // ── Original image card — appears with parallax photos (Phase B), then zooms ──
+    const imgCardFadeIn = c01(ph(p, 0.35, 0.55));
     const cardW    = imgCard.offsetWidth || window.innerWidth * 0.26;
     const maxScale = Math.max(window.innerWidth / cardW, window.innerHeight / (cardW * 0.5625));
     const cardZoom = 1 + pA * 0.05 + pCardZoom * (maxScale - 1.05);
-    gsap.set(imgCard, { scale: cardZoom, opacity: 1, xPercent: -50, transformOrigin: '50% 50%' });
+    gsap.set(imgCard, { scale: cardZoom, opacity: imgCardFadeIn, xPercent: -50, transformOrigin: '50% 50%' });
+
+    // Hero img wrap: reveal animation triggers once when Phase B starts
+    const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
+    if (heroImgWrap) {
+      if (p >= 0.35) {
+        if (!heroImgWrap.classList.contains('is-revealed')) {
+          void heroImgWrap.offsetWidth; // force reflow
+          heroImgWrap.classList.add('is-revealed');
+        }
+      } else {
+        heroImgWrap.classList.remove('is-revealed');
+      }
+    }
 
     // zpItems: appear during Phase B, exit when card zooms
     const pExit = ph(p, 0.78, 0.92, eIO);
 
-    zpItems.forEach((item) => {
+    zpItems.forEach((item, idx) => {
       const isCenterItem = item.querySelector('.hero-zp-center') !== null;
       const targetScale  = parseFloat(item.dataset.scale) || 1.5;
       const delay        = parseFloat(item.dataset.delay) || 0;
@@ -382,6 +395,19 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
       const exitOpacity = fadeIn * c01(1 - pExit * 1.8);
 
       gsap.set(item, { opacity: exitOpacity, scale: exitScale });
+
+      // Clip-path reveal: trigger once when this item's fade-in starts
+      const wrap = item.querySelector('.hero-zp-wrap');
+      if (wrap) {
+        if (itemP > 0) {
+          if (!wrap.classList.contains('is-revealed')) {
+            void wrap.offsetWidth;
+            wrap.classList.add('is-revealed');
+          }
+        } else {
+          wrap.classList.remove('is-revealed');
+        }
+      }
     });
 
     // ── Phase C [0.80 → 1.00]: Bottom Sheet slides up ──
@@ -395,14 +421,21 @@ document.fonts.ready.then(() => requestAnimationFrame(heroInit));
   }
 
   function resetAll() {
-    gsap.set(nameEl,  { xPercent: 0, opacity: 1 });
+    gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
+    const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
+    letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none', letterSpacing: '' }));
     gsap.set([roleEl, designerEl], { opacity: 1 });
-    gsap.set(imgCard, { opacity: 1, xPercent: -50, scale: 1 });
+    gsap.set(imgCard, { opacity: 0, xPercent: -50, scale: 1 });
     const subtitleEl = document.querySelector('.hero-subtitle');
-    if (subtitleEl) gsap.set(subtitleEl, { opacity: 1 });
-    const logoEl = document.getElementById('heroLogoScroll');
-    if (logoEl) gsap.set(logoEl, { opacity: 1, yPercent: 0 });
+    if (subtitleEl) gsap.set(subtitleEl, { y: 0, opacity: 1, filter: 'blur(0px)' });
     zpItems.forEach(item => gsap.set(item, { opacity: 0, scale: 1 }));
+    // Reset reveal animations
+    const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
+    if (heroImgWrap) heroImgWrap.classList.remove('is-revealed');
+    zpItems.forEach(item => {
+      const wrap = item.querySelector('.hero-zp-wrap');
+      if (wrap) wrap.classList.remove('is-revealed');
+    });
   }
 
   measure();
@@ -1348,7 +1381,7 @@ ScrollTrigger.create({
   document.fonts.ready.then(fitBanner);
   window.addEventListener('resize', fitBanner);
 })();
-/* ── Hero Glitch Label Scramble ── */
+
 (function initGlitchLabels() {
   const ASCII = '!<>-_\\/[]{}—=+*^?#⣿⣾⣽⣼⣻⣺⣹⣸⣷⣶⣵⣴⣳⣲⣱⣰⣯⣮⣭⣬⣫⣪⣩⣨⢿⢾⢽⢼⢻⢺⢹⢸⡿⡾⡽⡼⡻⡺⡹⡸@#$%&';
 

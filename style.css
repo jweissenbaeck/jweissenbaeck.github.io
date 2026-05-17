@@ -115,15 +115,19 @@ body:has(.project-row:hover) .cursor-ring {
 .nav-left {
   display: flex; flex-direction: column; gap: 2px;
   align-items: flex-start;
+  mix-blend-mode: difference;
 }
+
+.nav-center-logo { mix-blend-mode: difference; }
+.nav-right { mix-blend-mode: difference; }
 
 .nav-link-1820 {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
-  letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.38);
+  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
   text-decoration: none; cursor: none;
   line-height: 1.85;
   position: relative;
-  transition: color 0.25s ease, letter-spacing 0.25s ease;
+  transition: letter-spacing 0.25s ease;
   display: flex; align-items: center; gap: 0;
 }
 
@@ -173,14 +177,13 @@ body:has(.project-row:hover) .cursor-ring {
   display: inline-block;
   font-family: var(--font-mono); font-size: 13px; font-weight: 700;
   letter-spacing: 0.22em; color: #fff;
-  border: 1.5px solid rgba(255,255,255,0.85);
-  padding: 4px 10px; line-height: 1.2;
+  line-height: 1.2;
   transition: opacity 0.5s ease;
 }
 
 .nav-logo-sub {
   font-family: var(--font-mono); font-size: 7px; font-weight: 400;
-  letter-spacing: 0.28em; color: rgba(255,255,255,0.75);
+  letter-spacing: 0.28em; color: #fff;
   text-transform: uppercase;
   transition: opacity 0.5s ease;
 }
@@ -226,8 +229,7 @@ body:has(.project-row:hover) .cursor-ring {
 .hero-logo-name {
   font-family: var(--font-mono); font-size: 13px; font-weight: 700;
   letter-spacing: 0.22em; color: #fff;
-  border: 1.5px solid rgba(255,255,255,0.85);
-  padding: 4px 10px; line-height: 1.2; display: inline-block;
+  line-height: 1.2; display: inline-block;
 }
 .hero-logo-sub {
   font-family: var(--font-mono); font-size: 7px; font-weight: 400;
@@ -275,6 +277,13 @@ body:has(.project-row:hover) .cursor-ring {
   width: 100%; aspect-ratio: 16 / 9;
   overflow: hidden;
   border-radius: 0; box-shadow: var(--shadow-lg);
+  clip-path: inset(50% 0 50% 0);
+  transition: none;
+}
+
+.hero-img-wrap.is-revealed {
+  clip-path: inset(0% 0 0% 0);
+  transition: clip-path 0.82s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-img-card.is-animating .hero-img-wrap { box-shadow: none; }
@@ -304,7 +313,7 @@ body:has(.project-row:hover) .cursor-ring {
   pointer-events: none;
 }
 
-.hero-title-clip { overflow: hidden; }
+.hero-title-clip { overflow: visible; }
 .hero-subtitle-row { overflow: hidden; }
 
 .hero-subtitle {
@@ -328,12 +337,12 @@ body:has(.project-row:hover) .cursor-ring {
   display: block; white-space: nowrap;
   mix-blend-mode: difference;
   color: #ffffff;
-  font-size: clamp(3rem, 8.5vw, 10rem);
+  font-size: clamp(3.5rem, 11vw, 14rem);
 }
 
 /* Legacy hidden */
 .hero::after { display: none; }
-.hero-info-bar, .hero-scroll-new, .hero-particles,
+.hero-info-bar, .hero-scroll-new,
 .hero-orb, .hero-noise, .hero-grid, .hero-pagination { display: none; }
 
 /* ============================
@@ -370,6 +379,13 @@ body:has(.project-row:hover) .cursor-ring {
 .hero-zp-wrap {
   position: absolute;
   overflow: hidden;
+  clip-path: inset(50% 0 50% 0);
+  transition: none;
+}
+
+.hero-zp-wrap.is-revealed {
+  clip-path: inset(0% 0 0% 0);
+  transition: clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-zp-wrap img {
@@ -380,54 +396,46 @@ body:has(.project-row:hover) .cursor-ring {
   filter: saturate(0.82) brightness(0.96);
 }
 
-/* ── Layout positions — scattered around the center card ── */
+/* ── Layout positions ──
+   Hauptbild: 26vw × 14.625vw (16:9), Mitte 50%/50%
+   Kanten: links 50%-13vw | rechts 50%+13vw | oben 50%-7.3vw | unten 50%+7.3vw
+   ─────────────────────────── */
 
-/* Large center image — same footprint as original zp center */
-.hero-zp-center {
-  width: 32vw; height: 22vh;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* Top-left — landscape */
+/* LINKS — hoch, vertikal zentriert */
 .hero-zp-tl {
-  width: 26vw; height: 20vh;
-  top: calc(50% - 18vh);
-  left: calc(50% - 18vw);
-  transform: translate(-50%, 0);
+  width: 16vw; height: 22vw;
+  top: 50%;
+  left: calc(50% - 13vw - 3vw - 16vw);
+  transform: translate(0, -50%);
 }
 
-/* Top-right — portrait */
+/* RECHTS — querformat, vertikal zentriert */
 .hero-zp-tr {
-  width: 14vw; height: 28vh;
-  top: calc(50% - 22vh);
-  left: calc(50% + 14vw);
-  transform: translate(-50%, 0);
+  width: 18vw; height: 12vw;
+  top: 50%;
+  left: calc(50% + 13vw + 3vw);
+  transform: translate(0, -50%);
 }
 
-/* Bottom-left — landscape */
+/* OBEN — klein, links ausgerichtet, bündig mit Hauptbild-Oberkante */
 .hero-zp-bl {
-  width: 24vw; height: 18vh;
-  top: calc(50% + 10vh);
-  left: calc(50% - 16vw);
-  transform: translate(-50%, 0);
+  width: 14vw; height: 9vw;
+  top: calc(50% - 7.3vw - 3vw - 9vw);
+  left: calc(50% - 13vw);
+  transform: none;
 }
 
-/* Bottom-right — square */
+/* UNTEN — breiter, rechts ausgerichtet, klar unter dem Hauptbild */
 .hero-zp-br {
-  width: 18vw; height: 18vh;
-  top: calc(50% + 8vh);
-  left: calc(50% + 14vw);
-  transform: translate(-50%, 0);
+  width: 20vw; height: 11vw;
+  top: calc(50% + 7.3vw + 3vw);
+  left: calc(50% + 13vw - 20vw);
+  transform: none;
 }
 
-/* Small accent — top center-right */
-.hero-zp-sm {
-  width: 12vw; height: 12vh;
-  top: calc(50% - 14vh);
-  left: calc(50% + 4vw);
-  transform: translate(-50%, 0);
-}
+.hero-zp-sm  { display: none; }
+.hero-zp-br2 { display: none; }
+.hero-zp-center { display: none; }
 
 /* ============================
    BOTTOM SHEET
