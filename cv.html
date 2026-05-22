@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jacob Weissenbäck — Erfahrung</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="cv.css">
+</head>
+<body class="cv-page">
+
+<div class="cursor-dot"  id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav class="nav" id="mainNav">
+  <div class="nav-left" id="navBack">
+    <a href="index.html" class="cv-nav-back">
+      <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
+        <line x1="20" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.4"/>
+        <polygon points="8,0 0,7 8,14" fill="currentColor"/>
+      </svg>
+      <span>Zurück zum Start</span>
+    </a>
+  </div>
+  <div class="nav-center-logo">
+    <span class="nav-logo-box">JCKY</span>
+    <span class="nav-logo-sub">PORTFOLIO</span>
+  </div>
+  <div class="nav-right" id="navDownload">
+    <a href="#" class="cv-download-btn-nav" download>
+      <span>Lebenslauf</span>
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+      </svg>
+    </a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="cv-hero">
+  <h1 class="cv-hero-title">
+    <span class="cv-line-clip"><span class="cv-line-inner" id="heroLine1">Meine</span></span>
+    <span class="cv-line-clip"><span class="cv-line-inner" id="heroLine2">Erfahrung</span></span>
+  </h1>
+</div>
+
+<!-- STACKED CARDS CONTAINER -->
+<div class="cv-stack-container" id="stackContainer">
+
+  <!-- Card 1 -->
+  <div class="cv-card-wrap">
+    <div class="cv-card" id="card-0" data-index="0">
+      <div class="cv-card-noise"></div>
+      <div class="cv-card-inner">
+        <div class="cv-card-left">
+          <h2 class="cv-card-title">Skalierbares<br>Design<br>System</h2>
+          <p class="cv-cap-body--left">
+            Das Websline® Design System von Grund auf aufgebaut — eine produktionsreife,
+            markenübergreifende Token-Architektur für Web- und Mobile-Oberflächen.
+          </p>
+        </div>
+        <div class="cv-card-right">
+          <div class="cv-card-img-grid cv-card-img-grid--3col">
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/900/520?random=41" alt="Design System">
+            </div>
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/560/420?random=42" alt="Components">
+            </div>
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/560/420?random=43" alt="Guidelines">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="cv-card-wrap">
+    <div class="cv-card" id="card-1" data-index="1">
+      <div class="cv-card-noise"></div>
+      <div class="cv-card-inner">
+        <div class="cv-card-left">
+          <h2 class="cv-card-title">High-Fidelity<br>Prototyping</h2>
+          <p class="cv-cap-body--left">
+            Vollständige Produktdesign-Verantwortung — von der Konzeption bis zum
+            pixelgenauen Prototyp. User Flows, Wireframes, Visual Design,
+            Micro-Interactions und annotierte Übergabedokumente.
+          </p>
+        </div>
+        <div class="cv-card-right">
+          <div class="cv-card-img-grid cv-card-img-grid--2col">
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/560/680?random=51" alt="User flow">
+            </div>
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/900/440?random=53" alt="Handoff">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="cv-card-wrap">
+    <div class="cv-card" id="card-2" data-index="2">
+      <div class="cv-card-noise"></div>
+      <div class="cv-card-inner">
+        <div class="cv-card-left">
+          <h2 class="cv-card-title">Mobile<br>Produkt<br>Design</h2>
+          <p class="cv-cap-body--left">
+            Native mobile Versionen der Websline® Produkte gestaltet — Desktop-Flows
+            auf Touch-native Muster adaptiert und systemweite Design-Konsistenz
+            über alle Breakpoints hinweg sichergestellt.
+          </p>
+        </div>
+        <div class="cv-card-right">
+          <div class="cv-card-img-grid cv-card-img-grid--3col">
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/380/600?random=61" alt="iOS">
+            </div>
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/380/600?random=62" alt="Android">
+            </div>
+            <div class="cv-editorial-img cv-img-reveal">
+              <img src="https://picsum.photos/380/600?random=63" alt="Tablet">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cv-stack-container -->
+
+<!-- BETWEEN STRIP — reveals when footer approaches -->
+<div class="cv-between-strip" id="betweenStrip">
+  <a href="index.html" class="cv-between-back">
+    <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
+      <line x1="20" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.4"/>
+      <polygon points="8,0 0,7 8,14" fill="currentColor"/>
+    </svg>
+    <span>Zurück zum Start</span>
+  </a>
+  <a href="#" class="cv-between-download" download>
+    <span>Lebenslauf</span>
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+      <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+  </a>
+</div>
+
+<!-- FOOTER -->
+<footer class="cv-footer" id="cvFooter">
+  <div class="cv-footer-bg-text" aria-hidden="true">JCKY</div>
+
+  <div class="cv-footer-top">
+    <div class="cv-footer-label">Bereit für das nächste Projekt</div>
+    <a href="mailto:jacob@weissenbaeck.at" class="cv-footer-cta">
+      <span class="cv-footer-cta-text">Kontakt aufnehmen</span>
+      <svg class="cv-footer-cta-arrow" width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1"/>
+        <path d="M10 14h8M15 11l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+
+  <div class="cv-footer-divider"></div>
+
+  <div class="cv-footer-bottom">
+    <div class="cv-footer-left">
+      <span class="cv-footer-name">Jacob Weissenbäck</span>
+      <span class="cv-footer-role">Junior UI/UX Designer · Salzburg, AT</span>
+    </div>
+    <div class="cv-footer-links">
+      <a href="#" class="cv-footer-link">LinkedIn</a>
+      <a href="#" class="cv-footer-link">Behance</a>
+      <a href="#" class="cv-footer-link cv-footer-link--download" download>
+        Lebenslauf
+        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </a>
+    </div>
+    <div class="cv-footer-copy">© 2025</div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+<script src="cv.js"></script>
+</body>
+</html>

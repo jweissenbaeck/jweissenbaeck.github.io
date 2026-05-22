@@ -7,7 +7,6 @@
   const pct     = document.getElementById('loaderPercent');
   if (!loader) return;
 
-  // Block scroll while loading
   document.documentElement.style.overflow = 'hidden';
 
   let progress = 0;
@@ -24,15 +23,12 @@
     done = true;
     setProgress(100);
 
-    // Kurze Pause bei 100%, dann Loader ausblenden
     setTimeout(() => {
-      // Startzustände SOFORT setzen bevor Loader wegfadet — kein Flash möglich
       const nameEl     = document.getElementById('heroWordFullname');
       const subtitleEl = document.querySelector('.hero-subtitle');
       if (nameEl)     nameEl.style.transform     = 'translateY(110%)';
       if (subtitleEl) subtitleEl.style.transform = 'translateY(110%)';
 
-      // Loader nach oben wegsliden
       loader.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1)';
       loader.style.opacity    = '0';
       loader.style.transform  = 'translateY(-12px)';
@@ -41,10 +37,8 @@
         loader.classList.add('is-hidden');
         loader.style.display = 'none';
 
-        // Scroll erst jetzt freigeben
         document.documentElement.style.overflow = '';
 
-        // Hero-Reveal starten — inline styles vorher entfernen damit GSAP übernimmt
         if (nameEl)     nameEl.style.transform     = '';
         if (subtitleEl) subtitleEl.style.transform = '';
 
@@ -57,7 +51,6 @@
     }, 250);
   }
 
-  // Fake-trickle: quickly to 80%, then wait for real load
   let trickle = 0;
   const trickleInterval = setInterval(() => {
     trickle += Math.random() * 12;
@@ -65,7 +58,6 @@
     setProgress(trickle);
   }, 120);
 
-  // Real load event
   if (document.readyState === 'complete') {
     clearInterval(trickleInterval);
     hideLoader();
@@ -73,7 +65,6 @@
     window.addEventListener('load', () => {
       clearInterval(trickleInterval);
       setProgress(90);
-      // Wait for fonts too
       document.fonts.ready.then(() => {
         setProgress(97);
         setTimeout(hideLoader, 180);
@@ -106,21 +97,18 @@ gsap.ticker.lagSmoothing(0);
 
 /* ============================
    NAV — Click to scroll via Lenis
-   Native anchors break with pinned GSAP sections — lenis.scrollTo fixes offsets
 ============================ */
 document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(link => {
   link.addEventListener('click', (e) => {
     let href = link.getAttribute('href');
     if (!href || href === '#') return;
 
-    // #contact → globeSection (the actual footer section id)
     if (href === '#contact') href = '#globeSection';
 
     const target = document.querySelector(href);
     if (!target) return;
     e.preventDefault();
 
-    // START: scroll to very top so hero animation resets to beginning
     if (href === '#hero') {
       lenis.scrollTo(0, { duration: 2.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
       return;
@@ -131,9 +119,8 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
 });
 
 /* ============================
-   CUSTOM CURSOR (FIXED)
+   CUSTOM CURSOR
 ============================ */
-
 const cursorDot  = document.getElementById('cursorDot');
 const cursorRing = document.getElementById('cursorRing');
 
@@ -142,17 +129,14 @@ gsap.set([cursorDot, cursorRing], { xPercent: -50, yPercent: -50 });
 let mouseX = window.innerWidth / 2;
 let mouseY = window.innerHeight / 2;
 
-// Initial
 gsap.set(cursorDot,  { x: mouseX, y: mouseY });
 gsap.set(cursorRing, { x: mouseX, y: mouseY });
 
-// quickSetter statt gsap.to() im mousemove — kein neues Tween pro Event, viel weniger Overhead
 const setDotX  = gsap.quickSetter(cursorDot,  'x', 'px');
 const setDotY  = gsap.quickSetter(cursorDot,  'y', 'px');
 const setRingX = gsap.quickSetter(cursorRing, 'x', 'px');
 const setRingY = gsap.quickSetter(cursorRing, 'y', 'px');
 
-// Ring per Lerp im gsap.ticker smoothen — kein neues Tween pro Frame
 let ringX = mouseX, ringY = mouseY;
 gsap.ticker.add(() => {
   ringX += (mouseX - ringX) * 0.18;
@@ -168,7 +152,6 @@ document.addEventListener('mousemove', (e) => {
   setDotY(mouseY);
 }, { passive: true });
 
-// Visibility fix bleibt
 document.addEventListener('mouseleave', () => {
   gsap.to([cursorDot, cursorRing], { opacity: 0, duration: 0.2 });
 });
@@ -177,31 +160,16 @@ document.addEventListener('mouseenter', () => {
   gsap.to([cursorDot, cursorRing], { opacity: 1, duration: 0.2 });
 });
 
-/* Nav links: nativer pointer cursor */
-document.querySelectorAll('.nav-links a').forEach(link => {
-  link.addEventListener('mouseenter', () => {
-    gsap.to([cursorDot, cursorRing], { opacity: 0, duration: 0.15 });
-  });
-  link.addEventListener('mouseleave', () => {
-    gsap.to([cursorDot, cursorRing], { opacity: 1, duration: 0.15 });
-  });
-});
-
-
-
 /* ============================
-   HERO — Jasmine Gunarto style reveal
+   HERO — Reveal
 ============================ */
 const heroInit = () => {
   const elName  = document.getElementById('heroWordFullname');
-  const imgCard = document.getElementById('heroImgCard');
 
-  // Startzustände SOFORT via GSAP setzen — verhindert jeden Flash
   gsap.set('#heroWordFullname', { y: '110%' });
   gsap.set('#heroImgCard',      { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
   gsap.set('.hero-subtitle',    { y: '-110%' });
 
-  // Fit name to exactly 1/3 viewport width
   const fitFullname = () => {
     if (!elName) return;
     const targetW = document.documentElement.clientWidth / 3;
@@ -251,38 +219,20 @@ const heroInit = () => {
   });
 })();
 
-// heroInit wird vom Loader aufgerufen, sobald der Ladescreen fertig ist
 window.__heroInit = heroInit;
 
-
-
-
-
-
-
-/* ── SCROLL SYSTEM — Awwwards Choreography ──────────────────────────────
-   Phase A [0.00 → 0.40]
-     · JACOB WEISSENBACK → fliegt nach RECHTS raus (overflow hidden clip)
-     · "Meine Projekte" → fliegt von LINKS rein, nimmt exakt dieselbe
-       Position und Schriftgröße ein
-     · UI/UX → fliegt nach LINKS raus + blur + fade
-     · DESIGNER → fliegt nach RECHTS raus + blur + fade
-     · Bild-Card: leichter Parallax-Scale
-
-   Phase B [0.40 → 0.75]
-     · Proxy-Bild wächst von Bild-Position auf volle Viewport-Breite
-
-   Phase C [0.75 → 1.00]
-     · Bottom Sheet fährt von unten herein
-─────────────────────────────────────────────────────────────────────── */
+/* ============================
+   SCROLL SYSTEM
+   Phase A [0.00 → 0.40] — Name letters float dissolve
+   Phase B [0.35 → 0.78] — Parallax photos
+   Phase C [0.80 → 1.00] — Bottom Sheet slides up
+============================ */
 (function initScrollSystem() {
   const hero       = document.getElementById('hero');
   const imgCard    = document.getElementById('heroImgCard');
-  const nameRow    = document.getElementById('heroNameRow');
   const nameEl     = document.getElementById('heroWordFullname');
   const roleEl     = document.getElementById('heroWordRole');
   const designerEl = document.getElementById('heroWordDesigner');
-  const scrollHint = document.getElementById('heroScroll');
   const panel      = document.getElementById('bottomSheet');
   const zpStage    = document.getElementById('heroZpStage');
   const zpItems    = zpStage ? [...zpStage.querySelectorAll('.hero-zp-item')] : [];
@@ -312,24 +262,17 @@ window.__heroInit = heroInit;
     if (pinLeft) return;
     if (!cardRect) return;
 
-    // ────────────────────────────────────────────────────
-    // Phase A [0 → 0.40] — per-letter float dissolve
-    // Letters float upward + blur out, staggered from center outward
-    // ────────────────────────────────────────────────────
+    // Phase A — letters float up
     const pA = ph(p, 0.04, 0.40, eIO);
-
     const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
     const total   = letters.length;
     const center  = (total - 1) / 2;
 
     letters.forEach((el, i) => {
-      // Distance from center (0 = center letter, 1 = edge letters)
       const distFromCenter = Math.abs(i - center) / center;
-      // Center letters exit LAST — edges go first, wave inward
       const staggerDelay = (1 - distFromCenter) * 0.30;
       const t = Math.max(0, Math.min(1, (pA - staggerDelay) / (1 - staggerDelay)));
-      const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // easeInOut
-
+      const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       gsap.set(el, {
         y:              -e * 60,
         opacity:        1 - e,
@@ -339,7 +282,6 @@ window.__heroInit = heroInit;
       });
     });
 
-    // Subtitle fades + drifts up in sync
     const subtitleEl = document.querySelector('.hero-subtitle');
     if (subtitleEl) gsap.set(subtitleEl, {
       y:       -pA * 30,
@@ -350,23 +292,21 @@ window.__heroInit = heroInit;
     gsap.set(roleEl,     { opacity: 1 });
     gsap.set(designerEl, { opacity: 1 });
 
-    // ── Phase B [0.35 → 0.78]: Parallax photos ──
+    // Phase B — parallax photos
     const pB        = ph(p, 0.35, 0.78, eIO);
     const pCardZoom = ph(p, 0.78, 1.00, eIO);
 
-    // ── Original image card — appears with parallax photos (Phase B), then zooms ──
     const imgCardFadeIn = c01(ph(p, 0.35, 0.55));
     const cardW    = imgCard.offsetWidth || window.innerWidth * 0.26;
     const maxScale = Math.max(window.innerWidth / cardW, window.innerHeight / (cardW * 0.5625));
     const cardZoom = 1 + pA * 0.05 + pCardZoom * (maxScale - 1.05);
     gsap.set(imgCard, { scale: cardZoom, opacity: imgCardFadeIn, xPercent: -50, transformOrigin: '50% 50%' });
 
-    // Hero img wrap: reveal animation triggers once when Phase B starts
     const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
     if (heroImgWrap) {
       if (p >= 0.35) {
         if (!heroImgWrap.classList.contains('is-revealed')) {
-          void heroImgWrap.offsetWidth; // force reflow
+          void heroImgWrap.offsetWidth;
           heroImgWrap.classList.add('is-revealed');
         }
       } else {
@@ -374,18 +314,11 @@ window.__heroInit = heroInit;
       }
     }
 
-    // zpItems: appear during Phase B, exit when card zooms
     const pExit = ph(p, 0.78, 0.92, eIO);
 
-    zpItems.forEach((item, idx) => {
-      const isCenterItem = item.querySelector('.hero-zp-center') !== null;
-      const targetScale  = parseFloat(item.dataset.scale) || 1.5;
-      const delay        = parseFloat(item.dataset.delay) || 0;
-
-      if (isCenterItem) {
-        gsap.set(item, { opacity: 0, scale: 1 });
-        return;
-      }
+    zpItems.forEach((item) => {
+      const targetScale = parseFloat(item.dataset.scale) || 1.5;
+      const delay       = parseFloat(item.dataset.delay) || 0;
 
       const itemP   = c01((pB - delay) / (1 - delay));
       const fadeIn  = c01(itemP * 4);
@@ -395,7 +328,6 @@ window.__heroInit = heroInit;
 
       gsap.set(item, { opacity: exitOpacity, scale: exitScale });
 
-      // Clip-path reveal: trigger once when this item's fade-in starts
       const wrap = item.querySelector('.hero-zp-wrap');
       if (wrap) {
         if (itemP > 0) {
@@ -409,7 +341,7 @@ window.__heroInit = heroInit;
       }
     });
 
-    // ── Phase C [0.80 → 1.00]: Bottom Sheet slides up ──
+    // Phase C — bottom sheet
     if (p < 0.80) {
       gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
     } else {
@@ -428,7 +360,6 @@ window.__heroInit = heroInit;
     const subtitleEl = document.querySelector('.hero-subtitle');
     if (subtitleEl) gsap.set(subtitleEl, { y: 0, opacity: 1, filter: 'blur(0px)' });
     zpItems.forEach(item => gsap.set(item, { opacity: 0, scale: 1 }));
-    // Reset reveal animations
     const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
     if (heroImgWrap) heroImgWrap.classList.remove('is-revealed');
     zpItems.forEach(item => {
@@ -447,16 +378,9 @@ window.__heroInit = heroInit;
     anticipatePin: 1,
     scrub:         0.4,
     onUpdate(self) { update(self.progress); },
-    onLeave() {
-      pinLeft = true;
-      // Card ist jetzt riesig gezoomt und hinter dem Bottom Sheet — ok
-    },
-    onEnterBack() {
-      pinLeft = false;
-    },
-    onLeaveBack() {
-      resetAll();
-    },
+    onLeave()      { pinLeft = true; },
+    onEnterBack()  { pinLeft = false; },
+    onLeaveBack()  { resetAll(); },
     onRefresh() {
       pinLeft = false;
       measure();
@@ -469,26 +393,8 @@ window.__heroInit = heroInit;
   window.addEventListener('resize', () => { measure(); ScrollTrigger.refresh(); });
 })();
 
-
-
-
-/* ============================
-   NAV — Live clock + show/hide on scroll
-============================ */
-// Live Salzburg time
-function updateNavTime() {
-  const now = new Date();
-  const opts = { timeZone: 'Europe/Vienna', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
-  const timeStr = now.toLocaleTimeString('de-AT', opts);
-  const el = document.getElementById('navTime');
-  if (el) el.textContent = timeStr + ' GMT+2';
-}
-updateNavTime();
-setInterval(updateNavTime, 1000);
-
 /* ============================
    NAV — Active section tracker
-   Watches which section is in view and highlights the matching nav link
 ============================ */
 (function initNavActiveState() {
   const links = [...document.querySelectorAll('.nav-link-1820[data-section]')];
@@ -498,70 +404,45 @@ setInterval(updateNavTime, 1000);
 
   function setActive(sectionId) {
     links.forEach(link => {
-      const matches = link.dataset.section === sectionId;
-      link.classList.toggle('is-active', matches);
+      link.classList.toggle('is-active', link.dataset.section === sectionId);
     });
   }
 
   setActive('hero');
 
-  // Use raw scroll position so pinned hero doesn't confuse things.
-  // We measure the real top of each section on every scroll tick.
-  function onScroll({ scroll }) {
+  lenis.on('scroll', () => {
     const vh = window.innerHeight;
-
     const workTop    = workEl    ? workEl.getBoundingClientRect().top    : Infinity;
     const contactTop = contactEl ? contactEl.getBoundingClientRect().top : Infinity;
 
-    if (contactTop <= vh * 0.55) {
-      setActive('contact');
-    } else if (workTop <= vh * 0.55) {
-      setActive('work');
-    } else {
-      setActive('hero');
-    }
-  }
-
-  lenis.on('scroll', onScroll);
-
-  // Nav state is fully handled by lenis scroll listener above
+    if (contactTop <= vh * 0.55)     setActive('contact');
+    else if (workTop <= vh * 0.55)   setActive('work');
+    else                             setActive('hero');
+  });
 })();
 
 /* ============================
-   WHAT I DO HOVER
-   - Image panel: fixed left edge, top = row center (viewport Y)
-   - Skills: absolute to item, left computed from text right edge
-   - Scramble on name
+   WHAT I DO — Hover interactions
 ============================ */
 (function initServices() {
   const imgPanel = document.getElementById('svcImgPanel');
   const section  = document.querySelector('.services-section');
   const CHARS    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·—';
 
-  if (imgPanel) {
-    gsap.set(imgPanel, { opacity: 0 });
-  }
+  if (imgPanel) gsap.set(imgPanel, { opacity: 0 });
 
   const imgInner = imgPanel ? imgPanel.querySelector('.svc-img-inner') : null;
 
   function showPanel(name, imgId) {
     if (!imgPanel || !section) return;
-
     const nameRect    = name.getBoundingClientRect();
     const sectionRect = section.getBoundingClientRect();
     const rowCenter   = (nameRect.top + nameRect.height / 2) - sectionRect.top;
-
     gsap.set(imgPanel, { top: rowCenter, yPercent: -50, opacity: 1, scale: 1, rotation: 0 });
-
-    // 1. Instantly collapse clip-path back to center
     if (imgInner) imgInner.classList.remove('is-revealed');
-
-    // 2. Swap the visible image
     document.querySelectorAll('.svc-img').forEach(img =>
       img.classList.toggle('is-active', img.id === imgId)
     );
-
-    // 3. Force reflow so the collapsed state is painted, then reveal upward+downward
     if (imgInner) {
       void imgInner.offsetWidth;
       imgInner.classList.add('is-revealed');
@@ -600,41 +481,28 @@ setInterval(updateNavTime, 1000);
     const skills = item.querySelector('.svc-skills');
     const imgId  = item.dataset.img;
 
-    // Trigger only on svc-name, not the full row
     name.addEventListener('mouseenter', () => {
-      const nameRect    = name.getBoundingClientRect();
-      const itemRect    = item.getBoundingClientRect();
-
+      const nameRect = name.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
       showPanel(name, imgId);
-
-      // Skills: right of name text, relative to item
       if (skills) {
-        const leftFromItem = nameRect.right - itemRect.left + 24;
-        skills.style.left = leftFromItem + 'px';
+        skills.style.left = (nameRect.right - itemRect.left + 24) + 'px';
         gsap.set(skills, { opacity: 1, x: 0 });
       }
-
       scramble(name);
     });
 
     name.addEventListener('mouseleave', () => {
       hidePanel();
-      if (skills) {
-        gsap.set(skills, { opacity: 0 });
-      }
+      if (skills) gsap.set(skills, { opacity: 0 });
       unscramble(name);
     });
   });
 })();
 
-/* svc scramble handled in initServices above */
-
-
 /* ============================
-   SCROLL ANIMATIONS — cinematic
+   SCROLL ANIMATIONS
 ============================ */
-
-// ── Services items: staggered slide up ──
 gsap.set('.svc-item', { opacity: 0, y: 24 });
 ScrollTrigger.create({
   trigger: '.services-list',
@@ -649,18 +517,13 @@ ScrollTrigger.create({
   }
 });
 
-
-
 /* ============================
-   GLOBE SECTION — Three.js
-   Dot-Grid Ästhetik (weiße Punkte), kein Auto-Rotate,
-   Mousemove-Tilt innerhalb der Section, Salzburg zentriert, Nord oben
+   GLOBE — Three.js
 ============================ */
 (function initGlobeSection() {
   const container = document.getElementById('globeSectionCanvas');
   if (!container || typeof THREE === 'undefined') return;
 
-  // ── Scene ──
   const scene  = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
   camera.position.set(0, 0, 4.8);
@@ -680,53 +543,33 @@ ScrollTrigger.create({
   resize();
   new ResizeObserver(resize).observe(container);
 
-  // ── Minimal light (dots are unlit points, but sphere needs some) ──
   scene.add(new THREE.AmbientLight(0xffffff, 0.08));
 
   const R     = 1.5;
   const globe = new THREE.Group();
   scene.add(globe);
 
-  // ── Helper: lat/lon → 3D Vec3 ──
-  function ll(latRad, lonRad, r) {
-    return new THREE.Vector3(
-       r * Math.cos(latRad) * Math.cos(lonRad),
-       r * Math.sin(latRad),
-      -r * Math.cos(latRad) * Math.sin(lonRad)
-    );
-  }
-
-
-  // ── Ocean sphere — warm dark, matches portfolio --bg ──
   globe.add(new THREE.Mesh(
     new THREE.SphereGeometry(R, 64, 64),
     new THREE.MeshBasicMaterial({ color: 0x1a1714 })
   ));
 
-  // ── Atmosphere rim ──
   globe.add(new THREE.Mesh(
     new THREE.SphereGeometry(R * 1.04, 32, 32),
     new THREE.MeshBasicMaterial({ color: 0x3a3028, transparent: true, opacity: 0.22, side: THREE.BackSide, depthWrite: false })
   ));
 
-  // ── ASCII OVERLAY — 2D canvas with wave interaction ──
   const RC = R + 0.008;
   const DOT_ROWS = 120;
-
-  // The ASCII/Braille char set from DelicateAsciiDots
   const ASCII_CHARS = '⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿⠁⠂⠄⠈⠐⠠⡀⢀⠃⠅⠘⠨⠊⠋⠌⠍⠎⠏⠑⠒⠓⠔⠕⠖⠗⠙⠚⠛⠜⠝⠞⠟⠡⠢⠣⠤⠥⠦⠧⠩⠪⠫⠬⠭⠮⠯⠱⠲⠳⠴⠵⠶⠷⠹⠺⠻⠼⠽⠾⠿⡁⡂⡃⡄⡅⡆⡇⡉⡊⡋⡌⡍⡎⡏⡑⡒⡓⡔⡕⡖⡗⡙⡚⡛⡜⡝⡞⡟⡡⡢⡣⡤⡥⡦⡧⡩⡪⡫⡬⡭⡮⡯⡱⡲⡳⡴⡵⡶⡷⡹⡺⡻⡼⡽⡾⡿⢁⢂⢃⢄⢅⢆⢇⢉⢊⢋⢌⢍⢎⢏⢑⢒⢓⢔⢕⢖⢗⢙⢚⢛⢜⢝⢞⢟⢡⢢⢣⢤⢥⢦⢧⢩⢪⢫⢬⢭⢮⢯⢱⢲⢳⢴⢵⢶⢷⢹⢺⢻⢼⢽⢾⢿⣀⣁⣂⣃⣄⣅⣆⣇⣉⣊⣋⣌⣍⣎⣏⣑⣒⣓⣔⣕⣖⣗⣙⣚⣛⣜⣝⣞⣟⣡⣢⣣⣤⣥⣦⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿';
 
-  // Build 2D overlay canvas
   const asciiCanvas = document.createElement('canvas');
   asciiCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%;z-index:2;';
   container.style.position = 'relative';
   container.appendChild(asciiCanvas);
   const asciiCtx = asciiCanvas.getContext('2d');
 
-  // Land positions stored as lat/lon (for re-projection each frame)
-  const landPoints = []; // [{lat, lon, localPos}]
-
-  // Wave state
+  const landPoints = [];
   const asciiWaves = [];
   const numBgWaves = 4;
   for (let i = 0; i < numBgWaves; i++) {
@@ -743,14 +586,10 @@ ScrollTrigger.create({
   const asciiClickWaves = [];
   const asciiMouse = { x: 0.5, y: 0.5 };
 
-  // Mouse tracking on renderer canvas
   renderer.domElement.style.pointerEvents = 'auto';
-
-  // Hover state fuer Label-Sichtbarkeit
   let globeHovered = false;
-  renderer.domElement.addEventListener('mouseenter', () => { globeHovered = true;  });
+  renderer.domElement.addEventListener('mouseenter', () => { globeHovered = true; });
   renderer.domElement.addEventListener('mouseleave', () => { globeHovered = false; });
-
   renderer.domElement.addEventListener('mousemove', (e) => {
     const rect = renderer.domElement.getBoundingClientRect();
     asciiMouse.x = (e.clientX - rect.left) / rect.width;
@@ -764,7 +603,6 @@ ScrollTrigger.create({
       time: Date.now(),
       intensity: 2.2,
     });
-    // prune old
     const now = Date.now();
     while (asciiClickWaves.length > 0 && now - asciiClickWaves[0].time > 4500) asciiClickWaves.shift();
   });
@@ -824,93 +662,67 @@ ScrollTrigger.create({
         const lon    = -180 + (360 / dotsInRow) * (col + 0.5);
         const lonRad = lon * Math.PI / 180;
         if (isLand(lat, lon, features)) {
-          const localPos = new THREE.Vector3(
-            RC * Math.cos(latRad) * Math.cos(lonRad),
-            RC * Math.sin(latRad),
-           -RC * Math.cos(latRad) * Math.sin(lonRad)
-          );
-          landPoints.push({ lat, lon, localPos });
+          landPoints.push({
+            localPos: new THREE.Vector3(
+              RC * Math.cos(latRad) * Math.cos(lonRad),
+              RC * Math.sin(latRad),
+             -RC * Math.cos(latRad) * Math.sin(lonRad)
+            )
+          });
         }
       }
     }
   }
 
-  // Project a local globe position to screen UV [0..1]
   const _projVec = new THREE.Vector3();
   function projectPoint(localPos) {
     _projVec.copy(localPos).applyQuaternion(globe.quaternion);
-    // Check visibility: z > 0 means facing camera
     const facing = _projVec.z > 0;
     const projected = _projVec.clone().project(camera);
     return {
-      nx: projected.x * 0.5 + 0.5,   // [0..1]
-      ny: -projected.y * 0.5 + 0.5,  // [0..1]
+      nx: projected.x * 0.5 + 0.5,
+      ny: -projected.y * 0.5 + 0.5,
       facing,
       depth: projected.z,
     };
   }
 
   function drawAsciiOverlay() {
-    const W = asciiCanvas.width;
-    const H = asciiCanvas.height;
+    const W = asciiCanvas.width, H = asciiCanvas.height;
     if (W === 0 || H === 0) return;
-
     asciiCtx.clearRect(0, 0, W, H);
     asciiTime += 0.75 * 0.016;
-
     const now = Date.now();
-    // Prune old click waves
     for (let i = asciiClickWaves.length - 1; i >= 0; i--) {
       if (now - asciiClickWaves[i].time > 4500) asciiClickWaves.splice(i, 1);
     }
-
     const FONT_SIZE = Math.max(6, Math.min(W, H) / DOT_ROWS * 1.6);
     asciiCtx.font = `${FONT_SIZE}px monospace`;
     asciiCtx.textAlign = 'center';
     asciiCtx.textBaseline = 'middle';
-
     for (const pt of landPoints) {
       const { nx, ny, facing, depth } = projectPoint(pt.localPos);
       if (!facing || depth > 1) continue;
-
-      // Fade near the limb (edge of sphere)
       const limbDist = Math.sqrt((nx - 0.5) ** 2 + (ny - 0.5) ** 2) * 2;
       if (limbDist > 0.98) continue;
       const limbFade = Math.max(0, 1 - Math.pow(Math.max(0, limbDist - 0.72) / 0.26, 2));
       if (limbFade <= 0) continue;
-
-      // Wave interference at this screen position
       let totalWave = 0;
-
-      // Background waves (in normalised screen space)
       for (const wave of asciiWaves) {
         const dx = nx - wave.x, dy = ny - wave.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const falloff = 1 / (1 + dist * 4);
-        totalWave += Math.sin(dist * wave.frequency * 60 - asciiTime * wave.speed + wave.phase)
-                     * wave.amplitude * falloff;
+        totalWave += Math.sin(dist * wave.frequency * 60 - asciiTime * wave.speed + wave.phase) * wave.amplitude * falloff;
       }
-
-      // Mouse wave
       const mdx = nx - asciiMouse.x, mdy = ny - asciiMouse.y;
       const mouseDist = Math.sqrt(mdx * mdx + mdy * mdy);
       if (mouseDist < 0.3) {
-        const mEffect = (1 - mouseDist / 0.3) * 0.9;
-        totalWave += mEffect * Math.sin(asciiTime * 3);
+        totalWave += (1 - mouseDist / 0.3) * 0.9 * Math.sin(asciiTime * 3);
       }
-
-      // Click waves
       totalWave += getClickInfluence(nx, ny, now);
-
-      // Map to char + opacity
-      const normalised = (totalWave + 2) / 4;
-      const clamped = Math.max(0, Math.min(1, normalised));
-      const charIdx = Math.floor(clamped * (ASCII_CHARS.length - 1));
-      const char = ASCII_CHARS[charIdx] || ASCII_CHARS[0];
-
-      const baseOpacity = 0.4 + clamped * 0.5;
-      const opacity = Math.min(0.92, baseOpacity) * limbFade;
-
+      const clamped = Math.max(0, Math.min(1, (totalWave + 2) / 4));
+      const char = ASCII_CHARS[Math.floor(clamped * (ASCII_CHARS.length - 1))] || ASCII_CHARS[0];
+      const opacity = Math.min(0.92, 0.4 + clamped * 0.5) * limbFade;
       asciiCtx.fillStyle = `rgba(255,255,255,${opacity.toFixed(3)})`;
       asciiCtx.fillText(char, nx * W, ny * H);
     }
@@ -923,7 +735,6 @@ ScrollTrigger.create({
       buildDots(topojson.feature(world, world.objects.countries).features);
     }).catch(() => {});
 
-  // ── Static faint grid lines (no interaction) ──
   const gridMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.06 });
   [-60, -30, 0, 30, 60].forEach(latDeg => {
     const lr = latDeg * Math.PI / 180, pts = [];
@@ -942,7 +753,6 @@ ScrollTrigger.create({
     globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
   });
 
-  // ── Salzburg pin — refined design ──
   const SALZ_LAT_RAD = 47.8  * Math.PI / 180;
   const SALZ_LON_RAD = 13.05 * Math.PI / 180;
 
@@ -958,13 +768,11 @@ ScrollTrigger.create({
   const pinTip  = ll3(SALZ_LAT_RAD, SALZ_LON_RAD, R + 0.22);
   const outward = pinBase.clone().normalize();
 
-  // Stem
   globe.add(new THREE.Line(
     new THREE.BufferGeometry().setFromPoints([pinBase.clone(), pinTip.clone()]),
     new THREE.LineBasicMaterial({ color: 0xF0EDE8, transparent: true, opacity: 0.9 })
   ));
 
-  // White core dot at tip
   const pinCoreDot = new THREE.Mesh(
     new THREE.SphereGeometry(0.022, 12, 12),
     new THREE.MeshBasicMaterial({ color: 0xffffff })
@@ -972,7 +780,6 @@ ScrollTrigger.create({
   pinCoreDot.position.copy(pinTip);
   globe.add(pinCoreDot);
 
-  // Red crosshair ring at tip
   const ring1 = new THREE.Mesh(
     new THREE.RingGeometry(0.030, 0.042, 32),
     new THREE.MeshBasicMaterial({ color: 0xff4040, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false })
@@ -981,7 +788,6 @@ ScrollTrigger.create({
   ring1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), outward);
   globe.add(ring1);
 
-  // Outer diffuse ring
   const ring2 = new THREE.Mesh(
     new THREE.RingGeometry(0.042, 0.075, 32),
     new THREE.MeshBasicMaterial({ color: 0xff4040, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false })
@@ -990,7 +796,6 @@ ScrollTrigger.create({
   ring2.quaternion.copy(ring1.quaternion);
   globe.add(ring2);
 
-  // Surface anchor dot
   const pinBaseDot = new THREE.Mesh(
     new THREE.SphereGeometry(0.014, 10, 10),
     new THREE.MeshBasicMaterial({ color: 0xff4040 })
@@ -998,7 +803,6 @@ ScrollTrigger.create({
   pinBaseDot.position.copy(pinBase);
   globe.add(pinBaseDot);
 
-  // ── Orient: Salzburg faces camera, North up ──
   const salzDir = ll3(SALZ_LAT_RAD, SALZ_LON_RAD, 1).normalize();
   const q1 = new THREE.Quaternion().setFromUnitVectors(salzDir, new THREE.Vector3(0, 0, 1));
   const northAfterQ1 = new THREE.Vector3(0, 1, 0).applyQuaternion(q1);
@@ -1006,7 +810,6 @@ ScrollTrigger.create({
   const baseQuat = q2.multiply(q1);
   globe.quaternion.copy(baseQuat);
 
-  // ── SVG label — dark badge ──
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5;';
   container.appendChild(svg);
@@ -1039,7 +842,6 @@ ScrollTrigger.create({
   svgText.textContent = 'SALZBURG, AT';
   svg.appendChild(svgText);
 
-  // ── Resize ASCII canvas to match renderer ──
   function resizeAsciiCanvas() {
     const s = container.offsetWidth || 520;
     asciiCanvas.width  = s;
@@ -1048,21 +850,16 @@ ScrollTrigger.create({
   resizeAsciiCanvas();
   new ResizeObserver(resizeAsciiCanvas).observe(container);
 
-  // ── Mouse state for tilt ──
   let tRotY = 0, tRotX = 0, cRotY = 0, cRotX = 0;
-  const globeSection = container.closest('.globe-section') || container.parentElement;
 
   window.addEventListener('mousemove', (e) => {
-    // Immer die aktuelle Position des Globus-Containers verwenden,
-    // nicht die der Section — weil der Globus per ScrollTrigger nach rechts wandert
     const containerRect = container.getBoundingClientRect();
     const cx = containerRect.left + containerRect.width  / 2;
     const cy = containerRect.top  + containerRect.height / 2;
-    const MAX_Y = 0.20;
-    const MAX_X = 0.12;
-    tRotY = Math.max(-MAX_Y, Math.min(MAX_Y, ((e.clientX - cx) / (containerRect.width  / 2)) * 0.18));
-    tRotX = Math.max(-MAX_X, Math.min(MAX_X, ((e.clientY - cy) / (containerRect.height / 2)) * 0.10));
+    tRotY = Math.max(-0.20, Math.min(0.20, ((e.clientX - cx) / (containerRect.width  / 2)) * 0.18));
+    tRotX = Math.max(-0.12, Math.min(0.12, ((e.clientY - cy) / (containerRect.height / 2)) * 0.10));
   }, { passive: true });
+
   const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
   const _q     = new THREE.Quaternion();
   let clockS = 0;
@@ -1075,13 +872,11 @@ ScrollTrigger.create({
     const px   = (v.x *  0.5 + 0.5) * rW;
     const py   = (v.y * -0.5 + 0.5) * rH;
     const vis  = v.z < 1 ? 1 : 0;
-
     const PAD = 6, H = 17;
-    const textW = 75; // approx px for "SALZBURG, AT" at 8.5px + tracking
+    const textW = 75;
     const DOT_R = 5, DOT_GAP = 5;
     const badgeW = DOT_R * 2 + DOT_GAP + textW + PAD * 2;
     const bx = px + 14, by = py - 28;
-
     svgLine.setAttribute('x1', px);  svgLine.setAttribute('y1', py);
     svgLine.setAttribute('x2', bx);  svgLine.setAttribute('y2', by + H / 2);
     svgBadge.setAttribute('x', bx);  svgBadge.setAttribute('y', by);
@@ -1090,7 +885,6 @@ ScrollTrigger.create({
     svgAccentDot.setAttribute('cy', by + H / 2);
     svgText.setAttribute('x', bx + PAD + DOT_R * 2 + DOT_GAP);
     svgText.setAttribute('y', by + H / 2);
-    // Label nur zeigen wenn: Pin auf der Vorderseite UND User hovert
     const labelVis = vis * (globeHovered ? 1 : 0);
     [svgLine, svgBadge, svgText, svgAccentDot].forEach(el => {
       el.style.opacity = String(labelVis);
@@ -1098,200 +892,119 @@ ScrollTrigger.create({
     });
   }
 
-  // IntersectionObserver: Globe-Loop pausieren wenn nicht sichtbar — spart CPU in Edge
   let globeVisible = false;
-  const globeObserver = new IntersectionObserver(
+  new IntersectionObserver(
     ([entry]) => { globeVisible = entry.isIntersecting; },
     { threshold: 0.01 }
-  );
-  globeObserver.observe(container);
+  ).observe(container);
 
   (function tick() {
     requestAnimationFrame(tick);
-    if (!globeVisible) return; // nicht rendern wenn außerhalb des Viewports
+    if (!globeVisible) return;
     clockS += 0.012;
-
     cRotY += (tRotY - cRotY) * 0.028;
     cRotX += (tRotX - cRotX) * 0.028;
-
     _euler.set(cRotX, cRotY, 0, 'YXZ');
     _q.setFromEuler(_euler);
     globe.quaternion.copy(_q).multiply(baseQuat);
-
     globe.position.y = Math.sin(clockS * 0.6) * 0.028;
-
-    // Pulse pin rings
     const p1 = 0.5 + 0.5 * Math.sin(clockS * 2.6);
     const p2 = 0.5 + 0.5 * Math.sin(clockS * 2.6 + Math.PI);
     ring1.material.opacity = 0.45 + 0.45 * p1;
     ring1.scale.setScalar(1 + 0.22 * p1);
     ring2.material.opacity = 0.08 + 0.20 * p2;
     ring2.scale.setScalar(1 + 0.45 * p2);
-
     drawAsciiOverlay();
     projectPin();
     renderer.render(scene, camera);
   })();
 
-
-/* ============================
-   GLOBE SECTION — ASCII BACKGROUND
-   Passive Braille-Wave hinter dem Globus,
-   dezente Farbe damit Erde dominiert
-============================ */
-(function initGlobeSectionAsciBg() {
-  const section = document.getElementById('globeSection');
-  if (!section) return;
-
-  const canvas = document.createElement('canvas');
-  canvas.className = 'globe-section-ascii-bg';
-  section.insertBefore(canvas, section.firstChild);
-  const ctx = canvas.getContext('2d');
-
-  const CHARS = '⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿⠁⠂⠄⠈⠐⠠⡀⢀⠃⠅⠘⠨⠊⠋⠌⠍⠎⠏⠑⠒⠓⠔⠕⠖⠗⠙⠚⠛⠜⠝⠞⠟⠡⠢⠣⠤⠥⠦⠧⠩⠪⠫⠬⠭⠮⠯⠱⠲⠳⠴⠵⠶⠷⠹⠺⠻⠼⠽⠾⠿⡁⡂⡃⡄⡅⡆⡇⡉⡊⡋⡌⡍⡎⡏⡑⡒⡓⡔⡕⡖⡗⡙⡚⡛⡜⡝⡞⡟⡡⡢⡣⡤⡥⡦⡧⡩⡪⡫⡬⡭⡮⡯⡱⡲⡳⡴⡵⡶⡷⡹⡺⡻⡼⡽⡾⡿⢁⢂⢃⢄⢅⢆⢇⢉⢊⢋⢌⢍⢎⢏⢑⢒⢓⢔⢕⢖⢗⢙⢚⢛⢜⢝⢞⢟⢡⢢⢣⢤⢥⢦⢧⢩⢪⢫⢬⢭⢮⢯⢱⢲⢳⢴⢵⢶⢷⢹⢺⢻⢼⢽⢾⢿⣀⣁⣂⣃⣄⣅⣆⣇⣉⣊⣋⣌⣍⣎⣏⣑⣒⣓⣔⣕⣖⣗⣙⣚⣛⣜⣝⣞⣟⣡⣢⣣⣤⣥⣦⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿';
-
-  // Grid resolution — coarser than globe dots for background feel
-  const GRID = 60;
-
-  // Background waves
-  const waves = [];
-  for (let i = 0; i < 5; i++) {
-    waves.push({
-      x: 0.15 + Math.random() * 0.7,
-      y: 0.15 + Math.random() * 0.7,
-      frequency: 0.14 + Math.random() * 0.18,
-      amplitude: 0.45 + Math.random() * 0.45,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.3 + Math.random() * 0.35,
+  /* ASCII Background */
+  (function initGlobeSectionAsciBg() {
+    const section = document.getElementById('globeSection');
+    if (!section) return;
+    const canvas = document.createElement('canvas');
+    canvas.className = 'globe-section-ascii-bg';
+    section.insertBefore(canvas, section.firstChild);
+    const ctx = canvas.getContext('2d');
+    const CHARS = ASCII_CHARS;
+    const GRID = 60;
+    const waves = [];
+    for (let i = 0; i < 5; i++) {
+      waves.push({
+        x: 0.15 + Math.random() * 0.7, y: 0.15 + Math.random() * 0.7,
+        frequency: 0.14 + Math.random() * 0.18, amplitude: 0.45 + Math.random() * 0.45,
+        phase: Math.random() * Math.PI * 2, speed: 0.3 + Math.random() * 0.35,
+      });
+    }
+    let time = 0;
+    const mouse = { x: 0.5, y: 0.5 };
+    const clickWaves = [];
+    section.addEventListener('mousemove', (e) => {
+      const rect = section.getBoundingClientRect();
+      mouse.x = (e.clientX - rect.left) / rect.width;
+      mouse.y = (e.clientY - rect.top)  / rect.height;
+    }, { passive: true });
+    section.addEventListener('click', (e) => {
+      const rect = section.getBoundingClientRect();
+      clickWaves.push({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height, time: Date.now(), intensity: 2.0 });
     });
-  }
-
-  let time = 0;
-  const mouse = { x: 0.5, y: 0.5 };
-  const clickWaves = [];
-
-  // Mouse tracking on the section
-  section.addEventListener('mousemove', (e) => {
-    const rect = section.getBoundingClientRect();
-    mouse.x = (e.clientX - rect.left) / rect.width;
-    mouse.y = (e.clientY - rect.top)  / rect.height;
-  }, { passive: true });
-
-  section.addEventListener('click', (e) => {
-    const rect = section.getBoundingClientRect();
-    clickWaves.push({
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top)  / rect.height,
-      time: Date.now(),
-      intensity: 2.0,
-    });
-  });
-
-  function getClickInfluence(nx, ny, now) {
-    let total = 0;
-    for (const cw of clickWaves) {
-      const age = now - cw.time;
-      if (age > 4500) continue;
-      const dx = nx - cw.x, dy = ny - cw.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const radius = (age / 4500) * 1.2;
-      const width = 0.12;
-      if (Math.abs(dist - radius) < width) {
-        const s = (1 - age / 4500) * cw.intensity;
-        const p = 1 - Math.abs(dist - radius) / width;
-        total += s * p * Math.sin((dist - radius) * 18);
+    function bgClickInfluence(nx, ny, now) {
+      let total = 0;
+      for (const cw of clickWaves) {
+        const age = now - cw.time;
+        if (age > 4500) continue;
+        const dx = nx - cw.x, dy = ny - cw.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const radius = (age / 4500) * 1.2, width = 0.12;
+        if (Math.abs(dist - radius) < width) {
+          total += (1 - age / 4500) * cw.intensity * (1 - Math.abs(dist - radius) / width) * Math.sin((dist - radius) * 18);
+        }
+      }
+      return total;
+    }
+    function resize() { canvas.width = section.offsetWidth; canvas.height = section.offsetHeight; }
+    function draw() {
+      const W = canvas.width, H = canvas.height;
+      if (W === 0 || H === 0) return;
+      time += 0.75 * 0.016;
+      const now = Date.now();
+      for (let i = clickWaves.length - 1; i >= 0; i--) { if (now - clickWaves[i].time > 4500) clickWaves.splice(i, 1); }
+      ctx.clearRect(0, 0, W, H);
+      const cellW = W / GRID, cellH = H / GRID;
+      const fontSize = Math.min(cellW, cellH) * 0.72;
+      ctx.font = `${fontSize}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (let gy = 0; gy < GRID; gy++) {
+        for (let gx = 0; gx < GRID; gx++) {
+          const nx = (gx + 0.5) / GRID, ny = (gy + 0.5) / GRID;
+          let totalWave = 0;
+          for (const wave of waves) {
+            const dx = nx - wave.x, dy = ny - wave.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            totalWave += Math.sin(dist * wave.frequency * 55 - time * wave.speed + wave.phase) * wave.amplitude / (1 + dist * 3.5);
+          }
+          const mdx = nx - mouse.x, mdy = ny - mouse.y;
+          const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+          if (mDist < 0.35) totalWave += (1 - mDist / 0.35) * 0.85 * Math.sin(time * 3.2);
+          totalWave += bgClickInfluence(nx, ny, now);
+          if (Math.abs(totalWave) < 0.18) continue;
+          const norm = Math.max(0, Math.min(1, (totalWave + 2) / 4));
+          const char = CHARS[Math.floor(norm * (CHARS.length - 1))] || CHARS[0];
+          const opacity = (0.055 + norm * 0.085) * 0.9;
+          ctx.fillStyle = `rgba(200,196,190,${opacity.toFixed(4)})`;
+          ctx.fillText(char, (gx + 0.5) * cellW, (gy + 0.5) * cellH);
+        }
       }
     }
-    return total;
-  }
-
-  function resize() {
-    canvas.width  = section.offsetWidth;
-    canvas.height = section.offsetHeight;
-  }
-
-  function draw() {
-    const W = canvas.width, H = canvas.height;
-    if (W === 0 || H === 0) return;
-
-    time += 0.75 * 0.016;
-    const now = Date.now();
-    // prune old click waves
-    for (let i = clickWaves.length - 1; i >= 0; i--) {
-      if (now - clickWaves[i].time > 4500) clickWaves.splice(i, 1);
-    }
-
-    ctx.clearRect(0, 0, W, H);
-
-    const cellW = W / GRID;
-    const cellH = H / GRID;
-    const fontSize = Math.min(cellW, cellH) * 0.72;
-    ctx.font = `${fontSize}px monospace`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    for (let gy = 0; gy < GRID; gy++) {
-      for (let gx = 0; gx < GRID; gx++) {
-        const nx = (gx + 0.5) / GRID;
-        const ny = (gy + 0.5) / GRID;
-
-        let totalWave = 0;
-
-        for (const wave of waves) {
-          const dx = nx - wave.x, dy = ny - wave.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const falloff = 1 / (1 + dist * 3.5);
-          totalWave += Math.sin(dist * wave.frequency * 55 - time * wave.speed + wave.phase)
-                       * wave.amplitude * falloff;
-        }
-
-        // Mouse wave
-        const mdx = nx - mouse.x, mdy = ny - mouse.y;
-        const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (mDist < 0.35) {
-          const eff = (1 - mDist / 0.35) * 0.85;
-          totalWave += eff * Math.sin(time * 3.2);
-        }
-
-        totalWave += getClickInfluence(nx, ny, now);
-
-        const norm = Math.max(0, Math.min(1, (totalWave + 2) / 4));
-
-        // Only draw if wave is strong enough — keeps it sparse/airy
-        if (Math.abs(totalWave) < 0.18) continue;
-
-        const charIdx = Math.floor(norm * (CHARS.length - 1));
-        const char = CHARS[charIdx] || CHARS[0];
-
-        // Very passive: low max opacity so globe stays dominant
-        // Slightly warmer color matching --ink-ghost / --ink-muted
-        const opacity = (0.055 + norm * 0.085) * 0.9;
-        ctx.fillStyle = `rgba(200,196,190,${opacity.toFixed(4)})`;
-        ctx.fillText(char, (gx + 0.5) * cellW, (gy + 0.5) * cellH);
-      }
-    }
-  }
-
-  // ASCII-BG ebenfalls nur rendern wenn Section sichtbar
-  let asciiBgVisible = false;
-  new IntersectionObserver(
-    ([entry]) => { asciiBgVisible = entry.isIntersecting; },
-    { threshold: 0.01 }
-  ).observe(section);
-
-  function animate() {
-    if (asciiBgVisible) draw();
-    requestAnimationFrame(animate);
-  }
-
-  window.addEventListener('resize', resize);
-  resize();
-  animate();
+    let asciiBgVisible = false;
+    new IntersectionObserver(([entry]) => { asciiBgVisible = entry.isIntersecting; }, { threshold: 0.01 }).observe(section);
+    function animate() { if (asciiBgVisible) draw(); requestAnimationFrame(animate); }
+    window.addEventListener('resize', resize);
+    resize();
+    animate();
+  })();
 })();
-})();
-
-
-
 
 /* ============================
    GLOBE SECTION — Scroll Split
@@ -1316,27 +1029,19 @@ ScrollTrigger.create({
   gsap.set(contactItems, { y: 24, opacity: 0 });
 
   function getTargetX() {
-    const vw         = window.innerWidth;
-    const cw         = canvasWrap.offsetWidth;
+    const vw = window.innerWidth;
+    const cw = canvasWrap.offsetWidth;
     const scaledHalf = (cw * 1.18) / 2;
-    let   target     = vw * 0.75;
-    target = Math.min(target, vw - scaledHalf - 40);
-    return target - vw / 2;
+    return Math.min(vw * 0.75, vw - scaledHalf - 40) - vw / 2;
   }
 
   function applyProgress(p) {
-    gsap.set(canvasWrap, {
-      x:     ph(p, 0.00, 1.00) * getTargetX(),
-      scale: 1 + ph(p, 0.00, 1.00) * 0.18,
-    });
+    gsap.set(canvasWrap, { x: ph(p, 0.00, 1.00) * getTargetX(), scale: 1 + ph(p, 0.00, 1.00) * 0.18 });
     gsap.set(textLeft, { opacity: ph(p, 0.60, 0.90) });
     gsap.set(line1,    { y: (1 - ph(p, 0.65, 0.92)) * 110 + '%' });
-
-    // Kontakt-Items: gestaffelt reinkommen
     contactItems.forEach((item, i) => {
       const start = 0.72 + i * 0.055;
-      const end   = start + 0.18;
-      const t     = ph(p, start, end);
+      const t     = ph(p, start, start + 0.18);
       gsap.set(item, { y: (1 - t) * 24, opacity: t });
     });
   }
@@ -1359,100 +1064,23 @@ ScrollTrigger.create({
   });
 })();
 
-/* ── Footer Name Banner: fit edge-to-edge ── */
-(function () {
-  function fitBanner() {
-    const el = document.querySelector('.footer-name-text');
-    if (!el) return;
-    // reset so we can measure natural width
-    el.style.transform = 'none';
-    const naturalW = el.getBoundingClientRect().width;
-    const viewW    = document.documentElement.clientWidth;
-    const scale    = viewW / naturalW;
-    // anchor left so it grows rightward
-    el.style.transform = 'scaleX(' + scale + ')';
-  }
-  document.fonts.ready.then(fitBanner);
-  window.addEventListener('resize', fitBanner);
-})();
-
-(function initGlitchLabels() {
-  const ASCII = '!<>-_\\/[]{}—=+*^?#⣿⣾⣽⣼⣻⣺⣹⣸⣷⣶⣵⣴⣳⣲⣱⣰⣯⣮⣭⣬⣫⣪⣩⣨⢿⢾⢽⢼⢻⢺⢹⢸⡿⡾⡽⡼⡻⡺⡹⡸@#$%&';
-
-  function scramble(el) {
-    const final = el.dataset.final || el.textContent.trim();
-    const len = final.length;
-    let frame = 0;
-    const totalFrames = 18;
-    const revealAt = (i) => Math.floor((i / len) * (totalFrames * 0.6));
-
-    el.classList.add('is-glitching');
-
-    const interval = setInterval(() => {
-      let out = '';
-      for (let i = 0; i < len; i++) {
-        if (final[i] === ' ') { out += ' '; continue; }
-        if (frame >= revealAt(i) + 4) {
-          out += final[i];
-        } else if (frame >= revealAt(i)) {
-          out += ASCII[Math.floor(Math.random() * ASCII.length)];
-        } else {
-          out += ASCII[Math.floor(Math.random() * ASCII.length)];
-        }
-      }
-      el.textContent = out;
-      frame++;
-
-      if (frame > totalFrames) {
-        el.textContent = final;
-        el.classList.remove('is-glitching');
-        clearInterval(interval);
-      }
-    }, 38);
-  }
-
-  function runAllLabels(staggerMs) {
-    const labels = document.querySelectorAll('.glitch-label');
-    labels.forEach((el, i) => {
-      setTimeout(() => scramble(el), i * staggerMs);
-    });
-  }
-
-  // Fire once on page load after hero animation starts
-  // Then re-scramble on hover of each side word
-  document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => runAllLabels(120), 900);
-
-    document.querySelectorAll('.hero-word--role, .hero-word--designer').forEach(word => {
-      word.addEventListener('mouseenter', () => {
-        word.querySelectorAll('.glitch-label').forEach((el, i) => {
-          setTimeout(() => scramble(el), i * 80);
-        });
-      });
-    });
-  });
-})();
 /* ============================
-   NAV LOGO — hide only in what i do section
+   NAV LOGO — hide in "what i do" section
 ============================ */
 (function initLogoVisibility() {
   const logoName = document.getElementById('navLogoName');
   const logoSub  = document.getElementById('navLogoSub');
-  const section  = document.getElementById('work');
-  if (!logoName || !logoSub || !section) return;
+  const workEl   = document.getElementById('work');
+  if (!logoName || !logoSub || !workEl) return;
 
-  const observer = new IntersectionObserver(([entry]) => {
-    const inside = entry.isIntersecting;
-    gsap.to([logoName, logoSub], {
-      opacity:  inside ? 0 : 1,
-      y:        inside ? -6 : 0,
-      duration: 0.35,
-      ease:     'power2.out',
-    });
-  }, {
-    // Element gilt als "in Section" wenn min. 10% sichtbar sind
-    threshold: 0.10,
-  });
+  let workVisible = false;
 
-  observer.observe(section);
+  function update() {
+    gsap.to([logoName, logoSub], { opacity: workVisible ? 0 : 1, duration: 0.08, ease: 'none' });
+  }
+
+  new IntersectionObserver(([entry]) => {
+    workVisible = entry.isIntersecting;
+    update();
+  }, { threshold: 0.10 }).observe(workEl);
 })();
