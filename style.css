@@ -2,62 +2,70 @@
    LOCAL FONTS
 ============================ */
 
-/* Anton — weight 400 (Hero, Card-Titles, Globe, Footer-Label) */
+/* Anton — weight 400
+   Verwendet für: JACOB WEISSENBÄCK, Find me here, CV-Titles */
 @font-face {
   font-family: 'Anton';
-  src: url('assets/fonts/Anton-Regular.ttf') format('truetype');
+  src: url('assets/fonts/anton-v27-latin-regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
-/* Barlow Condensed — weight 700 (.cv-footer-name), weight 900 (.svc-section-name) */
+/* Barlow Condensed — weight 700 (.cv-footer-name) */
 @font-face {
   font-family: 'Barlow Condensed';
-  src: url('assets/fonts/BarlowCondensed-Bold.ttf') format('truetype');
+  src: url('assets/fonts/barlow-condensed-v13-latin-700.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
+
+/* Barlow Condensed — weight 900 (.svc-name Service-Liste) */
 @font-face {
   font-family: 'Barlow Condensed';
-  src: url('assets/fonts/BarlowCondensed-Black.ttf') format('truetype');
+  src: url('assets/fonts/barlow-condensed-v13-latin-900.woff2') format('woff2');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
 
-/* DM Mono — weight 300 (card body text), 400 (nav/UI), 700 (nav-logo-box) */
+/* DM Mono — weight 300 (.cv-cap-body--left Card-Fließtext) */
 @font-face {
   font-family: 'DM Mono';
-  src: url('assets/fonts/DMMono-Light.ttf') format('truetype');
+  src: url('assets/fonts/dm-mono-v16-latin-300.woff2') format('woff2');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
+
+/* DM Mono — weight 400 (body, nav, Labels, --font-mono Elemente) */
 @font-face {
   font-family: 'DM Mono';
-  src: url('assets/fonts/DMMono-Regular.ttf') format('truetype');
+  src: url('assets/fonts/dm-mono-v16-latin-regular.woff2') format('woff2');
   font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'DM Mono';
-  src: url('assets/fonts/DMMono-Medium.ttf') format('truetype');
-  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* Cormorant Garamond — als CSS-Variable definiert, Fallback auf Georgia wenn nicht aktiv genutzt */
+/* DM Mono — weight 500–700 (.svc-eyebrow-txt, .nav-logo-box) */
+@font-face {
+  font-family: 'DM Mono';
+  src: url('assets/fonts/dm-mono-v16-latin-500.woff2') format('woff2');
+  font-weight: 500 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Cormorant Garamond — weight 400 (--font-display / --font-serif Variable) */
 @font-face {
   font-family: 'Cormorant Garamond';
-  src: url('assets/fonts/CormorantGaramond-Regular.ttf') format('truetype');
+  src: url('assets/fonts/cormorant-garamond-v21-latin-regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
+
 
 /* ============================
    DESIGN TOKENS
