@@ -198,7 +198,7 @@ const heroInit = () => {
    EASTER EGG — Name letter hover
 ============================ */
 (function initNameEasterEgg() {
-  const wrap = document.getElementById('nameLetterWrap');
+  const wrap = document.getElementById('heroNameLetters');
   if (!wrap) return;
 
   const chars = [...'JACOB WEISSENBACK'];
@@ -231,11 +231,11 @@ window.__heroInit = heroInit;
   const hero       = document.getElementById('hero');
   const imgCard    = document.getElementById('heroImgCard');
   const nameEl     = document.getElementById('heroWordFullname');
-  const roleEl     = document.getElementById('heroWordRole');
-  const designerEl = document.getElementById('heroWordDesigner');
-  const panel      = document.getElementById('bottomSheet');
-  const zpStage    = document.getElementById('heroZpStage');
-  const zpItems    = zpStage ? [...zpStage.querySelectorAll('.hero-zp-item')] : [];
+  const roleEl     = document.getElementById('heroSubtitleRow');
+  const designerEl = document.getElementById('heroDesignerCompat');
+  const panel      = document.getElementById('mainContent');
+  const zpStage    = document.getElementById('heroParallaxStage');
+  const zpItems    = zpStage ? [...zpStage.querySelectorAll('.hero-parallax-item')] : [];
 
   if (!hero || !roleEl || !designerEl || !panel || !imgCard || !nameEl) return;
 
@@ -328,7 +328,7 @@ window.__heroInit = heroInit;
 
       gsap.set(item, { opacity: exitOpacity, scale: exitScale });
 
-      const wrap = item.querySelector('.hero-zp-wrap');
+      const wrap = item.querySelector('.hero-parallax-wrap');
       if (wrap) {
         if (itemP > 0) {
           if (!wrap.classList.contains('is-revealed')) {
@@ -363,7 +363,7 @@ window.__heroInit = heroInit;
     const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
     if (heroImgWrap) heroImgWrap.classList.remove('is-revealed');
     zpItems.forEach(item => {
-      const wrap = item.querySelector('.hero-zp-wrap');
+      const wrap = item.querySelector('.hero-parallax-wrap');
       if (wrap) wrap.classList.remove('is-revealed');
     });
   }
@@ -431,7 +431,7 @@ window.__heroInit = heroInit;
 
   if (imgPanel) gsap.set(imgPanel, { opacity: 0 });
 
-  const imgInner = imgPanel ? imgPanel.querySelector('.svc-img-inner') : null;
+  const imgInner = imgPanel ? imgPanel.querySelector('.svc-preview-inner') : null;
 
   function showPanel(name, imgId) {
     if (!imgPanel || !section) return;
@@ -440,7 +440,7 @@ window.__heroInit = heroInit;
     const rowCenter   = (nameRect.top + nameRect.height / 2) - sectionRect.top;
     gsap.set(imgPanel, { top: rowCenter, yPercent: -50, opacity: 1, scale: 1, rotation: 0 });
     if (imgInner) imgInner.classList.remove('is-revealed');
-    document.querySelectorAll('.svc-img').forEach(img =>
+    document.querySelectorAll('.svc-preview-img').forEach(img =>
       img.classList.toggle('is-active', img.id === imgId)
     );
     if (imgInner) {
@@ -453,7 +453,7 @@ window.__heroInit = heroInit;
     if (!imgPanel) return;
     gsap.set(imgPanel, { opacity: 0 });
     if (imgInner) imgInner.classList.remove('is-revealed');
-    document.querySelectorAll('.svc-img').forEach(img => img.classList.remove('is-active'));
+    document.querySelectorAll('.svc-preview-img').forEach(img => img.classList.remove('is-active'));
   }
 
   function scramble(el) {
@@ -1013,8 +1013,8 @@ ScrollTrigger.create({
   const section    = document.getElementById('globeSection');
   const canvasWrap = document.getElementById('globeSectionCanvas');
   const textLeft   = document.getElementById('globeTextLeft');
-  const line1      = document.getElementById('globeLine1');
-  const contactBlock = document.getElementById('globeLine2');
+  const line1      = document.getElementById('globeHeadline');
+  const contactBlock = document.getElementById('globeContactList');
   const contactItems = contactBlock ? [...contactBlock.querySelectorAll('.globe-contact-item')] : [];
 
   if (!section || !canvasWrap || !textLeft) return;

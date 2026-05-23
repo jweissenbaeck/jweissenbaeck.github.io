@@ -16,7 +16,7 @@ window.addEventListener('DOMContentLoaded', function () {
     .to('#heroLine2', { y: '0%', duration: 0.85, ease: 'power4.out' }, 0.28);
 
   /* ── Stacked Cards — scale on scroll ── */
-  var container = document.getElementById('stackContainer');
+  var container = document.getElementById('cvCardStack');
   var cards     = gsap.utils.toArray('.cv-card');
   var N         = cards.length;
 
@@ -92,7 +92,7 @@ window.addEventListener('DOMContentLoaded', function () {
   /* ── Nav buttons hide / Between-strip reveal at footer ── */
   var navBack     = document.getElementById('navBack');
   var navDownload = document.getElementById('navDownload');
-  var strip       = document.getElementById('betweenStrip');
+  var strip       = document.getElementById('cvNavStrip');
 
   ScrollTrigger.create({
     trigger: '#cvFooter',
@@ -135,7 +135,7 @@ window.addEventListener('DOMContentLoaded', function () {
   /* ── NAV LOGO — hide during cards ── */
   var logoName = document.querySelector('.nav-logo-box');
   var logoSub  = document.querySelector('.nav-logo-sub');
-  var mainEl   = document.getElementById('stackContainer');
+  var mainEl   = document.getElementById('cvCardStack');
   if (logoName && logoSub && mainEl) {
     function onLogoScroll() {
       var rect   = mainEl.getBoundingClientRect();

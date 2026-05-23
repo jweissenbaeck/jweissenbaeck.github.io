@@ -57,14 +57,7 @@
   font-display: swap;
 }
 
-/* Cormorant Garamond — weight 400 (--font-display / --font-serif Variable) */
-@font-face {
-  font-family: 'Cormorant Garamond';
-  src: url('assets/fonts/cormorant-garamond-v21-latin-regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+
 
 
 /* ============================
@@ -79,25 +72,14 @@
   --ink-muted:   #7A7570;
   --ink-ghost:   #3A3834;
 
-  --accent:      #F0EDE8;
-  --accent-warm: #D4CFC8;
 
   --border:       rgba(240,237,232, 0.08);
-  --border-mid:   rgba(240,237,232, 0.15);
-  --border-light: rgba(240,237,232, 0.04);
 
-  --shadow-sm: 0 1px 4px rgba(240,237,232,0.08), 0 2px 10px rgba(240,237,232,0.05);
-  --shadow-md: 0 4px 20px rgba(240,237,232,0.12), 0 1px 4px rgba(240,237,232,0.06);
   --shadow-lg: 0 12px 40px rgba(240,237,232,0.15), 0 2px 8px rgba(240,237,232,0.08);
 
-  --font-display: 'Cormorant Garamond', Georgia, serif;
-  --font-hero:    'Anton', 'Barlow Condensed', Arial, sans-serif;
-  --font-ui:      'DM Mono', monospace;
   --font-mono:    'DM Mono', monospace;
-  --font-serif:   'Cormorant Garamond', Georgia, serif;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
   --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -109,7 +91,7 @@
 html { scroll-behavior: auto; scrollbar-gutter: stable; }
 
 body {
-  font-family: var(--font-ui);
+  font-family: var(--font-mono);
   background: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
@@ -349,7 +331,7 @@ body:has(button:hover) .cursor-ring {
 /* ============================
    HERO — ZOOM PARALLAX PHOTOS
 ============================ */
-.hero-zp-stage {
+.hero-parallax-stage {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -357,7 +339,7 @@ body:has(button:hover) .cursor-ring {
   overflow: hidden;
 }
 
-.hero-zp-item {
+.hero-parallax-item {
   position: absolute;
   inset: 0;
   display: flex;
@@ -368,19 +350,19 @@ body:has(button:hover) .cursor-ring {
   opacity: 0;
 }
 
-.hero-zp-wrap {
+.hero-parallax-wrap {
   position: absolute;
   overflow: hidden;
   clip-path: inset(50% 0 50% 0);
   transition: none;
 }
 
-.hero-zp-wrap.is-revealed {
+.hero-parallax-wrap.is-revealed {
   clip-path: inset(0% 0 0% 0);
   transition: clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.hero-zp-wrap img {
+.hero-parallax-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -388,42 +370,42 @@ body:has(button:hover) .cursor-ring {
   filter: saturate(0.82) brightness(0.96);
 }
 
-.hero-zp-tl {
+.hero-parallax-tl {
   width: 18vw; height: 24vw;
   top: 50%;
   left: calc(50% - 13vw - 1.5vw - 18vw);
   transform: translate(0, -50%);
 }
 
-.hero-zp-tr {
+.hero-parallax-tr {
   width: 20vw; height: 13vw;
   top: 50%;
   left: calc(50% + 13vw + 1.5vw);
   transform: translate(0, -50%);
 }
 
-.hero-zp-bl {
+.hero-parallax-bl {
   width: 16vw; height: 10vw;
   top: calc(50% - 7.3vw - 1.5vw - 10vw);
   left: calc(50% - 13vw);
   transform: none;
 }
 
-.hero-zp-br {
+.hero-parallax-br {
   width: 22vw; height: 13vw;
   top: calc(50% + 7.3vw + 1.5vw);
   left: calc(50% + 13vw - 22vw);
   transform: none;
 }
 
-.hero-zp-sm {
+.hero-parallax-sm {
   width: 13vw; height: 9vw;
   top: calc(50% - 7.3vw - 1.5vw - 9vw);
   left: calc(50% + 13vw + 1.5vw);
   transform: none;
 }
 
-.hero-zp-br2 {
+.hero-parallax-br2 {
   width: 15vw; height: 10vw;
   top: calc(50% + 7.3vw + 1.5vw);
   left: calc(50% - 13vw - 1.5vw - 15vw);
@@ -433,7 +415,7 @@ body:has(button:hover) .cursor-ring {
 /* ============================
    BOTTOM SHEET
 ============================ */
-.bottom-sheet {
+.main-content {
   position: relative;
   background: var(--bg);
   overflow: visible; z-index: 10;
@@ -442,7 +424,7 @@ body:has(button:hover) .cursor-ring {
   will-change: clip-path;
 }
 
-.bottom-sheet .services-section { max-height: none; overflow: visible; padding-top: 60px; }
+.main-content .services-section { max-height: none; overflow: visible; padding-top: 60px; }
 .services-section { will-change: transform; }
 
 /* ============================
@@ -501,7 +483,7 @@ body:has(button:hover) .cursor-ring {
   color: var(--ink);
 }
 
-.svc-img-panel {
+.svc-preview-panel {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -510,7 +492,7 @@ body:has(button:hover) .cursor-ring {
   z-index: 50;
 }
 
-.svc-img-inner {
+.svc-preview-inner {
   position: relative;
   width: 100%;
   aspect-ratio: 280 / 190;
@@ -521,20 +503,20 @@ body:has(button:hover) .cursor-ring {
   transition: none;
 }
 
-.svc-img-inner.is-revealed {
+.svc-preview-inner.is-revealed {
   clip-path: inset(0% 0 0% 0 round 6px);
   transition: clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.svc-img {
+.svc-preview-img {
   position: absolute;
   inset: 0;
   opacity: 0;
   pointer-events: none;
   display: flex;
 }
-.svc-img svg { width: 100%; height: 100%; display: block; flex-shrink: 0; }
-.svc-img.is-active { opacity: 1; }
+.svc-preview-img svg { width: 100%; height: 100%; display: block; flex-shrink: 0; }
+.svc-preview-img.is-active { opacity: 1; }
 
 .services-list {
   display: flex;
@@ -703,7 +685,7 @@ body:has(button:hover) .cursor-ring {
   z-index: 0;
 }
 
-.globe-section-inner {
+.globe-layout {
   position: relative;
   z-index: 4;
   display: flex;

@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jacob Weissenbäck — Portfolio</title>
 
-<script src="assets/libs/gsap.min.js" defer></script>
-<script src="assets/libs/ScrollTrigger.min.js" defer></script>
-<script src="assets/libs/lenis.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
 <link rel="stylesheet" href="style.css">
 
 </head>
@@ -48,8 +48,8 @@
 <!-- HERO -->
 <section class="hero" id="hero">
 
-  <div class="hero-middle-row" id="heroMiddleRow">
-    <div class="hero-name-row" id="heroNameRow"></div>
+  <div class="hero-middle-row" id="heroStage">
+    <div class="hero-name-row" id="heroNameOverlay"></div>
     <div class="hero-img-card" id="heroImgCard">
       <div class="hero-img-wrap">
         <img src="https://picsum.photos/900/600?random=10" alt="Showreel" style="width:100%;height:100%;object-fit:cover;display:block;">
@@ -57,56 +57,56 @@
     </div>
   </div>
 
-  <div class="hero-center-block" id="heroCenterBlock">
+  <div class="hero-center-block" id="heroTitleBlock">
     <div class="hero-title-clip">
       <span class="hero-word hero-word--fullname" id="heroWordFullname">
-        <span class="name-letter-wrap" id="nameLetterWrap">JACOB WEISSENBACK</span>
+        <span class="name-letter-wrap" id="heroNameLetters">JACOB WEISSENBACK</span>
       </span>
     </div>
-    <div class="hero-subtitle-row" id="heroWordRole">
+    <div class="hero-subtitle-row" id="heroSubtitleRow">
       <span class="hero-subtitle">UI / UX Designer</span>
     </div>
   </div>
 
   <!-- Hidden compat elements -->
-  <span id="heroWordDesigner" style="display:none;opacity:1;"></span>
-  <span id="heroScroll"       style="display:none;"></span>
+  <span id="heroDesignerCompat" style="display:none;opacity:1;"></span>
+  <span id="heroScrollCompat"       style="display:none;"></span>
 
   <!-- Zoom Parallax Photos -->
-  <div class="hero-zp-stage" id="heroZpStage" aria-hidden="true">
+  <div class="hero-parallax-stage" id="heroParallaxStage" aria-hidden="true">
 
-    <div class="hero-zp-item" data-scale="1.6" data-delay="0.00">
-      <div class="hero-zp-wrap hero-zp-tl">
+    <div class="hero-parallax-item" data-scale="1.6" data-delay="0.00">
+      <div class="hero-parallax-wrap hero-parallax-tl">
         <img src="https://picsum.photos/540/360?random=79" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
 
-    <div class="hero-zp-item" data-scale="1.7" data-delay="0.18">
-      <div class="hero-zp-wrap hero-zp-tr">
+    <div class="hero-parallax-item" data-scale="1.7" data-delay="0.18">
+      <div class="hero-parallax-wrap hero-parallax-tr">
         <img src="https://picsum.photos/480/680?random=80" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
 
-    <div class="hero-zp-item" data-scale="1.8" data-delay="0.32">
-      <div class="hero-zp-wrap hero-zp-bl">
+    <div class="hero-parallax-item" data-scale="1.8" data-delay="0.32">
+      <div class="hero-parallax-wrap hero-parallax-bl">
         <img src="https://picsum.photos/560/400?random=81" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
 
-    <div class="hero-zp-item" data-scale="1.9" data-delay="0.44">
-      <div class="hero-zp-wrap hero-zp-sm">
+    <div class="hero-parallax-item" data-scale="1.9" data-delay="0.44">
+      <div class="hero-parallax-wrap hero-parallax-sm">
         <img src="https://picsum.photos/380/280?random=83" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
 
-    <div class="hero-zp-item" data-scale="1.7" data-delay="0.55">
-      <div class="hero-zp-wrap hero-zp-br">
+    <div class="hero-parallax-item" data-scale="1.7" data-delay="0.55">
+      <div class="hero-parallax-wrap hero-parallax-br">
         <img src="https://picsum.photos/520/380?random=82" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
 
-    <div class="hero-zp-item" data-scale="1.8" data-delay="0.65">
-      <div class="hero-zp-wrap hero-zp-br2">
+    <div class="hero-parallax-item" data-scale="1.8" data-delay="0.65">
+      <div class="hero-parallax-wrap hero-parallax-br2">
         <img src="https://picsum.photos/500/360?random=84" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
       </div>
     </div>
@@ -115,14 +115,14 @@
 
 </section>
 
-<div id="bottomSheet" class="bottom-sheet">
+<div id="mainContent" class="main-content">
 
 <!-- WHAT I DO -->
 <section class="services-section" id="work">
 
-  <div class="svc-img-panel" id="svcImgPanel" aria-hidden="true">
-    <div class="svc-img-inner">
-      <div class="svc-img" id="simg-uiux">
+  <div class="svc-preview-panel" id="svcImgPanel" aria-hidden="true">
+    <div class="svc-preview-inner">
+      <div class="svc-preview-img" id="svc-preview-img-uiux">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#0f0f0f"/>
           <rect x="28" y="22" width="224" height="146" rx="7" fill="#1a1a1a"/>
@@ -138,7 +138,7 @@
           <rect x="50" y="105" width="56" height="7" rx="2" fill="#fff" opacity="0.9"/>
         </svg>
       </div>
-      <div class="svc-img" id="simg-product">
+      <div class="svc-preview-img" id="svc-preview-img-product">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#0d0d0d"/>
           <rect x="70" y="22" width="140" height="140" rx="20" fill="#191919"/>
@@ -152,7 +152,7 @@
           <rect x="102" y="132" width="76" height="4" rx="2" fill="#e0c97a" opacity="0.45"/>
         </svg>
       </div>
-      <div class="svc-img" id="simg-image">
+      <div class="svc-preview-img" id="svc-preview-img-image">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#080808"/>
           <rect x="28" y="22" width="224" height="136" rx="5" fill="#111"/>
@@ -163,7 +163,7 @@
           <rect x="230" y="30" width="14" height="14" rx="2" fill="#ff6b35" opacity="0.6"/>
         </svg>
       </div>
-      <div class="svc-img" id="simg-color">
+      <div class="svc-preview-img" id="svc-preview-img-color">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#060606"/>
           <rect x="22" y="22" width="78" height="130" rx="5 0 0 5" fill="#1a2a40"/>
@@ -176,7 +176,7 @@
           <rect x="206" y="140" width="36" height="5" rx="2" fill="#ff4a7a" opacity="0.7"/>
         </svg>
       </div>
-      <div class="svc-img" id="simg-video">
+      <div class="svc-preview-img" id="svc-preview-img-video">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#090909"/>
           <rect x="22" y="34" width="236" height="106" rx="5" fill="#111"/>
@@ -188,7 +188,7 @@
           <rect x="84" y="139" width="76" height="3" rx="1" fill="#fff" opacity="0.45"/>
         </svg>
       </div>
-      <div class="svc-img" id="simg-ads">
+      <div class="svc-preview-img" id="svc-preview-img-ads">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#0b0b0b"/>
           <rect x="28" y="18" width="224" height="146" rx="7" fill="#141414"/>
@@ -203,7 +203,7 @@
           <rect x="172" y="114" width="44" height="4" rx="2" fill="#3a8fff" opacity="0.55"/>
         </svg>
       </div>
-      <div class="svc-img" id="simg-social">
+      <div class="svc-preview-img" id="svc-preview-img-social">
         <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
           <rect width="280" height="190" fill="#090909"/>
           <rect x="90" y="12" width="100" height="170" rx="14" fill="#111"/>
@@ -226,7 +226,7 @@
 
   <div class="services-list" id="servicesList">
 
-    <div class="svc-item" data-img="simg-uiux">
+    <div class="svc-item" data-img="svc-preview-img-uiux">
       <span class="svc-name">UI / UX Design</span>
       <div class="svc-skills">
         <span class="svc-skill">Figma</span>
@@ -236,7 +236,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="simg-product">
+    <div class="svc-item" data-img="svc-preview-img-product">
       <span class="svc-name">Product Design</span>
       <div class="svc-skills">
         <span class="svc-skill">Systems</span>
@@ -245,7 +245,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="simg-image">
+    <div class="svc-item" data-img="svc-preview-img-image">
       <span class="svc-name">Image Editing</span>
       <div class="svc-skills">
         <span class="svc-skill">Photoshop</span>
@@ -254,7 +254,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="simg-color">
+    <div class="svc-item" data-img="svc-preview-img-color">
       <span class="svc-name">Colorgrading</span>
       <div class="svc-skills">
         <span class="svc-skill">DaVinci</span>
@@ -263,7 +263,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="simg-video">
+    <div class="svc-item" data-img="svc-preview-img-video">
       <span class="svc-name">Video Cutting</span>
       <div class="svc-skills">
         <span class="svc-skill">DaVinci Resolve</span>
@@ -272,7 +272,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="simg-ads">
+    <div class="svc-item" data-img="svc-preview-img-ads">
       <span class="svc-name">Advertisements</span>
       <div class="svc-skills">
         <span class="svc-skill">Motion</span>
@@ -281,7 +281,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="simg-social">
+    <div class="svc-item" data-img="svc-preview-img-social">
       <span class="svc-name">Social Media</span>
       <div class="svc-skills">
         <span class="svc-skill">Content</span>
@@ -310,15 +310,15 @@
 <!-- GLOBE SECTION -->
 <section class="globe-section" id="globeSection">
 
-  <div class="globe-section-inner" id="globeSectionInner">
+  <div class="globe-layout" id="globeLayout">
 
     <div class="globe-text-left" id="globeTextLeft">
 
       <div class="globe-text-clip">
-        <span class="globe-display-line" id="globeLine1">Find me here</span>
+        <span class="globe-display-line" id="globeHeadline">Find me here</span>
       </div>
 
-      <div class="globe-contact-block" id="globeLine2">
+      <div class="globe-contact-block" id="globeContactList">
 
         <a href="mailto:j.weissenbaeck@gmx.at" class="globe-contact-item" data-label="E-MAIL">
           <span class="globe-contact-icon">
@@ -366,8 +366,8 @@
 
 </div><!-- /bottom-sheet -->
 
-<script src="assets/libs/topojson-client.min.js" defer></script>
-<script src="assets/libs/three.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="script.js" defer></script>
 </body>
 </html>

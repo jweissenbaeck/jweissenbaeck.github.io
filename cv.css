@@ -19,7 +19,7 @@
 }
 
 /* ── BETWEEN-CARDS REVEAL STRIP ── */
-.cv-between-strip {
+.cv-nav-strip {
   position: relative;
   z-index: 50;
   display: flex;
@@ -31,7 +31,7 @@
   opacity: 0;
 }
 
-.cv-between-back {
+.cv-nav-back-btn {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -45,9 +45,9 @@
   opacity: 0.55;
   transition: opacity 0.2s ease;
 }
-.cv-between-back:hover { opacity: 1; }
+.cv-nav-back-btn:hover { opacity: 1; }
 
-.cv-between-download {
+.cv-nav-download-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -63,7 +63,7 @@
   white-space: nowrap;
   transition: background 0.2s ease;
 }
-.cv-between-download:hover { background: rgba(255,255,255,0.85); }.cv-hero-title {
+.cv-nav-download-btn:hover { background: rgba(255,255,255,0.85); }.cv-hero-title {
   font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
   font-size: clamp(2rem, 8.5vw, 10rem);
   font-weight: 400;
@@ -76,11 +76,11 @@
   align-items: center;
 }
 
-.cv-line-clip  { overflow: hidden; display: block; padding-bottom: 0.06em; }
-.cv-line-inner { display: block; transform: translateY(110%); will-change: transform; }
+.cv-title-clip  { overflow: hidden; display: block; padding-bottom: 0.06em; }
+.cv-title-inner { display: block; transform: translateY(110%); will-change: transform; }
 
 /* ── STACK CONTAINER ── */
-.cv-stack-container { position: relative; }
+.cv-card-stack { position: relative; }
 
 /* ── CARD WRAP ── */
 .cv-card-wrap {
@@ -157,14 +157,6 @@
   overflow: hidden;
 }
 
-.cv-card-counter {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-}
-
 .cv-card-title {
   font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
   font-size: clamp(2rem, 3.2vw, 3.8rem);
@@ -185,22 +177,6 @@
   flex: 1;
 }
 
-.cv-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  margin-top: auto;
-}
-.cv-meta-item {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--ink-ghost);
-}
-.cv-meta-dot { color: var(--ink-ghost); font-size: 10px; }
 
 /* RIGHT */
 .cv-card-right {
