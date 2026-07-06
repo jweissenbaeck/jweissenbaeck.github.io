@@ -209,24 +209,68 @@ body:has(button:hover) .cursor-ring {
 }
 
 .nav-btn-talk {
+  position: relative;
+  overflow: hidden;
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.14em; text-transform: uppercase; color: #111;
   background: #fff; border: none; padding: 7px 14px;
   cursor: none; text-decoration: none;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.25s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1), box-shadow 0.4s cubic-bezier(0.16,1,0.3,1);
   display: inline-block;
 }
-.nav-btn-talk:hover { background: rgba(255,255,255,0.85); }
+.nav-btn-talk:hover {
+  background: rgba(255,255,255,0.92);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+}
 
 .nav-btn-menu {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
   background: transparent; border: 1.5px solid rgba(255,255,255,0.6);
   padding: 6px 14px; cursor: none; text-decoration: none;
   display: inline-block;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.3s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1);
 }
-.nav-btn-menu:hover { border-color: #fff; }
+.nav-btn-menu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.1);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  z-index: -1;
+}
+.nav-btn-menu:hover {
+  border-color: #fff;
+  transform: translateY(-2px);
+}
+.nav-btn-menu:hover::before { transform: scaleX(1); }
+
+/* ── Nav button text swipe micro-interaction ── */
+.btn-slide-wrap {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+.btn-slide-text {
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+}
+.btn-slide-text--dupe {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+}
+.nav-btn-talk:hover .btn-slide-text,
+.nav-btn-menu:hover .btn-slide-text {
+  transform: translateY(-100%);
+}
 
 /* ============================
    HERO
@@ -586,7 +630,7 @@ body:has(button:hover) .cursor-ring {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  border: 1px solid rgba(240,237,232,0.18);
+  border: 2px solid rgba(240,237,232,0.18);
   border-radius: 12px;
   background: transparent;
   cursor: none;

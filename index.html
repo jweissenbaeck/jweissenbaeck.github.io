@@ -40,8 +40,16 @@
     <span class="nav-logo-sub" id="navLogoSub">PORTFOLIO</span>
   </div>
   <div class="nav-right">
-    <a href="#contact" class="nav-btn-talk">WHO I AM</a>
-    <a href="cv.html" class="nav-btn-menu">CV</a>
+    <a href="projects.html" class="nav-btn-talk btn-liquid">
+      <span class="btn-liquid-fill"></span>
+      <span class="btn-liquid-label">ALL PROJECTS</span>
+      <span class="btn-liquid-label btn-liquid-label--inv" aria-hidden="true">ALL PROJECTS</span>
+    </a>
+    <a href="cv.html" class="nav-btn-menu btn-liquid">
+      <span class="btn-liquid-fill"></span>
+      <span class="btn-liquid-label">CV</span>
+      <span class="btn-liquid-label btn-liquid-label--inv" aria-hidden="true">CV</span>
+    </a>
   </div>
 </nav>
 
@@ -293,16 +301,12 @@
   </div>
 
   <div style="display:flex;justify-content:center;padding:64px 0 0;">
-    <button class="svc-flip-btn" id="svcFlipBtn">
+    <a href="projects.html" class="svc-flip-btn" id="svcFlipBtn">
       <span class="svc-flip-front">
-        View all projects
-        <svg class="svc-flip-arrow" width="28" height="12" viewBox="0 0 28 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <line class="arr-line" x1="0" y1="6" x2="22" y2="6" stroke="currentColor" stroke-width="1.2"/>
-          <polyline class="arr-head" points="20,1 27,6 20,11" stroke="currentColor" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        All Projects
       </span>
       <span class="svc-flip-back">Have fun!</span>
-    </button>
+    </a>
   </div>
 
 </section>
