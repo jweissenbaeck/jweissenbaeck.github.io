@@ -41,14 +41,6 @@
   </div>
 </nav>
 
-<!-- HERO -->
-<div class="cv-hero">
-  <h1 class="cv-hero-title">
-    <span class="cv-title-clip"><span class="cv-title-inner" id="heroLine1">My</span></span>
-    <span class="cv-title-clip"><span class="cv-title-inner" id="heroLine2">Projects</span></span>
-  </h1>
-</div>
-
 <!-- TAB NAV -->
 <div class="proj-tabnav-sentinel" id="projTabnavSentinel"></div>
 <div class="proj-tabnav-wrap" id="projTabnavWrap">
@@ -63,27 +55,34 @@
   </nav>
 </div>
 
-<!-- BENTO GRID -->
-<div class="proj-bento-wrap" id="projBentoWrap">
-  <div class="bento-grid" id="bentoGrid" tabindex="0"></div>
+<!-- SELECTED WORK LIST -->
+<div class="proj-list-wrap" id="projListWrap">
 
-  <div class="bento-controls">
-    <button class="bento-arrow" id="bentoArrowLeft" type="button" aria-label="Zurück">
+  <div class="proj-view-switch" id="projViewSwitch" role="tablist" aria-label="View umschalten">
+    <button class="proj-view-btn is-active" data-view="list" type="button" role="tab" aria-selected="true" aria-label="Listenansicht">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="2" cy="3" r="1.2" fill="currentColor"/>
+        <circle cx="2" cy="8" r="1.2" fill="currentColor"/>
+        <circle cx="2" cy="13" r="1.2" fill="currentColor"/>
+        <line x1="5.5" y1="3" x2="14" y2="3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="5.5" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <line x1="5.5" y1="13" x2="14" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
       </svg>
     </button>
-
-    <div class="bento-slider-track" id="bentoSliderTrack">
-      <div class="bento-slider-thumb" id="bentoSliderThumb"></div>
-    </div>
-
-    <button class="bento-arrow" id="bentoArrowRight" type="button" aria-label="Weiter">
+    <button class="proj-view-btn" data-view="grid" type="button" role="tab" aria-selected="false" aria-label="Rasteransicht">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="2" y="2" width="5" height="5" rx="1.2" fill="currentColor"/>
+        <rect x="9" y="2" width="5" height="5" rx="1.2" fill="currentColor"/>
+        <rect x="2" y="9" width="5" height="5" rx="1.2" fill="currentColor"/>
+        <rect x="9" y="9" width="5" height="5" rx="1.2" fill="currentColor"/>
       </svg>
     </button>
   </div>
+
+  <div class="proj-list-preview" id="projListPreview" aria-hidden="true">
+    <img id="projListPreviewImg" src="" alt="">
+  </div>
+  <div class="proj-list" id="projList"></div>
 </div>
 
 <script src="script.js"></script>

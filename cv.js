@@ -10,11 +10,6 @@ window.addEventListener('DOMContentLoaded', function () {
   gsap.ticker.add(function(time) { lenis.raf(time * 1000); });
   gsap.ticker.lagSmoothing(0);
 
-  /* ── Hero reveal ── */
-  var tl = gsap.timeline({ delay: 0.1 });
-  tl.to('#heroLine1', { y: '0%', duration: 0.85, ease: 'power4.out' }, 0.15)
-    .to('#heroLine2', { y: '0%', duration: 0.85, ease: 'power4.out' }, 0.28);
-
   /* ── Stacked Cards — scale on scroll ── */
   var container = document.getElementById('cvCardStack');
   var cards     = gsap.utils.toArray('.cv-card');
@@ -25,6 +20,8 @@ window.addEventListener('DOMContentLoaded', function () {
     card.style.position = 'relative';
     card.style.top      = 'calc(-4vh + ' + (i * 28) + 'px)';
   });
+
+  gsap.set(cards[0], { y: 0, opacity: 1 });
 
   function getProgress() {
     var rect    = container.getBoundingClientRect();
@@ -132,18 +129,29 @@ window.addEventListener('DOMContentLoaded', function () {
     opacity: 1, y: 0, duration: 0.7, ease: 'power3.out',
   });
 
-  /* ── NAV LOGO — hide during cards ── */
+  /* ── NAV LOGO — stay visible until the third card is actually reached ── */
   var logoName = document.querySelector('.nav-logo-box');
   var logoSub  = document.querySelector('.nav-logo-sub');
   var mainEl   = document.getElementById('cvCardStack');
   if (logoName && logoSub && mainEl) {
-    function onLogoScroll() {
-      var rect   = mainEl.getBoundingClientRect();
-      var active = rect.top <= 80 && rect.bottom > 80;
-      gsap.to([logoName, logoSub], { opacity: active ? 0 : 1, duration: 0.4, ease: 'power2.out' });
+    gsap.set([logoName, logoSub], { opacity: 1 });
+    var thirdCard = document.getElementById('card-2');
+    if (thirdCard) {
+      function updateLogoVisibility() {
+        var rect = thirdCard.getBoundingClientRect();
+        var shouldHide = rect.top <= window.innerHeight * 0.35;
+        gsap.to([logoName, logoSub], {
+          opacity: shouldHide ? 0 : 1,
+          duration: 0.25,
+          ease: 'power2.out',
+          overwrite: true,
+        });
+      }
+
+      window.addEventListener('scroll', updateLogoVisibility, { passive: true });
+      window.addEventListener('resize', updateLogoVisibility);
+      updateLogoVisibility();
     }
-    ScrollTrigger.create({ onUpdate: onLogoScroll });
-    onLogoScroll();
   }
 
 });

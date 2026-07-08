@@ -10,12 +10,30 @@
   document.documentElement.style.overflow = 'hidden';
 
   let progress = 0;
-  let done     = false;
+  let targetProgress = 0;
+  let done = false;
+  let progressRaf = null;
+
+  function renderProgress() {
+    progress += (targetProgress - progress) * 0.16;
+    if (bar) bar.style.width = Math.round(progress) + '%';
+    if (pct) pct.textContent = Math.floor(progress) + '%';
+
+    if (Math.abs(targetProgress - progress) > 0.4) {
+      progressRaf = requestAnimationFrame(renderProgress);
+    } else {
+      progress = targetProgress;
+      if (bar) bar.style.width = Math.round(progress) + '%';
+      if (pct) pct.textContent = Math.floor(progress) + '%';
+      progressRaf = null;
+    }
+  }
 
   function setProgress(p) {
-    progress = Math.min(100, Math.max(progress, p));
-    if (bar) bar.style.width = progress + '%';
-    if (pct) pct.textContent = Math.floor(progress);
+    targetProgress = Math.min(100, Math.max(targetProgress, p));
+    if (!progressRaf) {
+      progressRaf = requestAnimationFrame(renderProgress);
+    }
   }
 
   function hideLoader() {
@@ -48,13 +66,13 @@
           }
         });
       }, 700);
-    }, 250);
+    }, 700);
   }
 
   let trickle = 0;
   const trickleInterval = setInterval(() => {
-    trickle += Math.random() * 12;
-    if (trickle >= 80) { trickle = 80; clearInterval(trickleInterval); }
+    trickle += Math.random() * 3.8 + 1.2;
+    if (trickle >= 84) { trickle = 84; clearInterval(trickleInterval); }
     setProgress(trickle);
   }, 120);
 
@@ -67,7 +85,7 @@
       setProgress(90);
       document.fonts.ready.then(() => {
         setProgress(97);
-        setTimeout(hideLoader, 180);
+        setTimeout(hideLoader, 240);
       });
     });
   }
