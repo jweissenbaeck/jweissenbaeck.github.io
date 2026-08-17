@@ -9,21 +9,25 @@
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cv.css">
+
+  <script>
+    /* Flash-Schutz: Inhalt bei interner Navigation verbergen, bis das ASCII-Overlay übernimmt. */
+    try {
+      if (sessionStorage.getItem('jcky:internalNav') === '1') {
+        document.documentElement.classList.add('vt-arriving');
+        setTimeout(function () { document.documentElement.classList.remove('vt-arriving'); }, 2500);
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body class="cv-page">
 
-<div class="cursor-dot"  id="cursorDot"></div>
-<div class="cursor-ring" id="cursorRing"></div>
 
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <div class="nav-left" id="navBack">
-    <a href="index.html" class="cv-nav-back">
-      <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
-        <line x1="20" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.4"/>
-        <polygon points="8,0 0,7 8,14" fill="currentColor"/>
-      </svg>
-      <span>Zurück zum Start</span>
+    <a href="index.html" class="hero-btn" aria-label="Start">
+      <span class="hero-btn-label">Start</span>
     </a>
   </div>
   <div class="nav-center-logo">
@@ -31,132 +35,86 @@
     <span class="nav-logo-sub">PORTFOLIO</span>
   </div>
   <div class="nav-right" id="navDownload">
-    <a href="#" class="cv-download-btn-nav" download>
-      <span>Lebenslauf</span>
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-      </svg>
+    <a href="#" class="hero-btn" download aria-label="Lebenslauf">
+      <span class="hero-btn-label">Lebenslauf</span>
     </a>
   </div>
 </nav>
 
 
-<!-- STACKED CARDS CONTAINER -->
-<div class="cv-card-stack" id="cvCardStack">
+<!-- EXPERIENCE DOSSIER -->
+<main class="cvx" id="cvx">
 
-  <!-- Card 1 -->
-  <div class="cv-card-wrap">
-    <div class="cv-card" id="card-0" data-index="0">
-      <div class="cv-card-noise"></div>
-      <div class="cv-card-inner">
-        <div class="cv-card-left">
-          <div class="cv-card-kicker">Sept. 2025 — now</div>
-          <h2 class="cv-card-title">UI / UX Designer</h2>
-          <p class="cv-card-company">Websline</p>
-          <p class="cv-cap-body--left">
-            I was an essential part of the software design process for both our internal and external products.
-            I also built a scalable design system from the ground up and created high-fidelity prototypes in Figma with clear developer handoff.
-            In addition, I worked on photography, videography, and video editing for hotel advertisements.
-          </p>
-        </div>
-        <div class="cv-card-right">
-          <div class="cv-card-img-grid cv-card-img-grid--3col">
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230d0d0c'/%3E%3Crect x='88' y='96' width='180' height='320' rx='28' fill='%23f0ede8'/%3E%3Crect x='318' y='132' width='170' height='90' rx='20' fill='%23938d82'/%3E%3Crect x='318' y='252' width='170' height='110' rx='20' fill='%235e594f'/%3E%3C/svg%3E" alt="Design system structure">
-            </div>
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%23121110'/%3E%3Ccircle cx='240' cy='300' r='140' fill='%23f0ede8'/%3E%3Ccircle cx='360' cy='240' r='80' fill='%237a756f'/%3E%3C/svg%3E" alt="System logic">
-            </div>
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230f0f0d'/%3E%3Cpath d='M120 420L250 180L380 420' stroke='%23f0ede8' stroke-width='28' fill='none' stroke-linecap='round'/%3E%3Cpath d='M220 420L360 260L470 420' stroke='%236b665e' stroke-width='24' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" alt="Visual language">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="cvx-head">
+    <span class="cvx-kicker">Curriculum Vitae — 01/03</span>
+    <h1 class="cvx-title"><span class="cvx-title-inner">Experience</span></h1>
   </div>
 
-  <!-- Card 2 -->
-  <div class="cv-card-wrap">
-    <div class="cv-card" id="card-1" data-index="1">
-      <div class="cv-card-noise"></div>
-      <div class="cv-card-inner">
-        <div class="cv-card-left">
-          <div class="cv-card-kicker">2022 — 2025</div>
-          <h2 class="cv-card-title">B.Sc. Student</h2>
-          <p class="cv-card-company">Paris Lodron University of Salzburg</p>
-          <p class="cv-cap-body--left">
-            I studied Digitalization - Innovation at the PLUS with a focus on HCI and Design.
-            There I learned Product and Design Thinking and completed several projects in the field of web design.
-            My bachelor thesis also explores HCI and Design, specifically how apps can be designed to increase user motivation.
-            I completed my studies with a grade of 1.4, passing with distinction.
-          </p>
-        </div>
-        <div class="cv-card-right">
-          <div class="cv-card-img-grid cv-card-img-grid--2col">
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 800'%3E%3Crect width='600' height='800' fill='%23110f0e'/%3E%3Crect x='100' y='120' width='400' height='520' rx='32' fill='%23f0ede8'/%3E%3Crect x='148' y='188' width='304' height='92' rx='20' fill='%23160f0d'/%3E%3Crect x='148' y='326' width='142' height='220' rx='20' fill='%23948d81'/%3E%3Crect x='310' y='326' width='142' height='220' rx='20' fill='%235e594f'/%3E%3C/svg%3E" alt="Interface flow">
-            </div>
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 800'%3E%3Crect width='600' height='800' fill='%230d0c0b'/%3E%3Cpath d='M120 620C220 460 380 430 480 220' stroke='%23f0ede8' stroke-width='20' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='220' cy='250' r='76' fill='%237d766f'/%3E%3Ccircle cx='396' cy='546' r='104' fill='%23b7b0a6'/%3E%3C/svg%3E" alt="Prototype direction">
-            </div>
-          </div>
-        </div>
+  <div class="cvx-body">
+
+    <!-- LEFT: index list -->
+    <div class="cvx-list-wrap">
+      <ol class="cvx-list" id="cvxList">
+        <li class="cvx-item is-active" data-i="0">
+          <button class="cvx-item-btn" type="button" aria-label="UI / UX Designer — Websline, 2025 to now">
+            <span class="cvx-item-idx">01</span>
+            <span class="cvx-item-main">
+              <span class="cvx-item-role">UI / UX Designer</span>
+              <span class="cvx-item-company">Websline</span>
+            </span>
+            <span class="cvx-item-year">’25 — now</span>
+          </button>
+        </li>
+        <li class="cvx-item" data-i="1">
+          <button class="cvx-item-btn" type="button" aria-label="B.Sc. Student — Paris Lodron University of Salzburg, 2022 to 2025">
+            <span class="cvx-item-idx">02</span>
+            <span class="cvx-item-main">
+              <span class="cvx-item-role">B.Sc. Student</span>
+              <span class="cvx-item-company">PLUS Salzburg</span>
+            </span>
+            <span class="cvx-item-year">’22 — ’25</span>
+          </button>
+        </li>
+        <li class="cvx-item" data-i="2">
+          <button class="cvx-item-btn" type="button" aria-label="Pupil and Intern — BRG Seekirchen, 2013 to 2021">
+            <span class="cvx-item-idx">03</span>
+            <span class="cvx-item-main">
+              <span class="cvx-item-role">Pupil &amp; Intern</span>
+              <span class="cvx-item-company">BRG Seekirchen</span>
+            </span>
+            <span class="cvx-item-year">’13 — ’21</span>
+          </button>
+        </li>
+        <span class="cvx-marker" id="cvxMarker" aria-hidden="true"></span>
+      </ol>
+    </div>
+
+    <!-- RIGHT: morphing stage -->
+    <div class="cvx-stage" id="cvxStage">
+      <div class="cvx-ghost" id="cvxGhost" aria-hidden="true">01</div>
+      <div class="cvx-media" id="cvxMedia" aria-hidden="true">
+        <img id="cvxMediaImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230d0d0c'/%3E%3Crect x='88' y='96' width='180' height='320' rx='28' fill='%23f0ede8'/%3E%3Crect x='318' y='132' width='170' height='90' rx='20' fill='%23938d82'/%3E%3Crect x='318' y='252' width='170' height='110' rx='20' fill='%235e594f'/%3E%3C/svg%3E" alt="">
+      </div>
+      <div class="cvx-detail">
+        <div class="cvx-detail-kicker" id="cvxYear">Sept. 2025 — now</div>
+        <h2 class="cvx-detail-title"><span id="cvxRole">UI / UX Designer</span></h2>
+        <div class="cvx-detail-company" id="cvxCompany">Websline</div>
+        <p class="cvx-detail-desc" id="cvxDesc"></p>
+        <ul class="cvx-tags" id="cvxTags"></ul>
       </div>
     </div>
+
   </div>
 
-  <!-- Card 3 -->
-  <div class="cv-card-wrap">
-    <div class="cv-card" id="card-2" data-index="2">
-      <div class="cv-card-noise"></div>
-      <div class="cv-card-inner">
-        <div class="cv-card-left">
-          <div class="cv-card-kicker">2013 — 2021</div>
-          <h2 class="cv-card-title">Pupil & Intern</h2>
-          <p class="cv-card-company">BRG Seekirchen</p>
-          <p class="cv-cap-body--left">
-            I attended school there while also completing internships and part-time work in the IT and digital field.
-            I completed my Matura and, alongside my studies, regularly worked in the IT sector.
-            During that time I gained experience with databases, digital design, and several practical projects.
-            At school, I also developed strong communication skills and learned multiple languages.
-          </p>
-        </div>
-        <div class="cv-card-right">
-          <div class="cv-card-img-grid cv-card-img-grid--3col">
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230f0f0e'/%3E%3Crect x='98' y='120' width='404' height='326' rx='32' fill='%23f0ede8'/%3E%3Cpath d='M160 404L284 230L402 404' stroke='%23110f0e' stroke-width='24' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" alt="Editorial composition">
-            </div>
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%2312110f0e'/%3E%3Crect x='150' y='120' width='300' height='300' rx='24' fill='%23b7b0a6'/%3E%3Ccircle cx='300' cy='270' r='112' fill='%23f0ede8'/%3E%3C/svg%3E" alt="Experiments">
-            </div>
-            <div class="cv-editorial-img cv-img-reveal">
-              <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230d0c0b'/%3E%3Crect x='120' y='160' width='360' height='90' rx='20' fill='%23f0ede8'/%3E%3Crect x='120' y='300' width='160' height='150' rx='20' fill='%237a756f'/%3E%3Crect x='320' y='300' width='160' height='150' rx='20' fill='%23b8b0a7'/%3E%3C/svg%3E" alt="Spatial rhythm">
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /cv-stack-container -->
+</main>
 
 <!-- BETWEEN STRIP — reveals when footer approaches -->
 <div class="cv-nav-strip" id="cvNavStrip">
-  <a href="index.html" class="cv-nav-back-btn">
-    <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
-      <line x1="20" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.4"/>
-      <polygon points="8,0 0,7 8,14" fill="currentColor"/>
-    </svg>
-    <span>Zurück zum Start</span>
+  <a href="index.html" class="hero-btn" aria-label="Start">
+    <span class="hero-btn-label">Start</span>
   </a>
-  <a href="#" class="cv-nav-download-btn" download>
-    <span>Lebenslauf</span>
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-      <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M2 12h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-    </svg>
+  <a href="#" class="hero-btn" download aria-label="Lebenslauf">
+    <span class="hero-btn-label">Lebenslauf</span>
   </a>
 </div>
 

@@ -1,312 +1,182 @@
 /* ============================
-   PROJECTS PAGE — Jacob Weissenbäck
+   PROJECTS — Chronological Index
 ============================ */
-
-var NAV_LINE = 64; /* px — matches the fixed nav's height, used as the shared scroll offset */
-
 window.addEventListener('DOMContentLoaded', function () {
 
   /* ── Lenis smooth scroll ── */
   var lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
-  lenis.on('scroll', function () {
-    ScrollTrigger.update();
-  });
+  lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
   gsap.ticker.lagSmoothing(0);
 
-  ScrollTrigger.addEventListener('refresh', function () { lenis.resize(); });
+  var EXPO = 'power4.out';
 
-  /* ============================
-     NAV LOGO — stays static ("JCKY / PORTFOLIO") on the projects page,
-     no scroll-driven swap here.
-  ============================ */
-  var sentinel = document.getElementById('projTabnavSentinel');
+  /* Monochrome SVG-Platzhalter (bis echte Projektbilder da sind) */
+  function ph(seed) {
+    var bg = ['0d0d0c', '121110', '0f0f0d', '16150f'][seed % 4];
+    var fg = 'f0ede8', mid = ['938d82', '5e594f', '7a756f', 'b7b0a6'][seed % 4];
+    var shapes = [
+      "%3Crect x='90' y='120' width='220' height='360' rx='24' fill='%23" + fg + "'/%3E%3Crect x='340' y='150' width='170' height='150' rx='18' fill='%23" + mid + "'/%3E",
+      "%3Ccircle cx='260' cy='300' r='150' fill='%23" + fg + "'/%3E%3Ccircle cx='400' cy='230' r='80' fill='%23" + mid + "'/%3E",
+      "%3Cpath d='M110 440L280 160L450 440' stroke='%23" + fg + "' stroke-width='30' fill='none' stroke-linecap='round'/%3E%3Cpath d='M220 440L360 250L470 440' stroke='%23" + mid + "' stroke-width='22' fill='none' stroke-linecap='round'/%3E",
+      "%3Crect x='120' y='150' width='360' height='110' rx='18' fill='%23" + fg + "'/%3E%3Crect x='120' y='300' width='160' height='160' rx='18' fill='%23" + mid + "'/%3E%3Crect x='320' y='300' width='160' height='160' rx='18' fill='%23" + fg + "'/%3E"
+    ];
+    return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%23" + bg + "'/%3E" + shapes[seed % 4] + "%3C/svg%3E";
+  }
+  function imgs(base) { return [ph(base), ph(base + 1), ph(base + 2)]; }
 
-  /* ============================
-     TAB NAV — kept for looks only; no longer switches any content.
-  ============================ */
-  var tabnavWrap = document.getElementById('projTabnavWrap');
-  var tabnav     = document.getElementById('projTabnav');
-  var tabs       = gsap.utils.toArray('.proj-tab');
-  var indicator  = document.getElementById('projTabIndicator');
+  /* Chronologisch (neueste zuerst) */
+  var PROJECTS = [
+    { title: 'Lumina', year: '2024', tags: ['UI/UX', 'Design System', 'AI'],
+      desc: 'An AI-powered design system generator that turns a handful of brand inputs into a coherent, production-ready component library — tokens, states and documentation included.',
+      link: '#', images: imgs(0) },
+    { title: 'Flux', year: '2024', tags: ['Product', 'UI/UX', 'Collaboration'],
+      desc: 'Real-time collaboration for creative teams: shared canvases, live presence and a comment layer that keeps feedback attached to the pixels it belongs to.',
+      link: '#', images: imgs(1) },
+    { title: 'Prism', year: '2023', tags: ['Tool', 'Color', 'Web'],
+      desc: 'Colour palette extraction from any image, tuned for accessibility. Drop an image, get a balanced, WCAG-checked palette you can export straight into your stack.',
+      link: '#', images: imgs(2) },
+    { title: 'Vertex', year: '2023', tags: ['3D', 'Web', 'Toolkit'],
+      desc: 'A lightweight 3D modelling toolkit for the browser — parametric primitives, real-time shading and a tiny footprint, built for designers who think in space.',
+      link: '#', images: imgs(3) }
+  ];
 
-  var listEl       = document.getElementById('projList');
-  var previewEl     = document.getElementById('projListPreview');
-  var previewImgEl  = document.getElementById('projListPreviewImg');
-  var viewSwitchEl  = document.getElementById('projViewSwitch');
-  var viewBtns      = gsap.utils.toArray('.proj-view-btn');
+  var listEl = document.getElementById('pjxList');
+  var openRow = null;
 
-  var currentTab  = document.querySelector('.proj-tab.is-active').dataset.tab;
-  var currentView = 'list';
-  viewSwitchEl.setAttribute('data-view', currentView);
+  function el(tag, cls, html) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (html != null) n.innerHTML = html;
+    return n;
+  }
 
-  function positionIndicator(tabEl, animated) {
-    var navRect  = tabnav.getBoundingClientRect();
-    var tabRect  = tabEl.getBoundingClientRect();
-    var newLeft  = tabRect.left - navRect.left;
-    var newWidth = tabRect.width;
+  /* Horizontaler Drag-Swipe: Linksklick halten + nach links/rechts ziehen */
+  function enableDragScroll(track) {
+    var down = false, startX = 0, startScroll = 0, moved = 0;
 
-    if (!animated) {
-      gsap.set(indicator, { left: newLeft, width: newWidth });
-      return;
-    }
-
-    gsap.to(indicator, {
-      left: newLeft,
-      width: newWidth,
-      duration: 0.24,
-      ease: 'power2.out'
+    track.addEventListener('mousedown', function (e) {
+      if (e.button !== 0) return;
+      down = true; moved = 0;
+      startX = e.pageX;
+      startScroll = track.scrollLeft;
+      track.classList.add('is-dragging');
     });
+
+    window.addEventListener('mousemove', function (e) {
+      if (!down) return;
+      e.preventDefault();
+      var walk = e.pageX - startX;
+      moved = Math.abs(walk);
+      track.scrollLeft = startScroll - walk;
+    }, { passive: false });
+
+    function end() {
+      if (!down) return;
+      down = false;
+      track.classList.remove('is-dragging');
+    }
+    window.addEventListener('mouseup', end);
+    window.addEventListener('mouseleave', end);
+
+    /* Klick unterdrücken, wenn tatsächlich gezogen wurde (kein versehentliches Öffnen) */
+    track.addEventListener('click', function (e) {
+      if (moved > 6) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
   }
 
-  function setActiveTab(tabEl) {
-    tabs.forEach(function (t) { t.classList.remove('is-active'); });
-    tabEl.classList.add('is-active');
-    positionIndicator(tabEl, true);
-    currentTab = tabEl.dataset.tab;
-    renderList();
-  }
+  PROJECTS.forEach(function (p, i) {
+    var row = el('article', 'pjx-row');
 
-  tabs.forEach(function (tabEl) {
-    tabEl.addEventListener('click', function () { setActiveTab(tabEl); });
-  });
+    /* head (button) */
+    var head = el('button', 'pjx-head-row');
+    head.type = 'button';
+    head.setAttribute('aria-expanded', 'false');
+    head.setAttribute('aria-label', p.title + ' — ' + p.year + ', expand');
 
-  window.addEventListener('resize', function () {
-    var active = tabnav.querySelector('.proj-tab.is-active');
-    if (active) positionIndicator(active, false);
-  });
+    head.appendChild(el('span', 'pjx-idx', String(i + 1).padStart(2, '0')));
+    head.appendChild(el('span', 'pjx-title-main', p.title));
 
-  viewBtns.forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      if (btn.classList.contains('is-active')) return;
-      viewBtns.forEach(function (b) {
-        b.classList.remove('is-active');
-        b.setAttribute('aria-selected', 'false');
-      });
-      btn.classList.add('is-active');
-      btn.setAttribute('aria-selected', 'true');
-      currentView = btn.dataset.view;
-      viewSwitchEl.setAttribute('data-view', currentView);
-      if (currentView !== 'list') deactivatePreview();
-      renderList();
+    var tags = el('span', 'pjx-tags');
+    p.tags.forEach(function (t) { tags.appendChild(el('span', 'pjx-tag', t)); });
+    head.appendChild(tags);
+
+    head.appendChild(el('span', 'pjx-year', "'" + p.year.slice(2)));
+
+    var toggle = el('span', 'pjx-toggle',
+      '(&nbsp;<span class="pjx-toggle-sign">+</span>&nbsp;)');
+    head.appendChild(toggle);
+
+    var strip = el('span', 'pjx-strip');
+    p.images.forEach(function (src) {
+      var wrap = el('span', 'pjx-strip-img');
+      var im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy';
+      wrap.appendChild(im); strip.appendChild(wrap);
+    });
+    head.appendChild(strip);
+
+    row.appendChild(head);
+
+    /* detail */
+    var detail = el('div', 'pjx-detail');
+    var inner = el('div', 'pjx-detail-inner');
+
+    var textCol = el('div');
+    textCol.appendChild(el('p', 'pjx-detail-desc', p.desc));
+    var meta = el('div', 'pjx-detail-meta',
+      '<span>' + p.tags.join(' · ') + '</span><span>' + p.year + '</span>');
+    textCol.appendChild(meta);
+    var link = el('a', 'pjx-detail-link', 'View Project ↗');
+    link.href = p.link;
+    textCol.appendChild(link);
+    inner.appendChild(textCol);
+
+    var gal = el('div', 'pjx-gallery');
+    p.images.forEach(function (src) {
+      var g = el('div', 'pjx-gallery-img');
+      var im = document.createElement('img'); im.src = src; im.alt = p.title; im.loading = 'lazy'; im.draggable = false;
+      g.appendChild(im); gal.appendChild(g);
+    });
+    enableDragScroll(gal);
+    inner.appendChild(gal);
+
+    detail.appendChild(inner);
+    row.appendChild(detail);
+    listEl.appendChild(row);
+
+    /* toggle expand/collapse (accordion: nur eine offen) */
+    head.addEventListener('click', function () {
+      var isOpen = row.classList.contains('is-open');
+      if (openRow && openRow !== row) closeRow(openRow);
+      if (isOpen) { closeRow(row); openRow = null; }
+      else { openRow_(row, detail); openRow = row; }
     });
   });
 
-  /* sticky "stuck" background state, driven off the static sentinel */
-  ScrollTrigger.create({
-    trigger: sentinel,
-    start: 'top ' + NAV_LINE + 'px',
-    end: 99999,
-    toggleClass: { targets: tabnavWrap, className: 'is-stuck' }
-  });
-
-  /* ============================
-     SELECTED WORK LIST
-  ============================ */
-
-  var PROJECTS_DATA = {
-    uiux: [
-      {
-        title: 'Lumina',
-        description: 'AI-powered design system generator.',
-        year: '2024',
-        link: '#',
-        image: 'https://plus.unsplash.com/premium_photo-1723489242223-865b4a8cf7b8?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D$0'
-      },
-      {
-        title: 'Flux',
-        description: 'Real-time collaboration for creative teams.',
-        year: '2024',
-        link: '#',
-        image: 'https://images.unsplash.com/photo-1530435460869-d13625c69bbf?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D$0'
-      },
-      {
-        title: 'Prism',
-        description: 'Color palette extraction from any image.',
-        year: '2023',
-        link: '#',
-        image: 'https://i.pinimg.com/1200x/99/ca/5c/99ca5cf82cf12df8801f7b2bef38d325.jpg'
-      },
-      {
-        title: 'Vertex',
-        description: '3D modeling toolkit for the web.',
-        year: '2023',
-        link: '#',
-        image: 'https://i.pinimg.com/736x/7c/15/39/7c1539cf7ff0207cb49ce0d338de1e5f.jpg'
-      }
-    ],
-    product: [],
-    image: [],
-    ads: [],
-    video: []
-  };
-
-  function buildGridItem(item) {
-    var a = document.createElement('a');
-    a.className = 'proj-grid-item';
-    a.href = item.link;
-
-    var img = document.createElement('img');
-    img.src = item.image;
-    img.alt = item.title;
-    img.loading = 'lazy';
-    a.appendChild(img);
-
-    var overlay = document.createElement('div');
-    overlay.className = 'proj-grid-overlay';
-
-    var inner = document.createElement('div');
-    inner.className = 'proj-grid-overlay-inner';
-
-    var titleRow = document.createElement('div');
-    titleRow.className = 'proj-grid-title-row';
-
-    var titleLeft = document.createElement('span');
-    titleLeft.style.display = 'flex';
-    titleLeft.style.alignItems = 'center';
-    titleLeft.style.gap = '8px';
-
-    var title = document.createElement('span');
-    title.className = 'proj-grid-title';
-    title.textContent = item.title;
-
-    var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    arrow.setAttribute('class', 'proj-grid-arrow');
-    arrow.setAttribute('width', '16');
-    arrow.setAttribute('height', '16');
-    arrow.setAttribute('viewBox', '0 0 24 24');
-    arrow.setAttribute('fill', 'none');
-    arrow.innerHTML = '<path d="M7 17L17 7M9 7h8v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
-
-    titleLeft.appendChild(title);
-    titleLeft.appendChild(arrow);
-
-    var year = document.createElement('span');
-    year.className = 'proj-grid-year';
-    year.textContent = item.year;
-
-    titleRow.appendChild(titleLeft);
-    titleRow.appendChild(year);
-
-    var desc = document.createElement('p');
-    desc.className = 'proj-grid-desc';
-    desc.textContent = item.description;
-
-    inner.appendChild(titleRow);
-    inner.appendChild(desc);
-    overlay.appendChild(inner);
-    a.appendChild(overlay);
-
-    return a;
+  function openRow_(row, detail) {
+    row.classList.add('is-open');
+    row.querySelector('.pjx-head-row').setAttribute('aria-expanded', 'true');
+    gsap.set(detail, { height: 'auto' });
+    gsap.from(detail, { height: 0, duration: 0.6, ease: EXPO });
+    var inner = detail.querySelector('.pjx-detail-inner');
+    gsap.fromTo(inner, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out', delay: 0.1 });
+  }
+  function closeRow(row) {
+    var detail = row.querySelector('.pjx-detail');
+    row.classList.remove('is-open');
+    row.querySelector('.pjx-head-row').setAttribute('aria-expanded', 'false');
+    gsap.to(detail, { height: 0, duration: 0.5, ease: 'power3.inOut' });
   }
 
-  function buildListItem(item) {
-    var a = document.createElement('a');
-    a.className = 'proj-list-item';
-    a.href = item.link;
-
-    var bg = document.createElement('div');
-    bg.className = 'proj-list-item-bg';
-    a.appendChild(bg);
-
-    var inner = document.createElement('div');
-    inner.className = 'proj-list-item-inner';
-
-    var main = document.createElement('div');
-    main.className = 'proj-list-item-main';
-
-    var titleRow = document.createElement('span');
-    titleRow.className = 'proj-list-title-row';
-
-    var title = document.createElement('span');
-    title.className = 'proj-list-title';
-    title.textContent = item.title;
-    var underline = document.createElement('span');
-    underline.className = 'proj-list-title-underline';
-    title.appendChild(underline);
-
-    var arrow = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    arrow.setAttribute('class', 'proj-list-arrow');
-    arrow.setAttribute('width', '18');
-    arrow.setAttribute('height', '18');
-    arrow.setAttribute('viewBox', '0 0 24 24');
-    arrow.setAttribute('fill', 'none');
-    arrow.innerHTML = '<path d="M7 17L17 7M9 7h8v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
-
-    titleRow.appendChild(title);
-    titleRow.appendChild(arrow);
-
-    var desc = document.createElement('p');
-    desc.className = 'proj-list-desc';
-    desc.textContent = item.description;
-
-    main.appendChild(titleRow);
-    main.appendChild(desc);
-
-    var year = document.createElement('span');
-    year.className = 'proj-list-year';
-    year.textContent = item.year;
-
-    inner.appendChild(main);
-    inner.appendChild(year);
-    a.appendChild(inner);
-
-    a.addEventListener('mouseenter', function () { activatePreview(item.image); });
-    a.addEventListener('mouseleave', deactivatePreview);
-
-    return a;
+  /* Reveal beim Laden */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  gsap.set('.pjx-title-inner', { yPercent: 110 });
+  function playReveal() {
+    if (reduce) { gsap.set('.pjx-title-inner', { yPercent: 0 }); return; }
+    gsap.timeline()
+      .to('.pjx-title-inner', { yPercent: 0, duration: 0.8, ease: 'power4.out' })
+      .from('.pjx-row', { y: 30, opacity: 0, duration: 0.7, stagger: 0.08, ease: 'power3.out' }, 0.15);
   }
-
-  function renderList() {
-    var items = PROJECTS_DATA[currentTab] || [];
-    listEl.innerHTML = '';
-    listEl.classList.toggle('is-grid', currentView === 'grid');
-
-    if (!items.length) {
-      var empty = document.createElement('div');
-      empty.className = 'proj-list-empty';
-      empty.textContent = 'Bald verfügbar';
-      listEl.appendChild(empty);
-      return;
-    }
-
-    items.forEach(function (item) {
-      listEl.appendChild(currentView === 'grid' ? buildGridItem(item) : buildListItem(item));
-    });
-  }
-
-  /* ── cursor-follow preview image ── */
-  var mouse  = { x: 0, y: 0 };
-  var smooth = { x: 0, y: 0 };
-
-  window.addEventListener('mousemove', function (e) {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  });
-
-  function animatePreview() {
-    smooth.x += (mouse.x - smooth.x) * 0.15;
-    smooth.y += (mouse.y - smooth.y) * 0.15;
-    previewEl.style.transform = 'translate3d(' + (smooth.x + 24) + 'px,' + (smooth.y - 100) + 'px,0)';
-    requestAnimationFrame(animatePreview);
-  }
-  requestAnimationFrame(animatePreview);
-
-  function activatePreview(src) {
-    if (previewImgEl.getAttribute('src') !== src) {
-      previewImgEl.classList.remove('is-active');
-      previewImgEl.src = src;
-    }
-    requestAnimationFrame(function () { previewImgEl.classList.add('is-active'); });
-    previewEl.classList.add('is-visible');
-  }
-
-  function deactivatePreview() {
-    previewEl.classList.remove('is-visible');
-  }
-
-  /* ── init ── */
-  positionIndicator(document.querySelector('.proj-tab.is-active'), false);
-  renderList();
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(playReveal); } else { playReveal(); }
 
 });

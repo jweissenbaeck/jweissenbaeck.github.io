@@ -12,6 +12,16 @@
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
 <link rel="stylesheet" href="style.css">
 
+<script>
+  /* Flash-Schutz: Inhalt bei interner Navigation verbergen, bis das ASCII-Overlay übernimmt. */
+  try {
+    if (sessionStorage.getItem('jcky:internalNav') === '1') {
+      document.documentElement.classList.add('vt-arriving');
+      setTimeout(function () { document.documentElement.classList.remove('vt-arriving'); }, 2500);
+    }
+  } catch (e) {}
+</script>
+
 </head>
 <body>
 
@@ -27,8 +37,6 @@
 </div>
 
 <!-- CUSTOM CURSOR -->
-<div class="cursor-dot"  id="cursorDot"></div>
-<div class="cursor-ring" id="cursorRing"></div>
 
 <!-- NAV -->
 <nav class="nav" id="mainNav">
@@ -42,11 +50,11 @@
     <span class="nav-logo-sub" id="navLogoSub">PORTFOLIO</span>
   </div>
   <div class="nav-right">
-    <a href="projects.html" class="nav-btn nav-btn--talk" aria-label="Projects">
-      <span class="nav-btn-label">Projects</span>
+    <a href="projects.html" class="hero-btn hero-btn--primary" aria-label="Projects">
+      <span class="hero-btn-label">Projects</span>
     </a>
-    <a href="cv.html" class="nav-btn nav-btn--menu" aria-label="CV">
-      <span class="nav-btn-label">CV</span>
+    <a href="cv.html" class="hero-btn" aria-label="CV">
+      <span class="hero-btn-label">CV</span>
     </a>
   </div>
 </nav>
@@ -73,10 +81,6 @@
       <span class="hero-subtitle">UI / UX Designer</span>
     </div>
   </div>
-
-  <!-- Hidden compat elements -->
-  <span id="heroDesignerCompat" style="display:none;opacity:1;"></span>
-  <span id="heroScrollCompat"       style="display:none;"></span>
 
   <!-- Zoom Parallax Photos -->
   <div class="hero-parallax-stage" id="heroParallaxStage" aria-hidden="true">
@@ -299,11 +303,9 @@
   </div>
 
   <div style="display:flex;justify-content:center;padding:64px 0 0;">
-    <a href="projects.html" class="svc-flip-btn" id="svcFlipBtn">
-      <span class="svc-flip-front">
-        All Projects
-      </span>
-      <span class="svc-flip-back">Have fun!</span>
+    <a href="projects.html" class="projects-cta" id="svcFlipBtn" aria-label="All Projects">
+      <span class="projects-cta-fill" aria-hidden="true"></span>
+      <span class="projects-cta-label">All Projects</span>
     </a>
   </div>
 
@@ -323,38 +325,30 @@
       <div class="globe-contact-block" id="globeContactList">
 
         <a href="mailto:j.weissenbaeck@gmx.at" class="globe-contact-item" data-label="E-MAIL">
-          <span class="globe-contact-icon">
-            <svg width="20" height="20" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="3" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.1"/>
-              <path d="M1 4.5L7 8.5L13 4.5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-            </svg>
+          <span class="gc-fill" aria-hidden="true"></span>
+          <span class="gc-index">01</span>
+          <span class="gc-body">
+            <span class="gc-label">E-Mail</span>
+            <span class="gc-value" data-text="j.weissenbaeck@gmx.at">j.weissenbaeck@gmx.at</span>
           </span>
-          <span class="globe-contact-text">E-Mail</span>
-          <span class="globe-contact-arrow">↗</span>
         </a>
 
-        <a href="https://www.linkedin.com/in/jweissenbaeck/" target="_blank" class="globe-contact-item" data-label="LINKEDIN">
-          <span class="globe-contact-icon">
-            <svg width="20" height="20" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.1"/>
-              <path d="M4 6v4M4 4.5v.01" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-              <path d="M7 10V7.5C7 6.67 7.67 6 8.5 6S10 6.67 10 7.5V10" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-            </svg>
+        <a href="https://www.linkedin.com/in/jweissenbaeck/" target="_blank" rel="noopener" class="globe-contact-item" data-label="LINKEDIN">
+          <span class="gc-fill" aria-hidden="true"></span>
+          <span class="gc-index">02</span>
+          <span class="gc-body">
+            <span class="gc-label">LinkedIn</span>
+            <span class="gc-value" data-text="/in/jweissenbaeck">/in/jweissenbaeck</span>
           </span>
-          <span class="globe-contact-text">LinkedIn</span>
-          <span class="globe-contact-arrow">↗</span>
         </a>
 
-        <a href="https://www.instagram.com/jacobwssnbck" target="_blank" class="globe-contact-item" data-label="INSTAGRAM">
-          <span class="globe-contact-icon">
-            <svg width="20" height="20" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="1.5" y="1.5" width="11" height="11" rx="3" stroke="currentColor" stroke-width="1.1"/>
-              <circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.1"/>
-              <circle cx="10.2" cy="3.8" r="0.6" fill="currentColor"/>
-            </svg>
+        <a href="https://www.instagram.com/jacobwssnbck" target="_blank" rel="noopener" class="globe-contact-item" data-label="INSTAGRAM">
+          <span class="gc-fill" aria-hidden="true"></span>
+          <span class="gc-index">03</span>
+          <span class="gc-body">
+            <span class="gc-label">Instagram</span>
+            <span class="gc-value" data-text="@jacobwssnbck">@jacobwssnbck</span>
           </span>
-          <span class="globe-contact-text">Instagram</span>
-          <span class="globe-contact-arrow">↗</span>
         </a>
 
       </div>

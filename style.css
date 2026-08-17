@@ -95,7 +95,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
-  cursor: none;
+
 }
 
 /* Paper grain overlay */
@@ -107,37 +107,6 @@ body::before {
   pointer-events: none;
   z-index: 9990;
   mix-blend-mode: multiply;
-}
-
-/* ============================
-   CUSTOM CURSOR
-============================ */
-.cursor-dot {
-  position: fixed; left: 0; top: 0;
-  width: 5px; height: 5px;
-  background: #ffffff;
-  border-radius: 50%;
-  pointer-events: none; z-index: 99999;
-  mix-blend-mode: difference; will-change: transform;
-}
-
-.cursor-ring {
-  position: fixed; left: 0; top: 0;
-  width: 40px; height: 40px;
-  border: 1.5px solid rgba(240,237,232,0.5);
-  background: transparent; border-radius: 50%;
-  pointer-events: none; z-index: 99998;
-  opacity: 0.75; will-change: transform;
-  mix-blend-mode: difference;
-  transition: width 0.35s var(--ease-spring), height 0.35s var(--ease-spring),
-              opacity 0.35s ease, border-color 0.35s ease;
-}
-
-body:has(a:hover) .cursor-ring,
-body:has(button:hover) .cursor-ring {
-  width: 62px; height: 62px; opacity: 1;
-  border-color: rgba(240,237,232,0.85);
-  border-radius: 40% 60% 55% 45% / 50% 45% 55% 50%;
 }
 
 /* ============================
@@ -162,16 +131,15 @@ body:has(button:hover) .cursor-ring {
 }
 
 .nav-center-logo { mix-blend-mode: difference; }
-.nav-right { mix-blend-mode: difference; }
 
 .nav-link-1820 {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
   letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
-  text-decoration: none; cursor: none;
+  text-decoration: none;
   line-height: 1.85;
   position: relative;
-  opacity: 0.35;
-  transition: opacity 0.2s ease;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
 }
 
 .nav-link-1820.is-active {
@@ -180,8 +148,7 @@ body:has(button:hover) .cursor-ring {
 }
 
 .nav-link-1820:not(.is-active):hover {
-  opacity: 0.55;
-  text-decoration: underline;
+  opacity: 0.85;
 }
 
 .nav-center-logo {
@@ -208,56 +175,132 @@ body:has(button:hover) .cursor-ring {
   display: flex; align-items: center; gap: 10px; justify-content: flex-end;
 }
 
-.nav-btn {
+/* ── HERO CTA BUTTONS ──
+   Dunkel gefüllt, Mono-Versaltext. Default: durchgezogener Rahmen.
+   Hover: laufender gestrichelter Rahmen ("marching ants"). Reines CSS. */
+.hero-btn {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 108px;
-  height: 40px;
+  gap: 8px;
+  height: 36px;
   padding: 0 16px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.18);
-  text-decoration: none;
-  cursor: none;
-  overflow: hidden;
-  perspective: 800px;
-  transition: border-color 0.35s ease, transform 0.35s var(--ease-out-expo), box-shadow 0.35s ease;
-}
-
-.nav-btn-label {
+  border-radius: 4px;
+  background: rgba(18, 18, 22, 0.66);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1px solid transparent;
+  color: var(--ink);
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   line-height: 1;
-  transition: transform 0.35s var(--ease-out-expo), opacity 0.35s ease;
+  white-space: nowrap;
+  text-decoration: none;
+
+  transition: border-color 0.3s ease, background-color 0.3s ease;
 }
 
-.nav-btn--talk {
-  color: #111;
-  background: #fff;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.16);
+.hero-btn-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
-.nav-btn--menu {
-  color: #fff;
-  background: rgba(255,255,255,0.04);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+/* laufender gestrichelter Rahmen — nur im Hover sichtbar */
+.hero-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background-image:
+    linear-gradient(90deg, var(--ink) 50%, transparent 0),
+    linear-gradient(90deg, var(--ink) 50%, transparent 0),
+    linear-gradient(0deg,  var(--ink) 50%, transparent 0),
+    linear-gradient(0deg,  var(--ink) 50%, transparent 0);
+  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  background-size: 8px 1px, 8px 1px, 1px 8px, 1px 8px;
+  background-position: 0 0, 0 100%, 0 0, 100% 0;
 }
 
-.nav-btn:hover,
-.nav-btn:focus-visible {
-  border-color: rgba(255,255,255,0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+.hero-btn:hover,
+.hero-btn:focus-visible {
+  background: rgba(18, 18, 22, 0.82);
+}
+.hero-btn:hover::after,
+.hero-btn:focus-visible::after {
+  opacity: 1;
+  animation: heroBtnMarch 0.5s infinite linear;
+}
+.hero-btn:focus-visible { outline: none; }
+
+/* ── ALL PROJECTS — eigenständiger Section-CTA ──
+   Eigene Font (Barlow Condensed 700, nicht die Service-Namen/Skills);
+   radiale Ink-Füllung, die vom Cursor-Eintritt aufgeht. */
+.projects-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 30px;
+  border-radius: 6px;
+  border: 1px solid rgba(240, 237, 232, 0.35);
+  color: var(--ink);
+  text-decoration: none;
+
+  overflow: hidden;
+  transition: color 0.35s ease, border-color 0.5s var(--ease-out-expo);
+}
+.projects-cta-label {
+  position: relative;
+  z-index: 1;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: clamp(1.05rem, 1.7vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.projects-cta-fill {
+  position: absolute;
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
+  width: 220%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.55s var(--ease-out-expo);
+  pointer-events: none;
+}
+.projects-cta:hover,
+.projects-cta:focus-visible {
+  color: var(--bg-dark);
+  border-color: transparent;
+}
+.projects-cta:hover .projects-cta-fill,
+.projects-cta:focus-visible .projects-cta-fill { transform: translate(-50%, -50%) scale(1); }
+.projects-cta:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .projects-cta-fill { transition-duration: 0.001s; }
 }
 
-.nav-btn:hover .nav-btn-label,
-.nav-btn:focus-visible .nav-btn-label {
-  opacity: 0.9;
+@keyframes heroBtnMarch {
+  to { background-position: 16px 0, -16px 100%, 0 -16px, 100% 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-btn:hover::after,
+  .hero-btn:focus-visible::after { animation: none; }
 }
 
 /* ============================
@@ -280,6 +323,33 @@ body:has(button:hover) .cursor-ring {
   width: 100%;
   flex: 1;
 }
+
+/* ============================
+   PLAY CURSOR — nur wenn Hero-Bild Vollbild ist und man drüber hovert
+============================ */
+#playCursor {
+  position: fixed;
+  left: 0; top: 0;
+  width: 84px; height: 84px;
+  margin: -42px 0 0 -42px;           /* zentriert am Cursor */
+  border-radius: 50%;
+  border: 1px solid rgba(240, 237, 232, 0.9);
+  background: rgba(18, 18, 22, 0.18);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: opacity 0.3s ease, transform 0.4s var(--ease-out-expo);
+  will-change: transform, opacity;
+}
+#playCursor.is-visible { opacity: 1; transform: scale(1); }
+#playCursor svg { width: 22px; height: 22px; margin-left: 3px; }
+#playCursor svg path { fill: var(--ink); }
 
 .hero-img-card {
   position: absolute;
@@ -457,7 +527,6 @@ body:has(button:hover) .cursor-ring {
 }
 
 .main-content .services-section { max-height: none; overflow: visible; padding-top: 60px; }
-.services-section { will-change: transform; }
 
 /* ============================
    HERO NAME — LETTER EASTER EGG
@@ -621,7 +690,7 @@ body:has(button:hover) .cursor-ring {
   border: 2px solid rgba(240,237,232,0.18);
   border-radius: 12px;
   background: transparent;
-  cursor: none;
+
   perspective: 800px;
   overflow: hidden;
   color: transparent;
@@ -661,18 +730,6 @@ body:has(button:hover) .cursor-ring {
   opacity: 1;
   transform: rotateX(0deg) translateY(0%);
 }
-
-.svc-flip-arrow { flex-shrink: 0; overflow: visible; }
-.arr-line {
-  stroke-dasharray: 22;
-  stroke-dashoffset: 0;
-  transform-origin: left center;
-  transition: stroke-dashoffset 0.35s var(--ease-out-expo),
-              transform 0.35s var(--ease-out-expo);
-}
-.arr-head { transition: transform 0.35s var(--ease-out-expo); transform-origin: center center; }
-.svc-flip-btn:hover .arr-line { stroke-dashoffset: -8; transform: scaleX(1.18); }
-.svc-flip-btn:hover .arr-head { transform: translateX(5px); }
 
 /* ============================
    GLOBE SECTION
@@ -778,6 +835,8 @@ body:has(button:hover) .cursor-ring {
   transform: translateY(110%);
 }
 
+/* ── Find me here — Textlayout ── */
+
 /* ── Globe contact block ── */
 .globe-contact-block {
   display: flex;
@@ -787,55 +846,85 @@ body:has(button:hover) .cursor-ring {
 }
 
 .globe-contact-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid rgba(240,237,232,0.07);
+  gap: 20px;
+  padding: 16px 16px;
+  border-bottom: 1px solid rgba(240,237,232,0.09);
   text-decoration: none;
-  color: rgba(240,237,232,0.45);
-  transition: color 0.22s ease;
+  color: rgba(240,237,232,0.6);
+  transition: color 0.6s ease;
   position: relative;
-  cursor: none;
+
+  overflow: hidden;               /* clippt den Ink-Balken */
   will-change: opacity;
 }
 
 .globe-contact-item:first-child {
-  border-top: 1px solid rgba(240,237,232,0.07);
+  border-top: 1px solid rgba(240,237,232,0.09);
 }
 
-.globe-contact-item:hover { color: var(--ink); }
-
-.globe-contact-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: currentColor;
-  transition: color 0.22s ease;
+/* Hover wie beim "All Projects"-CTA: radiale Ink-Füllung ab Cursor-Eintritt, Text invertiert */
+.gc-fill {
+  position: absolute;
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
+  width: 220%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.55s var(--ease-out-expo);
+  pointer-events: none;
 }
+.globe-contact-item:hover .gc-fill,
+.globe-contact-item:focus-visible .gc-fill { transform: translate(-50%, -50%) scale(1); }
 
-.globe-contact-text {
+.globe-contact-item:hover,
+.globe-contact-item:focus-visible { color: var(--bg-dark); }
+
+.gc-index {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-mono);
-  font-size: clamp(11px, 1vw, 13px);
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-  color: currentColor;
-  flex: 1;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: rgba(240,237,232,0.35);
+  transition: color 0.6s ease;
+}
+.globe-contact-item:hover .gc-index,
+.globe-contact-item:focus-visible .gc-index { color: rgba(10,10,9,0.55); }
+
+.gc-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
 }
 
-.globe-contact-arrow {
-  font-size: 11px;
-  opacity: 0;
-  transform: translate(-3px, 3px);
-  transition: opacity 0.2s ease, transform 0.25s var(--ease-out-expo);
+.gc-label {
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 1vw, 14px);
+  letter-spacing: 0.06em;
+  color: currentColor;
   flex-shrink: 0;
 }
 
-.globe-contact-item:hover .globe-contact-arrow {
-  opacity: 0.5;
-  transform: translate(0, 0);
+.gc-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: rgba(240,237,232,0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: color 0.6s ease;
 }
+.globe-contact-item:hover .gc-value,
+.globe-contact-item:focus-visible .gc-value { color: rgba(10,10,9,0.7); }
 
 /* ============================
    PAGE LOADER
@@ -853,11 +942,6 @@ body:has(button:hover) .cursor-ring {
 
 #pageLoader.is-hidden {
   pointer-events: none;
-}
-
-body:has(#pageLoader:not(.is-hidden)) .cursor-dot,
-body:has(#pageLoader:not(.is-hidden)) .cursor-ring {
-  opacity: 0 !important;
 }
 
 .loader-inner {
@@ -904,5 +988,77 @@ body:has(#pageLoader:not(.is-hidden)) .cursor-ring {
   align-self: flex-end;
 }
 
-#heroWordFullname { transform: translateY(110%); }
-.hero-subtitle    { transform: translateY(110%); }
+/* ============================
+   PAGE TRANSITIONS — Editorial Panel (Aino-Stil)
+   Animation läuft per Web Animations API in script.js;
+   hier Layout des Panels + Flash-Schutz bei interner Ankunft.
+============================ */
+html.vt-arriving { background: #f5f5f0; }
+html.vt-arriving body { visibility: hidden; }
+
+#ainoPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  background: #f5f5f0;
+  color: #181818;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transform: translateY(101%);
+  will-change: transform;
+}
+
+#ainoPanel .aino-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+#ainoPanel .aino-code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(24, 24, 24, 0.45);
+  padding-left: 0.42em; /* optischer Ausgleich fürs Letter-Spacing */
+}
+
+#ainoPanel .aino-clip {
+  overflow: hidden;
+  display: block;
+  padding-bottom: 0.08em;
+}
+
+#ainoPanel .aino-name-inner {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: clamp(1.15rem, 3.4vw, 2.4rem);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #181818;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+#ainoPanel .aino-meta {
+  position: absolute;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(24, 24, 24, 0.5);
+}
+#ainoPanel .aino-tl { top: 22px;    left: 28px;  }
+#ainoPanel .aino-br { bottom: 22px; right: 28px; }
+
+@media (max-width: 780px) {
+  #ainoPanel .aino-tl { top: 18px; left: 20px; }
+  #ainoPanel .aino-br { bottom: 18px; right: 20px; }
+}

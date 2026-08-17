@@ -1,4 +1,16 @@
 /* ============================
+   NAV STATE — safe sessionStorage helpers
+   (fällt bei deaktiviertem Storage / Private Mode still auf no-op zurück)
+============================ */
+function vtStoreGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function vtStoreSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
+function vtStoreDel(k) { try { sessionStorage.removeItem(k); } catch (e) {} }
+
+/* Kamen wir über eine interne Seiten-Navigation? Einmalig konsumieren. */
+const ARRIVED_VIA_INTERNAL_NAV = vtStoreGet('jcky:internalNav') === '1';
+vtStoreDel('jcky:internalNav');
+
+/* ============================
    PAGE LOADER
 ============================ */
 (function initLoader() {
@@ -6,6 +18,17 @@
   const bar     = document.getElementById('loaderBar');
   const pct     = document.getElementById('loaderPercent');
   if (!loader) return;
+
+  /* Bei interner Navigation Loader überspringen — die Slide-Transition
+     sorgt bereits für Kontinuität; Hero danach normal einblenden. */
+  if (ARRIVED_VIA_INTERNAL_NAV) {
+    loader.style.display = 'none';
+    loader.classList.add('is-hidden');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (typeof window.__heroInit === 'function') window.__heroInit(true);
+    }));
+    return;
+  }
 
   document.documentElement.style.overflow = 'hidden';
 
@@ -92,9 +115,140 @@
 })();
 
 /* ============================
-   INIT
+   PAGE TRANSITIONS — EDITORIAL PANEL (Aino-Stil)
+   Ruhiges Off-White-Panel wischt über den Seitenwechsel: Zielname (sauberer
+   Text) + Katalog-Code + kleine Eckmetadaten, weiche Expo-Easings.
+   Ein Panel „zieht durch": vorwärts nach oben, zurück nach unten.
+   Handoff via sessionStorage; Vanilla, alle modernen Browser.
 ============================ */
-gsap.registerPlugin(ScrollTrigger);
+(function initEditorialTransition() {
+  const PAGE = {
+    'index.html':    { name: 'Start',    code: 'A—01', order: 0 },
+    'projects.html': { name: 'Projects', code: 'A—02', order: 1 },
+    'cv.html':       { name: 'CV',       code: 'A—03', order: 2 },
+  };
+  const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+  const DUR = 680;
+
+  function pageKey(url) {
+    try {
+      const f = new URL(url, location.href).pathname.split('/').pop();
+      return f === '' ? 'index.html' : f;
+    } catch (e) { return null; }
+  }
+  function metaFor(url) { return PAGE[pageKey(url)] || { name: '', code: '', order: 0 }; }
+  function dirBetween(fromU, toU) { return metaFor(toU).order < metaFor(fromU).order ? 'back' : 'forward'; }
+
+  function buildPanel(m) {
+    const p = document.createElement('div');
+    p.id = 'ainoPanel';
+    p.innerHTML =
+      '<span class="aino-meta aino-tl">JCKY&#8202;&#169;</span>' +
+      '<div class="aino-center">' +
+        '<span class="aino-code">' + m.code + '</span>' +
+        '<span class="aino-clip"><span class="aino-name-inner">' + m.name + '</span></span>' +
+      '</div>' +
+      '<span class="aino-meta aino-br">Salzburg, AT</span>';
+    document.documentElement.appendChild(p);
+    return p;
+  }
+
+  function anim(el, keyframes, opts) {
+    return el.animate(keyframes, Object.assign({ fill: 'forwards' }, opts));
+  }
+
+  /* ── OUTGOING: interne Links abfangen → Panel rein → navigieren ── */
+  let transitioning = false;
+  document.addEventListener('click', (e) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (href.startsWith('#') || a.target === '_blank' || a.hasAttribute('download')) return;
+    const dest = pageKey(a.href);
+    if (!dest || !PAGE[dest] || a.origin !== location.origin) return;
+
+    e.preventDefault();
+    if (transitioning) return;
+    transitioning = true;
+
+    const dir = dirBetween(location.href, a.href);
+    vtStoreSet('jcky:internalNav', '1');
+    vtStoreSet('jcky:vtDir', dir);
+    try { if (typeof lenis !== 'undefined' && lenis && lenis.stop) lenis.stop(); } catch (_) {}
+
+    const go = () => { window.location.href = a.href; };
+    const p = buildPanel(metaFor(a.href));
+    const from = dir === 'back' ? '-101%' : '101%';
+
+    if (reduceMotion) {
+      p.style.transform = 'translateY(0)';
+      anim(p, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 }).finished.then(go);
+      return;
+    }
+
+    const nameInner = p.querySelector('.aino-name-inner');
+    const code = p.querySelector('.aino-code');
+    nameInner.style.transform = 'translateY(110%)';
+    code.style.opacity = '0';
+
+    const panelAnim = anim(p, [{ transform: 'translateY(' + from + ')' }, { transform: 'translateY(0%)' }], { duration: DUR, easing: EASE });
+    setTimeout(() => {
+      anim(nameInner, [{ transform: 'translateY(110%)' }, { transform: 'translateY(0%)' }], { duration: 520, easing: EASE });
+      anim(code, [{ opacity: 0 }, { opacity: 1 }], { duration: 460, easing: 'ease-out' });
+    }, DUR * 0.22);
+    panelAnim.finished.then(() => setTimeout(go, 110));
+  }, true);
+
+  /* ── Zurück-Button / bfcache: wiederhergestellte, noch verdeckte Seite befreien ── */
+  window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    const leftover = document.getElementById('ainoPanel');
+    if (leftover && leftover.parentNode) leftover.parentNode.removeChild(leftover);
+    document.documentElement.classList.remove('vt-arriving');
+    transitioning = false;
+    try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
+  });
+
+  /* ── INCOMING: Panel ausfahren ── */
+  if (ARRIVED_VIA_INTERNAL_NAV) {
+    const dir = vtStoreGet('jcky:vtDir') || 'forward';
+    vtStoreDel('jcky:vtDir');
+
+    const cleanup = (p) => {
+      if (p && p.parentNode) p.parentNode.removeChild(p);
+      document.documentElement.classList.remove('vt-arriving');
+      try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
+    };
+
+    const start = () => {
+      const p = buildPanel(metaFor(location.href));
+      p.style.transform = 'translateY(0%)'; // deckt bereits
+      const to = dir === 'back' ? '101%' : '-101%';
+      const nameInner = p.querySelector('.aino-name-inner');
+
+      if (reduceMotion) {
+        document.documentElement.classList.remove('vt-arriving');
+        anim(p, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 }).finished.then(() => cleanup(p));
+        return;
+      }
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove('vt-arriving');
+        setTimeout(() => {
+          anim(nameInner, [{ transform: 'translateY(0%)' }, { transform: 'translateY(-110%)' }], { duration: DUR * 0.8, easing: EASE });
+          anim(p, [{ transform: 'translateY(0%)' }, { transform: 'translateY(' + to + ')' }], { duration: DUR, easing: EASE }).finished.then(() => cleanup(p));
+        }, 150);
+      });
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(start));
+    } else {
+      requestAnimationFrame(start);
+    }
+  }
+})();
 
 /* ============================
    LENIS — SMOOTH SCROLL
@@ -136,52 +290,312 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
   });
 });
 
+
 /* ============================
-   CUSTOM CURSOR
+   ALL PROJECTS CTA — radiale Füllung ab Cursor-Eintritt
 ============================ */
-const cursorDot  = document.getElementById('cursorDot');
-const cursorRing = document.getElementById('cursorRing');
+(function initProjectsCta() {
+  document.querySelectorAll('.projects-cta, .globe-contact-item').forEach((btn) => {
+    function setOrigin(e) {
+      const r = btn.getBoundingClientRect();
+      btn.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+      btn.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+    }
+    btn.addEventListener('mouseenter', setOrigin);
+    btn.addEventListener('mouseleave', setOrigin);
+  });
+})();
 
-gsap.set([cursorDot, cursorRing], { xPercent: -50, yPercent: -50 });
+/* ============================
+   CONTACT LINKS — Adresse entschlüsselt sich beim Hover (Decode)
+   Mono → keine Layout-Verschiebung; Strukturzeichen (@ . / -) bleiben stehen.
+============================ */
+(function initContactDecode() {
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const KEEP  = { '@': 1, '.': 1, '/': 1, '-': 1, '_': 1, ' ': 1 };
+  const DUR = 700;
 
-let mouseX = window.innerWidth / 2;
-let mouseY = window.innerHeight / 2;
+  function run(el) {
+    const target = el.dataset.text || el.textContent.trim();
+    if (reduce) { el.textContent = target; return; }
+    cancelAnimationFrame(el._raf || 0);
+    const n = target.length;
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - start) / DUR);
+      let out = '';
+      for (let i = 0; i < n; i++) {
+        const ch = target[i];
+        if (KEEP[ch]) { out += ch; continue; }
+        const thr = 0.10 + (i / n) * 0.7;
+        out += p >= thr ? ch : CHARS[(Math.random() * CHARS.length) | 0];
+      }
+      el.textContent = out;
+      if (p < 1) el._raf = requestAnimationFrame(tick);
+      else el.textContent = target;
+    }
+    el._raf = requestAnimationFrame(tick);
+  }
 
-gsap.set(cursorDot,  { x: mouseX, y: mouseY });
-gsap.set(cursorRing, { x: mouseX, y: mouseY });
+  document.querySelectorAll('.globe-contact-item').forEach((item) => {
+    const val = item.querySelector('.gc-value');
+    if (!val) return;
+    val.dataset.text = val.textContent.trim();
+    item.addEventListener('mouseenter', () => run(val));
+  });
+})();
 
-const setDotX  = gsap.quickSetter(cursorDot,  'x', 'px');
-const setDotY  = gsap.quickSetter(cursorDot,  'y', 'px');
-const setRingX = gsap.quickSetter(cursorRing, 'x', 'px');
-const setRingY = gsap.quickSetter(cursorRing, 'y', 'px');
+/* ============================
+   PLAY CURSOR — Hero-Bild im Vollbild
+   Kreisrunder Cursor mit Play-Icon, nur wenn das Bild Vollbild ist und
+   man drüber hovert. Blendet in dem Zustand den Dot-Trail aus.
+============================ */
+(function initPlayCursor() {
+  const card = document.getElementById('heroImgCard');
+  if (!card) return;
+  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
+  if (!fine) return;
 
-let ringX = mouseX, ringY = mouseY;
-gsap.ticker.add(() => {
-  ringX += (mouseX - ringX) * 0.18;
-  ringY += (mouseY - ringY) * 0.18;
-  setRingX(ringX);
-  setRingY(ringY);
-});
+  const cur = document.createElement('div');
+  cur.id = 'playCursor';
+  cur.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  document.body.appendChild(cur);
 
-document.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-  setDotX(mouseX);
-  setDotY(mouseY);
-}, { passive: true });
+  let overCard = false;
+  let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
 
-document.addEventListener('mouseleave', () => {
-  gsap.to([cursorDot, cursorRing], { opacity: 0, duration: 0.2 });
-});
+  card.addEventListener('mouseenter', () => { overCard = true; });
+  card.addEventListener('mouseleave', () => { overCard = false; });
 
-document.addEventListener('mouseenter', () => {
-  gsap.to([cursorDot, cursorRing], { opacity: 1, duration: 0.2 });
-});
+  window.addEventListener('mousemove', (e) => {
+    cx = e.clientX; cy = e.clientY;
+  }, { passive: true });
+
+  function active() { return overCard && window.__heroFullscreen === true; }
+
+  (function loop() {
+    requestAnimationFrame(loop);
+    const on = active();
+    cur.classList.toggle('is-visible', on);
+    window.__playCursorActive = on;   // vom Trail gelesen → Trail aus, wenn Play-Cursor an
+    if (on) {
+      cur.style.transform = 'translate(' + cx + 'px,' + cy + 'px) scale(1)';
+    }
+  })();
+})();
+
+/* ============================
+   CURSOR DOT TRAIL
+   Festes Punktraster (Halbton): jeder Punkt hat eine fixe xy-Position und
+   blendet über ein Hitze-Feld je nach Cursor-Nähe auf/ab — kein Drift, kein Spray.
+   Canvas, Vanilla; nur bei feinem Zeiger.
+============================ */
+(function initDotTrail() {
+  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (!fine || reduce) return;
+
+  const COLOR  = '240,237,232';  // --ink
+  const GRID   = 7;              // Rasterabstand (px) — kleiner = dichter
+  const DOT    = 1.9;            // Punktgröße (px)
+
+  /* Zwei Zonen: enger, sehr dichter Kern + lockerer Halo drumherum */
+  const CORE_R   = 27;           // Kernradius (eng, sehr dicht)
+  const CORE_SIG = 16;           // Kern-Weichheit
+  const CORE_ADD = 2.2;          // Kern-Hitze (hoch → praktisch voll)
+  const HALO_R   = 70;           // Halo-Radius (weit, locker)
+  const HALO_SIG = 48;           // Halo-Weichheit
+  const HALO_ADD = 0.55;         // Halo-Hitze (niedrig → spärlich)
+
+  const DECAY  = 0.972;          // Abkling-Faktor pro Frame → Schweif bleibt länger sichtbar
+  const TAPER  = 0.06;           // schwache Punkte klingen etwas schneller → Schweif läuft spitz zu
+  const TAIL_LEN = 3.2;          // Länge der Spitze in Radius-Einheiten (größer = spitzer/länger)
+  const MAXA   = 0.98;           // maximale Punkt-Deckkraft
+  const THRESH_MAX = 0.9;        // Streuung der Dither-Schwelle → starkes Ausdünnen nach außen
+
+  /* Physik: Wolke schleppt beim schnellen Wischen in Gegenrichtung nach */
+  const STRETCH = 0.9;           // wie stark die Geschwindigkeit den Schweif streckt
+  const MAX_STRETCH = 2.4;       // Deckel der Streckung
+
+  /* Wellen-Feld wie beim Globe/ASCII-Hintergrund: mehrere wandernde Sinus-Wellen,
+     die die Dichte pro Frame modulieren → lebendige, wogende Bewegung statt starr. */
+  const WAVE_AMP = 0.8;          // Stärke der Wellen-Modulation (deutlich sichtbar)
+  const WAVE_SPEED = 1.4;        // Zeittempo
+  const waves = [];
+  for (let i = 0; i < 4; i++) {
+    waves.push({
+      dirx: Math.cos((i / 4) * Math.PI * 2 + Math.random()),
+      diry: Math.sin((i / 4) * Math.PI * 2 + Math.random()),
+      freq: 0.045 + Math.random() * 0.045,     // kurze Wellen → mehrere Bänder in der Wolke
+      amp:  0.6 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.8 + Math.random() * 0.9,
+    });
+  }
+  let waveT = 0;
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'dotTrail';
+  canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9997;';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+
+  let cols, rows, heat, jitter, R;
+
+  function hash(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; return (h >>> 0) / 4294967296; }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cols = Math.ceil(window.innerWidth / GRID) + 1;
+    rows = Math.ceil(window.innerHeight / GRID) + 1;
+    heat = new Float32Array(cols * rows);
+    jitter = new Float32Array(cols * rows);
+    for (let i = 0; i < jitter.length; i++) jitter[i] = 0.03 + hash(i) * THRESH_MAX; // breite feste Schwelle je Zelle → Dichte nach Hitze/Distanz
+    R = Math.ceil((HALO_R * MAX_STRETCH) / GRID);  // Iterationsradius nach größtem möglichen Stamp
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const CORE_2S = 2 * CORE_SIG * CORE_SIG;
+  const HALO_2S = 2 * HALO_SIG * HALO_SIG;
+
+  /* Layer-Umschichtung: während die Parallax-Bilder sichtbar sind, liegt der
+     Trail IM Hero unter den Bildern (z-index 2, über dem Hintergrund); sonst
+     wieder auf <body> ganz oben (z-index 9997). */
+  const heroEl = document.getElementById('hero');
+  let layered = false;
+  function updateLayer() {
+    const want = !!window.__heroPhotos && !!heroEl;
+    if (want === layered) return;
+    layered = want;
+    if (layered) { heroEl.appendChild(canvas); canvas.style.zIndex = '2'; }
+    else { document.body.appendChild(canvas); canvas.style.zIndex = '9997'; }
+  }
+
+  /* Trail läuft, bis man UNTER dem "All Projects"-Button ist;
+     bestehende Spur klingt dann sanft aus (kein hartes Leeren) */
+  let off = false;
+  var stopEl = document.getElementById('svcFlipBtn');
+
+  /* Trail zusätzlich aus, sobald man über etwas Interaktives hovert
+     (Buttons, Nav-Links, Links, Kontakt-Links bei "Find me here") */
+  let hoverOff = false;
+  const INTERACTIVE = 'a, button, .hero-btn, .projects-cta, .nav-link-1820, .globe-contact-item, [role="button"]';
+  document.addEventListener('mouseover', (e) => {
+    if (e.target.closest && e.target.closest(INTERACTIVE)) hoverOff = true;
+  }, { passive: true });
+  document.addEventListener('mouseout', (e) => {
+    // nur zurücksetzen, wenn wir das interaktive Element wirklich verlassen
+    const to = e.relatedTarget;
+    if (!to || !(to.closest && to.closest(INTERACTIVE))) hoverOff = false;
+  }, { passive: true });
+
+  /* Ein Zonen-Stamp mit optionaler elliptischer Streckung entlang (ux,uy):
+     Distanzen werden längs der Bewegungsachse gestaucht → die Wolke wird in
+     Bewegungsrichtung gestreckt (Physik-Schleppe). str = Streckfaktor (1 = rund). */
+  function stampZone(px, py, radius, twoSig2, add, ux, uy, str) {
+    const back = radius * TAIL_LEN;              // wie weit die Spitze nach hinten reicht
+    const rCells = Math.ceil(Math.max(radius, back) * str / GRID) + 1;
+    const cgx = Math.round(px / GRID), cgy = Math.round(py / GRID);
+    const invStr = 1 / str;
+    const r2 = radius * radius;
+    for (let gy = cgy - rCells; gy <= cgy + rCells; gy++) {
+      if (gy < 0 || gy >= rows) continue;
+      for (let gx = cgx - rCells; gx <= cgx + rCells; gx++) {
+        if (gx < 0 || gx >= cols) continue;
+        const wdx = gx * GRID - px, wdy = gy * GRID - py;
+        let a = wdx * ux + wdy * uy;     // entlang der Bewegung (vorne +, hinten −)
+        const p = -wdx * uy + wdy * ux;  // quer
+        a *= invStr;                     // längs stauchen → visuelle Streckung
+        if (a > radius) continue;        // vorderer Rand
+        /* Tropfenform: hinten (a<0) verjüngt sich die Breite bis zur Spitze bei −back */
+        let wr;
+        if (a >= 0) { wr = radius; }
+        else {
+          const t = 1 + a / back;           // a ∈ [−back..0] → t ∈ [0..1]
+          if (t <= 0) continue;             // jenseits der Spitze
+          wr = radius * t * t;              // quadratisch → schlankerer, feinerer Auslauf
+        }
+        if (p > wr || p < -wr) continue;    // außerhalb der Tropfenkontur
+        const d2 = a * a + p * p;
+        if (a >= 0 && d2 > r2) continue;    // runder Kopf
+        const idx = gy * cols + gx;
+        const v = heat[idx] + add * Math.exp(-d2 / twoSig2);
+        heat[idx] = v > 2.4 ? 2.4 : v;
+      }
+    }
+  }
+
+  function stamp(px, py, ux, uy, str) {
+    stampZone(px, py, HALO_R, HALO_2S, HALO_ADD, ux, uy, str);   // lockerer Halo
+    stampZone(px, py, CORE_R, CORE_2S, CORE_ADD, ux, uy, str);   // dichter Kern
+  }
+
+  let lastX = null, lastY = null;
+  window.addEventListener('mousemove', (e) => {
+    const x = e.clientX, y = e.clientY;
+    if (off || hoverOff || window.__playCursorActive) { lastX = x; lastY = y; return; }
+    if (lastX == null) { lastX = x; lastY = y; }
+    const dx = x - lastX, dy = y - lastY;
+    const dist = Math.hypot(dx, dy);
+    // Bewegungsrichtung + Streckung aus Geschwindigkeit (Physik)
+    const ux = dist > 0.001 ? dx / dist : 1;
+    const uy = dist > 0.001 ? dy / dist : 0;
+    const str = Math.min(MAX_STRETCH, 1 + (dist / 90) * STRETCH);
+    const steps = Math.max(1, Math.min(10, Math.round(dist / GRID)));
+    for (let s = 1; s <= steps; s++) stamp(lastX + dx * (s / steps), lastY + dy * (s / steps), ux, uy, str);
+    lastX = x; lastY = y;
+  }, { passive: true });
+
+  function frame() {
+    if (stopEl) off = stopEl.getBoundingClientRect().bottom < 0;  // unter dem "All Projects"-Button?
+    updateLayer();
+    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    waveT += 0.016 * WAVE_SPEED;
+    const half = DOT / 2;
+    for (let gy = 0; gy < rows; gy++) {
+      for (let gx = 0; gx < cols; gx++) {
+        const idx = gy * cols + gx;
+        let h = heat[idx];
+        if (h <= 0.001) { heat[idx] = 0; continue; }
+        /* schwache Punkte (Halo/Rand) klingen schneller ab als der helle Kern-Spine
+           → hinter dem Cursor kollabiert die Breite, die Gesamtform läuft spitz zu */
+        const hn = h > 2.4 ? 1 : h / 2.4;
+        h *= (DECAY - (1 - hn) * TAPER);
+        heat[idx] = h;
+        if (h < jitter[idx]) continue;               // Dichte: nur Zellen, deren Schwelle unter der Hitze liegt
+        /* wanderndes Wellen-Feld (wie Globe/Hintergrund): moduliert die HITZE selbst,
+           damit die Bewegung durch die ganze Wolke wandert — auch im dichten Kern */
+        const px = gx * GRID, py = gy * GRID;
+        let w = 0;
+        for (let k = 0; k < waves.length; k++) {
+          const wv = waves[k];
+          w += Math.sin((px * wv.dirx + py * wv.diry) * wv.freq - waveT * wv.speed + wv.phase) * wv.amp;
+        }
+        const wn = w / waves.length;                 // ~[-1..1]
+        if (h < jitter[idx]) continue;               // Dichte/Form: Zonen + Physik bleiben aus der Hitze
+        /* Helligkeit kommt aus dem WELLEN-Feld (wie Globe): jeder Punkt pulsiert mit
+           den wandernden Wellen — auch der dichte Kern, nicht nur der Rand. */
+        const wave01 = 0.5 + 0.5 * (wn > 1 ? 1 : wn < -1 ? -1 : wn); // 0..1
+        const edge = h > 1 ? 1 : h;                  // Halo etwas dunkler als Kern
+        const a = MAXA * (0.12 + 0.88 * wave01) * (0.55 + 0.45 * edge);
+        ctx.fillStyle = 'rgba(' + COLOR + ',' + a.toFixed(3) + ')';
+        ctx.fillRect(px - half, py - half, DOT, DOT);   // FIXE Rasterposition
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
 
 /* ============================
    HERO — Reveal
 ============================ */
-const heroInit = () => {
+const heroInit = (instant) => {
   const elName  = document.getElementById('heroWordFullname');
 
   gsap.set('#heroWordFullname', { y: '110%' });
@@ -204,7 +618,18 @@ const heroInit = () => {
   };
 
   fitFullname();
-  window.addEventListener('resize', fitFullname);
+  let fitRaf;
+  window.addEventListener('resize', () => {
+    clearTimeout(fitRaf);
+    fitRaf = setTimeout(fitFullname, 120);
+  });
+
+  if (instant) {
+    /* Interne Ankunft: Hero steht sofort — die ASCII-Transition ist der Auftritt. */
+    gsap.set('#heroWordFullname', { y: '0%' });
+    gsap.set('.hero-subtitle',    { y: '0%' });
+    return;
+  }
 
   const heroTL = gsap.timeline({ delay: 0.0 });
   heroTL
@@ -240,6 +665,47 @@ const heroInit = () => {
 window.__heroInit = heroInit;
 
 /* ============================
+   HERO PARALLAX — Name + Rolle + eingeblendete Bilder folgen dem Cursor
+   Professionell/subtil: mehrere Tiefen, geglättet. Bewegt den ÄUSSEREN Block
+   (nicht das geclippte innere Element) → kein Abschneiden am Rand.
+   Die mittlere Bild-/Video-Karte (#heroImgCard) bleibt bewusst ausgenommen.
+============================ */
+(function initHeroParallax() {
+  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (!fine || reduce) return;
+
+  const block = document.getElementById('heroTitleBlock');    // Name + Rolle zusammen (NICHT geclippt)
+  const sub   = document.getElementById('heroSubtitleRow');   // Rolle bekommt etwas mehr Tiefe
+  const photos = Array.prototype.slice.call(document.querySelectorAll('.hero-parallax-item'));
+  const pdata = photos.map(function (el, i) {
+    const f = (i % 4) / 3;                                     // 0..1 → gestaffelte Tiefe
+    return { el: el, mx: 16 + f * 18, my: 12 + f * 14 };
+  });
+
+  let tx = 0, ty = 0, cx = 0, cy = 0;
+  window.addEventListener('mousemove', (e) => {
+    tx = (e.clientX / window.innerWidth  - 0.5);              // -0.5 .. 0.5
+    ty = (e.clientY / window.innerHeight - 0.5);
+  }, { passive: true });
+
+  gsap.ticker.add(() => {
+    cx += (tx - cx) * 0.075;                                  // geglättetes Nachlaufen
+    cy += (ty - cy) * 0.075;
+
+    /* Name/Rolle: nur oben aktiv, blendet beim Scrollen sanft aus */
+    const gate = Math.max(0, Math.min(1, 1 - window.scrollY / (window.innerHeight * 0.5)));
+    if (block) gsap.set(block, { x: -cx * 9  * gate, y: -cy * 6 * gate });
+    if (sub)   gsap.set(sub,   { x: -cx * 11 * gate, y: -cy * 7 * gate });
+
+    /* Eingeblendete Bilder: eigener Parallax (Sichtbarkeit steuert ihre opacity), Mittelkarte ausgenommen */
+    for (let i = 0; i < pdata.length; i++) {
+      gsap.set(pdata[i].el, { x: -cx * pdata[i].mx, y: -cy * pdata[i].my });
+    }
+  });
+})();
+
+/* ============================
    SCROLL SYSTEM
    Phase A [0.00 → 0.40] — Name letters float dissolve
    Phase B [0.35 → 0.78] — Parallax photos
@@ -250,12 +716,23 @@ window.__heroInit = heroInit;
   const imgCard    = document.getElementById('heroImgCard');
   const nameEl     = document.getElementById('heroWordFullname');
   const roleEl     = document.getElementById('heroSubtitleRow');
-  const designerEl = document.getElementById('heroDesignerCompat');
   const panel      = document.getElementById('mainContent');
   const zpStage    = document.getElementById('heroParallaxStage');
   const zpItems    = zpStage ? [...zpStage.querySelectorAll('.hero-parallax-item')] : [];
 
-  if (!hero || !roleEl || !designerEl || !panel || !imgCard || !nameEl) return;
+  if (!hero || !roleEl || !panel || !imgCard || !nameEl) return;
+
+  /* Statische Referenzen EINMALIG cachen — update() läuft pro Scroll-Frame,
+     querySelector/parseFloat dort waren teuer und unnötig. */
+  const letters     = [...nameEl.querySelectorAll('.nl:not(.nl--space)')];
+  const subtitleEl  = document.querySelector('.hero-subtitle');
+  const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
+  const zpData      = zpItems.map(item => ({
+    item,
+    wrap:  item.querySelector('.hero-parallax-wrap'),
+    scale: parseFloat(item.dataset.scale) || 1.5,
+    delay: parseFloat(item.dataset.delay) || 0,
+  }));
 
   const c01 = v => Math.max(0, Math.min(1, v));
   const eIO = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
@@ -268,7 +745,7 @@ window.__heroInit = heroInit;
   let pinLeft  = false;
 
   function measure() {
-    gsap.set([roleEl, designerEl], { opacity: 1, y: 0 });
+    gsap.set(roleEl, { opacity: 1, y: 0 });
     gsap.set(imgCard, { clearProps: 'transform' });
     gsap.set(imgCard, { xPercent: -50 });
     cardRect = imgCard.getBoundingClientRect();
@@ -282,7 +759,6 @@ window.__heroInit = heroInit;
 
     // Phase A — letters float up
     const pA = ph(p, 0.04, 0.40, eIO);
-    const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
     const total   = letters.length;
     const center  = (total - 1) / 2;
 
@@ -300,15 +776,11 @@ window.__heroInit = heroInit;
       });
     });
 
-    const subtitleEl = document.querySelector('.hero-subtitle');
     if (subtitleEl) gsap.set(subtitleEl, {
       y:       -pA * 30,
       opacity: c01(1 - pA * 3.5),
       filter:  `blur(${pA * 8}px)`,
     });
-
-    gsap.set(roleEl,     { opacity: 1 });
-    gsap.set(designerEl, { opacity: 1 });
 
     // Phase B — parallax photos
     const pB        = ph(p, 0.35, 0.78, eIO);
@@ -319,8 +791,9 @@ window.__heroInit = heroInit;
     const maxScale = Math.max(window.innerWidth / cardW, window.innerHeight / (cardW * 0.5625));
     const cardZoom = 1 + pA * 0.05 + pCardZoom * (maxScale - 1.05);
     gsap.set(imgCard, { scale: cardZoom, opacity: imgCardFadeIn, xPercent: -50, transformOrigin: '50% 50%' });
+    window.__heroFullscreen = pCardZoom > 0.9;   // Bild praktisch Vollbild → Play-Cursor aktiv
+    window.__heroPhotos = p >= 0.34 && p < 0.95;  // nur während die Parallax-Bilder sichtbar sind → Trail aus
 
-    const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
     if (heroImgWrap) {
       if (p >= 0.35) {
         if (!heroImgWrap.classList.contains('is-revealed')) {
@@ -334,10 +807,7 @@ window.__heroInit = heroInit;
 
     const pExit = ph(p, 0.78, 0.92, eIO);
 
-    zpItems.forEach((item) => {
-      const targetScale = parseFloat(item.dataset.scale) || 1.5;
-      const delay       = parseFloat(item.dataset.delay) || 0;
-
+    zpData.forEach(({ item, wrap, scale: targetScale, delay }) => {
       const itemP   = c01((pB - delay) / (1 - delay));
       const fadeIn  = c01(itemP * 4);
       const zoomVal = 1 + itemP * (targetScale - 1);
@@ -346,7 +816,6 @@ window.__heroInit = heroInit;
 
       gsap.set(item, { opacity: exitOpacity, scale: exitScale });
 
-      const wrap = item.querySelector('.hero-parallax-wrap');
       if (wrap) {
         if (itemP > 0) {
           if (!wrap.classList.contains('is-revealed')) {
@@ -370,18 +839,15 @@ window.__heroInit = heroInit;
   }
 
   function resetAll() {
+    window.__heroPhotos = false;
     gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
-    const letters = nameEl.querySelectorAll('.nl:not(.nl--space)');
     letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none' }));
-    gsap.set([roleEl, designerEl], { opacity: 1 });
+    gsap.set(roleEl, { opacity: 1 });
     gsap.set(imgCard, { opacity: 0, xPercent: -50, scale: 1 });
-    const subtitleEl = document.querySelector('.hero-subtitle');
     if (subtitleEl) gsap.set(subtitleEl, { y: 0, opacity: 1, filter: 'blur(0px)' });
-    zpItems.forEach(item => gsap.set(item, { opacity: 0, scale: 1 }));
-    const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
     if (heroImgWrap) heroImgWrap.classList.remove('is-revealed');
-    zpItems.forEach(item => {
-      const wrap = item.querySelector('.hero-parallax-wrap');
+    zpData.forEach(({ item, wrap }) => {
+      gsap.set(item, { opacity: 0, scale: 1 });
       if (wrap) wrap.classList.remove('is-revealed');
     });
   }
@@ -408,7 +874,12 @@ window.__heroInit = heroInit;
   });
 
   document.fonts.ready.then(() => { measure(); ScrollTrigger.refresh(); });
-  window.addEventListener('resize', () => { measure(); ScrollTrigger.refresh(); });
+
+  let resizeRaf;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeRaf);
+    resizeRaf = setTimeout(() => { measure(); ScrollTrigger.refresh(); }, 150);
+  });
 })();
 
 /* ============================
@@ -693,16 +1164,15 @@ ScrollTrigger.create({
   }
 
   const _projVec = new THREE.Vector3();
+  const _projOut = { nx: 0, ny: 0, facing: false, depth: 0 };
   function projectPoint(localPos) {
     _projVec.copy(localPos).applyQuaternion(globe.quaternion);
-    const facing = _projVec.z > 0;
-    const projected = _projVec.clone().project(camera);
-    return {
-      nx: projected.x * 0.5 + 0.5,
-      ny: -projected.y * 0.5 + 0.5,
-      facing,
-      depth: projected.z,
-    };
+    _projOut.facing = _projVec.z > 0;   // Sichtbarkeit im Weltraum, VOR der Projektion
+    _projVec.project(camera);            // in-place, keine Allokation
+    _projOut.nx    =  _projVec.x * 0.5 + 0.5;
+    _projOut.ny    = -_projVec.y * 0.5 + 0.5;
+    _projOut.depth =  _projVec.z;
+    return _projOut;                     // dasselbe Objekt wird wiederverwendet
   }
 
   function drawAsciiOverlay() {
@@ -1039,7 +1509,9 @@ ScrollTrigger.create({
 
   const c01  = v => Math.max(0, Math.min(1, v));
   const eOut = t => 1 - Math.pow(1 - c01(t), 3);
+  const eInOut = t => { t = c01(t); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
   const ph   = (p, a, b) => eOut(c01((p - a) / (b - a)));
+  const phIO = (p, a, b) => eInOut(c01((p - a) / (b - a)));
 
   gsap.set(canvasWrap, { x: 0, scale: 1, transformOrigin: 'center center' });
   gsap.set(textLeft,   { opacity: 0 });
@@ -1054,12 +1526,14 @@ ScrollTrigger.create({
   }
 
   function applyProgress(p) {
-    gsap.set(canvasWrap, { x: ph(p, 0.00, 1.00) * getTargetX(), scale: 1 + ph(p, 0.00, 1.00) * 0.18 });
-    gsap.set(textLeft, { opacity: ph(p, 0.60, 0.90) });
-    gsap.set(line1,    { y: (1 - ph(p, 0.65, 0.92)) * 110 + '%' });
+    /* Kugel: sanfter Ein-/Auslauf (eInOut) statt reinem eOut → kein „Anspringen" */
+    const move = phIO(p, 0.00, 1.00);
+    gsap.set(canvasWrap, { x: move * getTargetX(), scale: 1 + move * 0.18 });
+    gsap.set(textLeft, { opacity: ph(p, 0.55, 0.88) });
+    gsap.set(line1,    { y: (1 - ph(p, 0.60, 0.90)) * 110 + '%' });
     contactItems.forEach((item, i) => {
-      const start = 0.72 + i * 0.055;
-      const t     = ph(p, start, start + 0.18);
+      const start = 0.68 + i * 0.05;
+      const t     = ph(p, start, start + 0.20);
       gsap.set(item, { y: (1 - t) * 24, opacity: t });
     });
   }
@@ -1071,7 +1545,8 @@ ScrollTrigger.create({
     pin:           true,
     pinSpacing:    true,
     anticipatePin: 1,
-    scrub:         2.5,
+    scrub:         0.9,
+    invalidateOnRefresh: true,
     onUpdate(self)  { applyProgress(self.progress); },
     onLeaveBack() {
       gsap.set(canvasWrap, { x: 0, scale: 1 });

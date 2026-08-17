@@ -10,21 +10,25 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cv.css">
   <link rel="stylesheet" href="projects.css">
+
+  <script>
+    /* Flash-Schutz: Inhalt bei interner Navigation verbergen, bis das ASCII-Overlay übernimmt. */
+    try {
+      if (sessionStorage.getItem('jcky:internalNav') === '1') {
+        document.documentElement.classList.add('vt-arriving');
+        setTimeout(function () { document.documentElement.classList.remove('vt-arriving'); }, 2500);
+      }
+    } catch (e) {}
+  </script>
 </head>
 <body class="cv-page projects-page">
 
-<div class="cursor-dot"  id="cursorDot"></div>
-<div class="cursor-ring" id="cursorRing"></div>
 
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <div class="nav-left" id="navBack">
-    <a href="index.html" class="cv-nav-back">
-      <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
-        <line x1="20" y1="7" x2="7" y2="7" stroke="currentColor" stroke-width="1.4"/>
-        <polygon points="8,0 0,7 8,14" fill="currentColor"/>
-      </svg>
-      <span>Zurück zum Start</span>
+    <a href="index.html" class="hero-btn" aria-label="Start">
+      <span class="hero-btn-label">Start</span>
     </a>
   </div>
   <div class="nav-center-logo">
@@ -32,58 +36,23 @@
     <span class="nav-logo-sub" id="navLogoSub">PORTFOLIO</span>
   </div>
   <div class="nav-right" id="navDownload">
-    <a href="cv.html" class="cv-download-btn-nav">
-      <span>CV</span>
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+    <a href="cv.html" class="hero-btn" aria-label="CV">
+      <span class="hero-btn-label">CV</span>
     </a>
   </div>
 </nav>
 
-<!-- TAB NAV -->
-<div class="proj-tabnav-sentinel" id="projTabnavSentinel"></div>
-<div class="proj-tabnav-wrap" id="projTabnavWrap">
-  <nav class="proj-tabnav" id="projTabnav">
-    <button class="proj-tab is-active" data-tab="uiux" type="button">UI / UX Design</button>
-    <button class="proj-tab" data-tab="product" type="button">Product Design</button>
-    <button class="proj-tab" data-tab="image" type="button">Image Editing</button>
-    <button class="proj-tab" data-tab="ads" type="button">Advertisements</button>
-    <button class="proj-tab" data-tab="video" type="button">Video Cutting</button>
-    <span class="proj-tabnav-baseline"></span>
-    <span class="proj-tab-indicator" id="projTabIndicator"></span>
-  </nav>
-</div>
+<!-- PROJECTS INDEX -->
+<main class="pjx" id="pjx">
 
-<!-- SELECTED WORK LIST -->
-<div class="proj-list-wrap" id="projListWrap">
+  <header class="pjx-head">
+    <span class="pjx-kicker">Selected Work — Index</span>
+    <h1 class="pjx-title"><span class="pjx-title-inner">Projects</span></h1>
+  </header>
 
-  <div class="proj-view-switch" id="projViewSwitch" role="tablist" aria-label="View umschalten">
-    <button class="proj-view-btn is-active" data-view="list" type="button" role="tab" aria-selected="true" aria-label="Listenansicht">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <circle cx="2" cy="3" r="1.2" fill="currentColor"/>
-        <circle cx="2" cy="8" r="1.2" fill="currentColor"/>
-        <circle cx="2" cy="13" r="1.2" fill="currentColor"/>
-        <line x1="5.5" y1="3" x2="14" y2="3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        <line x1="5.5" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        <line x1="5.5" y1="13" x2="14" y2="13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <button class="proj-view-btn" data-view="grid" type="button" role="tab" aria-selected="false" aria-label="Rasteransicht">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <rect x="2" y="2" width="5" height="5" rx="1.2" fill="currentColor"/>
-        <rect x="9" y="2" width="5" height="5" rx="1.2" fill="currentColor"/>
-        <rect x="2" y="9" width="5" height="5" rx="1.2" fill="currentColor"/>
-        <rect x="9" y="9" width="5" height="5" rx="1.2" fill="currentColor"/>
-      </svg>
-    </button>
-  </div>
+  <div class="pjx-list" id="pjxList"></div>
 
-  <div class="proj-list-preview" id="projListPreview" aria-hidden="true">
-    <img id="projListPreviewImg" src="" alt="">
-  </div>
-  <div class="proj-list" id="projList"></div>
-</div>
+</main>
 
 <script src="script.js"></script>
 <script src="projects.js"></script>
