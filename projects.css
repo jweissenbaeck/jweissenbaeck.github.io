@@ -173,3 +173,15 @@
   .pjx-detail-inner { grid-template-columns: 1fr; }
   .pjx-gallery-img { width: clamp(200px, 62vw, 280px); }
 }
+/* ============================
+   REDUCED MOTION — globaler Fallback
+   Neutralisiert Bewegungs-Animationen für Nutzer mit prefers-reduced-motion.
+============================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

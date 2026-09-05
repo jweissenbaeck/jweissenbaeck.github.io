@@ -201,10 +201,13 @@ body::before {
   white-space: nowrap;
   text-decoration: none;
 
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  overflow: hidden;                 /* clippt den Pixel-Canvas auf den Radius */
+  transition: border-color 0.3s ease, color 0.3s ease;
 }
 
 .hero-btn-label {
+  position: relative;
+  z-index: 1;                       /* Text über dem Pixel-Canvas */
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
@@ -213,33 +216,9 @@ body::before {
   line-height: 1;
 }
 
-/* laufender gestrichelter Rahmen — nur im Hover sichtbar */
-.hero-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  background-image:
-    linear-gradient(90deg, var(--ink) 50%, transparent 0),
-    linear-gradient(90deg, var(--ink) 50%, transparent 0),
-    linear-gradient(0deg,  var(--ink) 50%, transparent 0),
-    linear-gradient(0deg,  var(--ink) 50%, transparent 0);
-  background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
-  background-size: 8px 1px, 8px 1px, 1px 8px, 1px 8px;
-  background-position: 0 0, 0 100%, 0 0, 100% 0;
-}
-
 .hero-btn:hover,
 .hero-btn:focus-visible {
-  background: rgba(18, 18, 22, 0.82);
-}
-.hero-btn:hover::after,
-.hero-btn:focus-visible::after {
-  opacity: 1;
-  animation: heroBtnMarch 0.5s infinite linear;
+  color: var(--bg-dark);            /* Text invertiert (Pixel-Füllung übernimmt den Hintergrund) */
 }
 .hero-btn:focus-visible { outline: none; }
 
@@ -269,34 +248,13 @@ body::before {
   text-transform: uppercase;
   line-height: 1;
 }
-.projects-cta-fill {
-  position: absolute;
-  left: var(--mx, 50%);
-  top: var(--my, 50%);
-  width: 220%;
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background: var(--ink);
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.55s var(--ease-out-expo);
-  pointer-events: none;
-}
+.projects-cta-fill { display: none; }   /* radiale Füllung → durch Pixel-Hover ersetzt */
 .projects-cta:hover,
 .projects-cta:focus-visible {
   color: var(--bg-dark);
   border-color: transparent;
 }
-.projects-cta:hover .projects-cta-fill,
-.projects-cta:focus-visible .projects-cta-fill { transform: translate(-50%, -50%) scale(1); }
 .projects-cta:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
-
-@media (prefers-reduced-motion: reduce) {
-  .projects-cta-fill { transition-duration: 0.001s; }
-}
-
-@keyframes heroBtnMarch {
-  to { background-position: 16px 0, -16px 100%, 0 -16px, 100% 16px; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .hero-btn:hover::after,
@@ -314,6 +272,15 @@ body::before {
   padding-top: 40px; padding-bottom: 3vh;
   position: relative; overflow: visible; gap: 0;
 }
+
+.ascii-hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;                 /* hinter Titel/Inhalt (z 3–7), über dem Basis-Hintergrund */
+  pointer-events: none;       /* blockiert Text/Scroll nicht */
+  overflow: hidden;
+}
+.ascii-hero-bg canvas { display: block; width: 100%; height: 100%; }
 
 .hero-middle-row {
   position: relative;
@@ -524,6 +491,15 @@ body::before {
   box-shadow: 0 -8px 40px rgba(240,237,232,0.08), 0 -2px 8px rgba(240,237,232,0.04);
   clip-path: inset(100% 0 0 0);
   will-change: clip-path;
+}
+
+/* Pixel-Wipe-Canvas: über dem Video (z4), unter #mainContent (z10) */
+#pixelWipe {
+  position: fixed;
+  inset: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .main-content .services-section { max-height: none; overflow: visible; padding-top: 60px; }
@@ -813,8 +789,26 @@ body::before {
   gap: 0.04em;
   opacity: 0;
   will-change: opacity;
-  max-width: 44vw;
+  max-width: 48vw;
 }
+
+/* Mono-Kicker: Katalog-Code + Salzburg-Koordinaten (Bezug zum Globe-Pin) */
+.globe-kicker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 26px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.globe-kicker-code {
+  color: var(--ink);
+  border: 1px solid rgba(240,237,232,0.25);
+  padding: 5px 10px;
+}
+.globe-kicker-loc { color: rgba(240,237,232,0.5); letter-spacing: 0.16em; }
 
 .globe-text-clip {
   overflow: hidden;
@@ -842,22 +836,21 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-top: 2.4em;
+  margin-top: 2.2em;
 }
 
 .globe-contact-item {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 1fr;   /* nur Body */
   align-items: center;
-  gap: 20px;
-  padding: 16px 16px;
+  gap: 24px;
+  padding: 22px 18px;
   border-bottom: 1px solid rgba(240,237,232,0.09);
   text-decoration: none;
   color: rgba(240,237,232,0.6);
   transition: color 0.6s ease;
   position: relative;
-
-  overflow: hidden;               /* clippt den Ink-Balken */
+  overflow: hidden;               /* clippt die Pixel-Füllung */
   will-change: opacity;
 }
 
@@ -865,58 +858,43 @@ body::before {
   border-top: 1px solid rgba(240,237,232,0.09);
 }
 
-/* Hover wie beim "All Projects"-CTA: radiale Ink-Füllung ab Cursor-Eintritt, Text invertiert */
-.gc-fill {
+/* Hover im Pixel-Stil: Ink-Blöcke steigen verstreut von unten auf (Canvas .gc-pixels) */
+.gc-fill { display: none; }               /* alten Radial-Fill stilllegen */
+.gc-pixels {
   position: absolute;
-  left: var(--mx, 50%);
-  top: var(--my, 50%);
-  width: 220%;
-  aspect-ratio: 1 / 1;
-  border-radius: 50%;
-  background: var(--ink);
-  transform: translate(-50%, -50%) scale(0);
-  transition: transform 0.55s var(--ease-out-expo);
+  inset: 0;
+  z-index: 0;                             /* hinter Index/Text (z-index 1) */
   pointer-events: none;
+  border-radius: inherit;                /* respektiert den Button-Radius */
 }
-.globe-contact-item:hover .gc-fill,
-.globe-contact-item:focus-visible .gc-fill { transform: translate(-50%, -50%) scale(1); }
 
 .globe-contact-item:hover,
 .globe-contact-item:focus-visible { color: var(--bg-dark); }
 
-.gc-index {
-  position: relative;
-  z-index: 1;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: rgba(240,237,232,0.35);
-  transition: color 0.6s ease;
-}
-.globe-contact-item:hover .gc-index,
-.globe-contact-item:focus-visible .gc-index { color: rgba(10,10,9,0.55); }
-
+/* Body: Label oben (klein/mono), Wert darunter (größer) */
 .gc-body {
   position: relative;
   z-index: 1;
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  flex-direction: column;
+  gap: 5px;
   min-width: 0;
 }
 
 .gc-label {
-  font-family: var(--font-mono);
-  font-size: clamp(12px, 1vw, 14px);
-  letter-spacing: 0.06em;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: clamp(1.15rem, 1.7vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  line-height: 1;
   color: currentColor;
-  flex-shrink: 0;
 }
 
 .gc-value {
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
   color: rgba(240,237,232,0.4);
   white-space: nowrap;
   overflow: hidden;
@@ -1061,4 +1039,16 @@ html.vt-arriving body { visibility: hidden; }
 @media (max-width: 780px) {
   #ainoPanel .aino-tl { top: 18px; left: 20px; }
   #ainoPanel .aino-br { bottom: 18px; right: 20px; }
+}
+/* ============================
+   REDUCED MOTION — globaler Fallback
+   Neutralisiert Bewegungs-Animationen für Nutzer mit prefers-reduced-motion.
+============================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

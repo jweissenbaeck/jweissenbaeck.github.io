@@ -268,6 +268,95 @@ gsap.ticker.add((time) => {
 gsap.ticker.lagSmoothing(0);
 
 /* ============================
+   SMOOTHING HELPER
+   Frameraten-unabhängiges Lerp: gleicher „Nachlauf" (in Sekunden) auf 60/120/144 Hz.
+   Ersetzt feste Pro-Frame-Faktoren, die auf High-Refresh-Displays zu schnell laufen.
+   smoothTowards(current, target, smoothSeconds, deltaSeconds)
+============================ */
+function smoothTowards(cur, target, smooth, dt) {
+  if (smooth <= 0) return target;
+  const k = 1 - Math.exp(-dt / smooth);
+  return cur + (target - cur) * k;
+}
+window.__smoothTowards = smoothTowards;
+
+/* ============================
+   SCROLL VELOCITY SKEW
+   Elemente mit .skew-on-scroll bekommen beim schnellen Scrollen einen minimalen
+   Skew/Scale, der beim Stoppen ausläuft — der typische "flüssige" Trägheits-Look.
+   Nutzt Lenis-Velocity, framerate-unabhängig geglättet, respektiert Reduced-Motion.
+============================ */
+(function initScrollSkew() {
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (reduce || typeof lenis === 'undefined') return;
+  const els = Array.prototype.slice.call(document.querySelectorAll('.skew-on-scroll'));
+  if (!els.length) return;
+
+  let skew = 0;
+  gsap.ticker.add((time, deltaTime) => {
+    const dt = Math.min(deltaTime || 16.7, 50) / 1000;
+    const v = lenis.velocity || 0;                       // px/frame-ish
+    const target = Math.max(-6, Math.min(6, v * 0.35));  // Grad, gedeckelt
+    skew = smoothTowards(skew, target, 0.12, dt);
+    if (Math.abs(skew) < 0.01) skew = 0;
+    for (let i = 0; i < els.length; i++) {
+      els[i].style.transform = 'skewY(' + skew.toFixed(3) + 'deg)';
+    }
+  });
+})();
+
+/* ============================
+   MAGNETIC BUTTONS
+   Buttons ziehen sich beim Hover leicht zum Cursor (Trägheit → "Masse").
+   Dezent, framerate-unabhängig geglättet, respektiert Reduced-Motion.
+============================ */
+(function initMagnetic() {
+  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if (!fine || reduce) return;
+
+  const STRENGTH = 0.28;   // wie stark der Button dem Cursor folgt (Anteil des Offsets)
+  const RADIUS   = 1.6;    // Aktionsradius als Vielfaches der halben Buttonbreite
+  const SMOOTH   = 0.09;   // Sekunden Nachlauf
+
+  const items = [];
+  document.querySelectorAll('.hero-btn, .projects-cta').forEach((el) => {
+    const state = { el, tx: 0, ty: 0, cx: 0, cy: 0, active: false, parked: true };
+    el.addEventListener('mouseenter', () => { state.active = true; });
+    el.addEventListener('mousemove', (e) => {
+      const r = el.getBoundingClientRect();
+      state.tx = (e.clientX - (r.left + r.width / 2)) * STRENGTH;
+      state.ty = (e.clientY - (r.top + r.height / 2)) * STRENGTH;
+    });
+    el.addEventListener('mouseleave', () => { state.tx = 0; state.ty = 0; state.active = false; });
+    items.push(state);
+  });
+  if (!items.length) return;
+
+  gsap.ticker.add((time, deltaTime) => {
+    const dt = Math.min(deltaTime || 16.7, 50) / 1000;
+    for (let i = 0; i < items.length; i++) {
+      const s = items[i];
+      s.cx = smoothTowards(s.cx, s.tx, SMOOTH, dt);
+      s.cy = smoothTowards(s.cy, s.ty, SMOOTH, dt);
+      const resting = Math.abs(s.cx) < 0.1 && Math.abs(s.cy) < 0.1 && !s.active;
+      if (resting) {
+        if (!s.parked) {                       // im Ruhezustand transform ganz entfernen
+          s.cx = 0; s.cy = 0; s.parked = true;
+          s.el.style.transform = '';
+          s.el.style.willChange = '';
+        }
+        continue;
+      }
+      s.parked = false;
+      s.el.style.willChange = 'transform';
+      // ganzzahlige Pixel → kein Subpixel-Smear beim backdrop-filter
+      s.el.style.transform = 'translate3d(' + Math.round(s.cx) + 'px,' + Math.round(s.cy) + 'px,0)';
+    }
+  });
+})();
+
+/* ============================
    NAV — Click to scroll via Lenis
 ============================ */
 document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(link => {
@@ -347,6 +436,77 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
 })();
 
 /* ============================
+   CONTACT PIXEL HOVER — Ink-Blöcke steigen beim Hover verstreut von unten auf
+   (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
+============================ */
+(function initContactPixels() {
+  const items = document.querySelectorAll('.globe-contact-item, .hero-btn, .projects-cta');
+  if (!items.length) return;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const BLOCK = 13;          // kleine Blöcke (Zeilen sind niedrig)
+  const BIAS  = 0.6;         // Anteil "von unten"
+  const SMOOTH = 0.11;       // Sekunden – Ein-/Ausblenden
+  const INK = '240, 237, 232';
+
+  function rnd(gx, gy) {
+    let h = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
+    h = (h ^ (h >>> 13)) * 1274126177 >>> 0;
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+
+  items.forEach((item) => {
+    const cv = document.createElement('canvas');
+    cv.className = 'gc-pixels';
+    cv.setAttribute('aria-hidden', 'true');
+    item.insertBefore(cv, item.firstChild);
+    const ctx = cv.getContext('2d');
+
+    let w = 0, h = 0, cols = 0, rows = 0, dpr = 1;
+    function size() {
+      const r = item.getBoundingClientRect();
+      w = Math.max(1, r.width); h = Math.max(1, r.height);
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cv.width = Math.floor(w * dpr); cv.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cols = Math.ceil(w / BLOCK); rows = Math.max(1, Math.ceil(h / BLOCK));
+    }
+    size();
+    if ('ResizeObserver' in window) new ResizeObserver(size).observe(item);
+
+    function draw(p) {
+      ctx.clearRect(0, 0, w, h);
+      if (p <= 0.001) return;
+      ctx.fillStyle = 'rgb(' + INK + ')';
+      for (let gy = 0; gy < rows; gy++) {
+        const rowBias = rows > 1 ? gy / (rows - 1) : 1;      // 0 oben, 1 unten
+        for (let gx = 0; gx < cols; gx++) {
+          const thr = (1 - rowBias) * BIAS + rnd(gx, gy) * (1 - BIAS); // unten zuerst
+          if (p >= thr) ctx.fillRect(gx * BLOCK, gy * BLOCK, BLOCK + 1, BLOCK + 1);
+        }
+      }
+    }
+
+    let prog = 0, target = 0, raf = null, lastT = 0;
+    function loop(now) {
+      if (!lastT) lastT = now;
+      const dt = Math.min((now - lastT) || 16.7, 50) / 1000; lastT = now;
+      const k = reduce ? 1 : (1 - Math.exp(-dt / SMOOTH));
+      prog += (target - prog) * k;
+      if (Math.abs(target - prog) < 0.002) prog = target;
+      draw(prog);
+      if (prog !== target) { raf = requestAnimationFrame(loop); }
+      else { raf = null; lastT = 0; }
+    }
+    function go(t) { target = t; if (!raf) { lastT = 0; raf = requestAnimationFrame(loop); } }
+
+    item.addEventListener('mouseenter', () => go(1));
+    item.addEventListener('mouseleave', () => go(0));
+    item.addEventListener('focus', () => go(1));
+    item.addEventListener('blur', () => go(0));
+  });
+})();
+
+/* ============================
    PLAY CURSOR — Hero-Bild im Vollbild
    Kreisrunder Cursor mit Play-Icon, nur wenn das Bild Vollbild ist und
    man drüber hovert. Blendet in dem Zustand den Dot-Trail aus.
@@ -383,213 +543,6 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
       cur.style.transform = 'translate(' + cx + 'px,' + cy + 'px) scale(1)';
     }
   })();
-})();
-
-/* ============================
-   CURSOR DOT TRAIL
-   Festes Punktraster (Halbton): jeder Punkt hat eine fixe xy-Position und
-   blendet über ein Hitze-Feld je nach Cursor-Nähe auf/ab — kein Drift, kein Spray.
-   Canvas, Vanilla; nur bei feinem Zeiger.
-============================ */
-(function initDotTrail() {
-  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
-  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  if (!fine || reduce) return;
-
-  const COLOR  = '240,237,232';  // --ink
-  const GRID   = 7;              // Rasterabstand (px) — kleiner = dichter
-  const DOT    = 1.9;            // Punktgröße (px)
-
-  /* Zwei Zonen: enger, sehr dichter Kern + lockerer Halo drumherum */
-  const CORE_R   = 27;           // Kernradius (eng, sehr dicht)
-  const CORE_SIG = 16;           // Kern-Weichheit
-  const CORE_ADD = 2.2;          // Kern-Hitze (hoch → praktisch voll)
-  const HALO_R   = 70;           // Halo-Radius (weit, locker)
-  const HALO_SIG = 48;           // Halo-Weichheit
-  const HALO_ADD = 0.55;         // Halo-Hitze (niedrig → spärlich)
-
-  const DECAY  = 0.972;          // Abkling-Faktor pro Frame → Schweif bleibt länger sichtbar
-  const TAPER  = 0.06;           // schwache Punkte klingen etwas schneller → Schweif läuft spitz zu
-  const TAIL_LEN = 3.2;          // Länge der Spitze in Radius-Einheiten (größer = spitzer/länger)
-  const MAXA   = 0.98;           // maximale Punkt-Deckkraft
-  const THRESH_MAX = 0.9;        // Streuung der Dither-Schwelle → starkes Ausdünnen nach außen
-
-  /* Physik: Wolke schleppt beim schnellen Wischen in Gegenrichtung nach */
-  const STRETCH = 0.9;           // wie stark die Geschwindigkeit den Schweif streckt
-  const MAX_STRETCH = 2.4;       // Deckel der Streckung
-
-  /* Wellen-Feld wie beim Globe/ASCII-Hintergrund: mehrere wandernde Sinus-Wellen,
-     die die Dichte pro Frame modulieren → lebendige, wogende Bewegung statt starr. */
-  const WAVE_AMP = 0.8;          // Stärke der Wellen-Modulation (deutlich sichtbar)
-  const WAVE_SPEED = 1.4;        // Zeittempo
-  const waves = [];
-  for (let i = 0; i < 4; i++) {
-    waves.push({
-      dirx: Math.cos((i / 4) * Math.PI * 2 + Math.random()),
-      diry: Math.sin((i / 4) * Math.PI * 2 + Math.random()),
-      freq: 0.045 + Math.random() * 0.045,     // kurze Wellen → mehrere Bänder in der Wolke
-      amp:  0.6 + Math.random() * 0.5,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.8 + Math.random() * 0.9,
-    });
-  }
-  let waveT = 0;
-
-  const canvas = document.createElement('canvas');
-  canvas.id = 'dotTrail';
-  canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:9997;';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-
-  let cols, rows, heat, jitter, R;
-
-  function hash(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; return (h >>> 0) / 4294967296; }
-
-  function resize() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cols = Math.ceil(window.innerWidth / GRID) + 1;
-    rows = Math.ceil(window.innerHeight / GRID) + 1;
-    heat = new Float32Array(cols * rows);
-    jitter = new Float32Array(cols * rows);
-    for (let i = 0; i < jitter.length; i++) jitter[i] = 0.03 + hash(i) * THRESH_MAX; // breite feste Schwelle je Zelle → Dichte nach Hitze/Distanz
-    R = Math.ceil((HALO_R * MAX_STRETCH) / GRID);  // Iterationsradius nach größtem möglichen Stamp
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  const CORE_2S = 2 * CORE_SIG * CORE_SIG;
-  const HALO_2S = 2 * HALO_SIG * HALO_SIG;
-
-  /* Layer-Umschichtung: während die Parallax-Bilder sichtbar sind, liegt der
-     Trail IM Hero unter den Bildern (z-index 2, über dem Hintergrund); sonst
-     wieder auf <body> ganz oben (z-index 9997). */
-  const heroEl = document.getElementById('hero');
-  let layered = false;
-  function updateLayer() {
-    const want = !!window.__heroPhotos && !!heroEl;
-    if (want === layered) return;
-    layered = want;
-    if (layered) { heroEl.appendChild(canvas); canvas.style.zIndex = '2'; }
-    else { document.body.appendChild(canvas); canvas.style.zIndex = '9997'; }
-  }
-
-  /* Trail läuft, bis man UNTER dem "All Projects"-Button ist;
-     bestehende Spur klingt dann sanft aus (kein hartes Leeren) */
-  let off = false;
-  var stopEl = document.getElementById('svcFlipBtn');
-
-  /* Trail zusätzlich aus, sobald man über etwas Interaktives hovert
-     (Buttons, Nav-Links, Links, Kontakt-Links bei "Find me here") */
-  let hoverOff = false;
-  const INTERACTIVE = 'a, button, .hero-btn, .projects-cta, .nav-link-1820, .globe-contact-item, [role="button"]';
-  document.addEventListener('mouseover', (e) => {
-    if (e.target.closest && e.target.closest(INTERACTIVE)) hoverOff = true;
-  }, { passive: true });
-  document.addEventListener('mouseout', (e) => {
-    // nur zurücksetzen, wenn wir das interaktive Element wirklich verlassen
-    const to = e.relatedTarget;
-    if (!to || !(to.closest && to.closest(INTERACTIVE))) hoverOff = false;
-  }, { passive: true });
-
-  /* Ein Zonen-Stamp mit optionaler elliptischer Streckung entlang (ux,uy):
-     Distanzen werden längs der Bewegungsachse gestaucht → die Wolke wird in
-     Bewegungsrichtung gestreckt (Physik-Schleppe). str = Streckfaktor (1 = rund). */
-  function stampZone(px, py, radius, twoSig2, add, ux, uy, str) {
-    const back = radius * TAIL_LEN;              // wie weit die Spitze nach hinten reicht
-    const rCells = Math.ceil(Math.max(radius, back) * str / GRID) + 1;
-    const cgx = Math.round(px / GRID), cgy = Math.round(py / GRID);
-    const invStr = 1 / str;
-    const r2 = radius * radius;
-    for (let gy = cgy - rCells; gy <= cgy + rCells; gy++) {
-      if (gy < 0 || gy >= rows) continue;
-      for (let gx = cgx - rCells; gx <= cgx + rCells; gx++) {
-        if (gx < 0 || gx >= cols) continue;
-        const wdx = gx * GRID - px, wdy = gy * GRID - py;
-        let a = wdx * ux + wdy * uy;     // entlang der Bewegung (vorne +, hinten −)
-        const p = -wdx * uy + wdy * ux;  // quer
-        a *= invStr;                     // längs stauchen → visuelle Streckung
-        if (a > radius) continue;        // vorderer Rand
-        /* Tropfenform: hinten (a<0) verjüngt sich die Breite bis zur Spitze bei −back */
-        let wr;
-        if (a >= 0) { wr = radius; }
-        else {
-          const t = 1 + a / back;           // a ∈ [−back..0] → t ∈ [0..1]
-          if (t <= 0) continue;             // jenseits der Spitze
-          wr = radius * t * t;              // quadratisch → schlankerer, feinerer Auslauf
-        }
-        if (p > wr || p < -wr) continue;    // außerhalb der Tropfenkontur
-        const d2 = a * a + p * p;
-        if (a >= 0 && d2 > r2) continue;    // runder Kopf
-        const idx = gy * cols + gx;
-        const v = heat[idx] + add * Math.exp(-d2 / twoSig2);
-        heat[idx] = v > 2.4 ? 2.4 : v;
-      }
-    }
-  }
-
-  function stamp(px, py, ux, uy, str) {
-    stampZone(px, py, HALO_R, HALO_2S, HALO_ADD, ux, uy, str);   // lockerer Halo
-    stampZone(px, py, CORE_R, CORE_2S, CORE_ADD, ux, uy, str);   // dichter Kern
-  }
-
-  let lastX = null, lastY = null;
-  window.addEventListener('mousemove', (e) => {
-    const x = e.clientX, y = e.clientY;
-    if (off || hoverOff || window.__playCursorActive) { lastX = x; lastY = y; return; }
-    if (lastX == null) { lastX = x; lastY = y; }
-    const dx = x - lastX, dy = y - lastY;
-    const dist = Math.hypot(dx, dy);
-    // Bewegungsrichtung + Streckung aus Geschwindigkeit (Physik)
-    const ux = dist > 0.001 ? dx / dist : 1;
-    const uy = dist > 0.001 ? dy / dist : 0;
-    const str = Math.min(MAX_STRETCH, 1 + (dist / 90) * STRETCH);
-    const steps = Math.max(1, Math.min(10, Math.round(dist / GRID)));
-    for (let s = 1; s <= steps; s++) stamp(lastX + dx * (s / steps), lastY + dy * (s / steps), ux, uy, str);
-    lastX = x; lastY = y;
-  }, { passive: true });
-
-  function frame() {
-    if (stopEl) off = stopEl.getBoundingClientRect().bottom < 0;  // unter dem "All Projects"-Button?
-    updateLayer();
-    ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    waveT += 0.016 * WAVE_SPEED;
-    const half = DOT / 2;
-    for (let gy = 0; gy < rows; gy++) {
-      for (let gx = 0; gx < cols; gx++) {
-        const idx = gy * cols + gx;
-        let h = heat[idx];
-        if (h <= 0.001) { heat[idx] = 0; continue; }
-        /* schwache Punkte (Halo/Rand) klingen schneller ab als der helle Kern-Spine
-           → hinter dem Cursor kollabiert die Breite, die Gesamtform läuft spitz zu */
-        const hn = h > 2.4 ? 1 : h / 2.4;
-        h *= (DECAY - (1 - hn) * TAPER);
-        heat[idx] = h;
-        if (h < jitter[idx]) continue;               // Dichte: nur Zellen, deren Schwelle unter der Hitze liegt
-        /* wanderndes Wellen-Feld (wie Globe/Hintergrund): moduliert die HITZE selbst,
-           damit die Bewegung durch die ganze Wolke wandert — auch im dichten Kern */
-        const px = gx * GRID, py = gy * GRID;
-        let w = 0;
-        for (let k = 0; k < waves.length; k++) {
-          const wv = waves[k];
-          w += Math.sin((px * wv.dirx + py * wv.diry) * wv.freq - waveT * wv.speed + wv.phase) * wv.amp;
-        }
-        const wn = w / waves.length;                 // ~[-1..1]
-        if (h < jitter[idx]) continue;               // Dichte/Form: Zonen + Physik bleiben aus der Hitze
-        /* Helligkeit kommt aus dem WELLEN-Feld (wie Globe): jeder Punkt pulsiert mit
-           den wandernden Wellen — auch der dichte Kern, nicht nur der Rand. */
-        const wave01 = 0.5 + 0.5 * (wn > 1 ? 1 : wn < -1 ? -1 : wn); // 0..1
-        const edge = h > 1 ? 1 : h;                  // Halo etwas dunkler als Kern
-        const a = MAXA * (0.12 + 0.88 * wave01) * (0.55 + 0.45 * edge);
-        ctx.fillStyle = 'rgba(' + COLOR + ',' + a.toFixed(3) + ')';
-        ctx.fillRect(px - half, py - half, DOT, DOT);   // FIXE Rasterposition
-      }
-    }
-    requestAnimationFrame(frame);
-  }
-  requestAnimationFrame(frame);
 })();
 
 /* ============================
@@ -664,46 +617,6 @@ const heroInit = (instant) => {
 
 window.__heroInit = heroInit;
 
-/* ============================
-   HERO PARALLAX — Name + Rolle + eingeblendete Bilder folgen dem Cursor
-   Professionell/subtil: mehrere Tiefen, geglättet. Bewegt den ÄUSSEREN Block
-   (nicht das geclippte innere Element) → kein Abschneiden am Rand.
-   Die mittlere Bild-/Video-Karte (#heroImgCard) bleibt bewusst ausgenommen.
-============================ */
-(function initHeroParallax() {
-  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
-  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  if (!fine || reduce) return;
-
-  const block = document.getElementById('heroTitleBlock');    // Name + Rolle zusammen (NICHT geclippt)
-  const sub   = document.getElementById('heroSubtitleRow');   // Rolle bekommt etwas mehr Tiefe
-  const photos = Array.prototype.slice.call(document.querySelectorAll('.hero-parallax-item'));
-  const pdata = photos.map(function (el, i) {
-    const f = (i % 4) / 3;                                     // 0..1 → gestaffelte Tiefe
-    return { el: el, mx: 16 + f * 18, my: 12 + f * 14 };
-  });
-
-  let tx = 0, ty = 0, cx = 0, cy = 0;
-  window.addEventListener('mousemove', (e) => {
-    tx = (e.clientX / window.innerWidth  - 0.5);              // -0.5 .. 0.5
-    ty = (e.clientY / window.innerHeight - 0.5);
-  }, { passive: true });
-
-  gsap.ticker.add(() => {
-    cx += (tx - cx) * 0.075;                                  // geglättetes Nachlaufen
-    cy += (ty - cy) * 0.075;
-
-    /* Name/Rolle: nur oben aktiv, blendet beim Scrollen sanft aus */
-    const gate = Math.max(0, Math.min(1, 1 - window.scrollY / (window.innerHeight * 0.5)));
-    if (block) gsap.set(block, { x: -cx * 9  * gate, y: -cy * 6 * gate });
-    if (sub)   gsap.set(sub,   { x: -cx * 11 * gate, y: -cy * 7 * gate });
-
-    /* Eingeblendete Bilder: eigener Parallax (Sichtbarkeit steuert ihre opacity), Mittelkarte ausgenommen */
-    for (let i = 0; i < pdata.length; i++) {
-      gsap.set(pdata[i].el, { x: -cx * pdata[i].mx, y: -cy * pdata[i].my });
-    }
-  });
-})();
 
 /* ============================
    SCROLL SYSTEM
@@ -744,11 +657,26 @@ window.__heroInit = heroInit;
   let cardRect = null;
   let pinLeft  = false;
 
+  /* ── PIXEL-WIPE: gepixelte Treppen-Kante statt gerader clip-path-Linie ──
+     Blöcke in fester Größe; jede Spalte enthüllt gestaffelt → gezackte Pixel-Grenze. */
+  const PX_BLOCK = 72;        // Blockgröße in px (wie in der Referenz)
+  const PX_JITTER_ROWS = 3;   // wie viele Blockreihen die Spalten gegeneinander versetzt sind
+  let pxCols = 1, pxRows = 1, pxJit = [];
+  function pxHash(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; return (h >>> 0) / 4294967296; }
+  function pxMeasure() {
+    pxCols = Math.max(1, Math.ceil(window.innerWidth / PX_BLOCK));
+    pxRows = Math.max(1, Math.ceil(window.innerHeight / PX_BLOCK));
+    pxJit = [];
+    for (let i = 0; i < pxCols; i++) pxJit[i] = pxHash(i) * PX_JITTER_ROWS;  // stabil je Spalte
+  }
+  pxMeasure();
+
   function measure() {
     gsap.set(roleEl, { opacity: 1, y: 0 });
     gsap.set(imgCard, { clearProps: 'transform' });
     gsap.set(imgCard, { xPercent: -50 });
     cardRect = imgCard.getBoundingClientRect();
+    pxMeasure();
   }
 
   gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
@@ -828,11 +756,11 @@ window.__heroInit = heroInit;
       }
     });
 
-    // Phase C — bottom sheet
+    // Phase C — bottom sheet (Hero-Reveal; der Pixel-Effekt wird separat an #work getriggert)
     if (p < 0.80) {
       gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
     } else {
-      const pC       = ph(p, 0.80, 1.00, eIO);
+      const pC = ph(p, 0.80, 1.00, eIO);
       const insetTop = c01(1 - pC) * 100;
       gsap.set(panel, { clipPath: `inset(${insetTop}% 0 0 0)` });
     }
@@ -840,6 +768,7 @@ window.__heroInit = heroInit;
 
   function resetAll() {
     window.__heroPhotos = false;
+    window.__heroPixel = 0;
     gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
     letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none' }));
     gsap.set(roleEl, { opacity: 1 });
@@ -911,6 +840,72 @@ window.__heroInit = heroInit;
 })();
 
 /* ============================
+   PIXEL WIPE — sichtbare Pixel-Blöcke beim Übergang Video → "What I do"
+   Zeichnet in Hintergrundfarbe (leicht aufgehellt, damit sie über dem Video
+   lesbar sind) eine gezackte, spaltenweise gestaffelte Pixelkante, die mit dem
+   Scrollen hochwächst. Reines Canvas-Overlay; liest window.__heroPixel (0..1).
+============================ */
+(function initPixelWipe() {
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  const BLOCK = 72;          // Blockgröße in px (wie in der Referenz)
+  const COLOR = '17, 17, 16';        // nur EINE Farbe: --bg (#111110), Schwarz der Services-Section
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'pixelWipe';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const panelEl = document.getElementById('mainContent');   // Oberkante der Services-Section = Anker
+
+  let cols = 1, vw = 0, vh = 0, dpr = 1;
+  const BIAS = 0.62;         // Anteil "von unten" (0 = rein zufällig, 1 = strikt von unten)
+  // stabiler Zufalls-Anteil pro Seiten-Zelle (Spalte, Dokument-Reihe) → fester Platz, kein Flackern
+  function rnd(gx, docRow) {
+    let h = ((gx + 1) * 374761393 + (docRow + 1) * 668265263) >>> 0;
+    h = (h ^ (h >>> 13)) * 1274126177 >>> 0;
+    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+  }
+  function resize() {
+    vw = window.innerWidth; vh = window.innerHeight;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(vw * dpr); canvas.height = Math.floor(vh * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cols = Math.max(1, Math.ceil(vw / BLOCK));
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function frame() {
+    requestAnimationFrame(frame);
+    const r = reduce ? (window.__heroPixel >= 0.999 ? 1 : 0) : (window.__heroPixel || 0);
+    ctx.clearRect(0, 0, vw, vh);
+    if (r <= 0.001) return;
+
+    /* An der Oberkante der Services-Section verankern und von dort NACH OBEN
+       aufbauen → die unterste Blockreihe schließt exakt an die Section an
+       (keine halbe Pixel-Lücke). Die Kante hat eine feste Seitenposition, daher
+       bleibt das Muster stabil und steigt von unten auf. */
+    const boundary = Math.round(panelEl ? panelEl.getBoundingClientRect().top : vh);
+    const maxK = Math.ceil((boundary + BLOCK) / BLOCK) + 1;
+
+    ctx.fillStyle = 'rgb(' + COLOR + ')';
+    for (let k = 1; k <= maxK; k++) {
+      const y = boundary - k * BLOCK;            // Reihe k oberhalb der Section-Kante
+      if (y > vh) continue;
+      if (y + BLOCK < 0) break;                  // über dem Viewport-Rand → fertig
+      const depthNorm = Math.max(0, Math.min(1, (k * BLOCK) / vh)); // Distanz zur Kante: 0 = an der Section
+      for (let gx = 0; gx < cols; gx++) {
+        // "von unten"-Bias (nahe der Kante zuerst) + Zufall → aufsteigend, verstreut
+        const thr = depthNorm * BIAS + rnd(gx, k) * (1 - BIAS);
+        // +1 px Überlappung schließt Nähte zwischen benachbarten Blöcken (gleiche Farbe → unsichtbar)
+        if (r >= thr) ctx.fillRect(gx * BLOCK, y, BLOCK + 1, BLOCK + 1);
+      }
+    }
+  }
+  requestAnimationFrame(frame);
+})();
+
+/* ============================
    WHAT I DO — Hover interactions
 ============================ */
 (function initServices() {
@@ -945,24 +940,61 @@ window.__heroInit = heroInit;
     document.querySelectorAll('.svc-preview-img').forEach(img => img.classList.remove('is-active'));
   }
 
+  /* HyperText-Reveal: beim Hover laeuft ein Zeiger von links nach rechts durch;
+     Buchstaben links davon stehen final, rechts davon zufaellige A-Z bis erreicht. */
+  const HYPER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  /* stabiles Pseudo-Zufallszeichen je Position + Flacker-Tick (kein Flimmern pro Frame) */
+  function hyChar(i, tick) {
+    let h = ((i * 73 + tick * 131) >>> 0) * 2654435761 >>> 0;
+    return HYPER_CHARS[h % 26];
+  }
   function scramble(el) {
     if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
     const orig = el.dataset.orig;
-    clearInterval(el._slot);
-    const eligible = [...orig].map((c,i) => c !== ' ' ? i : null).filter(i => i !== null);
-    const pos = new Set(eligible.sort(() => Math.random()-0.5).slice(0, Math.min(3, Math.max(2, Math.floor(eligible.length*0.3)))));
-    let f = 0, T = 10;
-    el._slot = setInterval(() => {
-      const chars = orig.split('');
-      pos.forEach(i => { if (f < T-2) chars[i] = CHARS[Math.floor(Math.random()*CHARS.length)]; });
-      el.textContent = chars.join('');
-      if (++f >= T) { clearInterval(el._slot); el.textContent = orig; }
-    }, 28);
+    const n = Math.max(1, orig.length);
+    cancelAnimationFrame(el._raf || 0);
+    /* Breite fixieren -> keine x-Sprünge durch unterschiedlich breite Zufallsbuchstaben */
+    el.style.display = 'inline-block';
+    el.style.width = Math.ceil(el.getBoundingClientRect().width) + 'px';
+    el.style.textAlign = 'left';
+    el.style.whiteSpace = 'pre';
+
+    const duration = 420;      // ms - kurz
+    const WINDOW = 2;          // nur wenige Zeichen um den Zeiger scramblen (dezent)
+    const FLICKER = 55;        // ms - Takt der Zufallszeichen (ruhig, nicht pro Frame)
+    const start = performance.now();
+    let lastStr = null;
+
+    function loop(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const iter = t * n;                        // Zeiger läuft flüssig, zeitbasiert
+      const tick = Math.floor(now / FLICKER);    // Zufallszeichen nur alle FLICKER ms neu
+      let s = '';
+      for (let i = 0; i < n; i++) {
+        const ch = orig[i];
+        if (ch === ' ') { s += ' '; continue; }
+        if (i <= iter) s += orig[i];                         // links: final
+        else if (i <= iter + WINDOW) s += hyChar(i, tick);   // kleines Fenster scramblen
+        else s += orig[i];                                   // rechts: schon Original
+      }
+      if (s !== lastStr) { el.textContent = s; lastStr = s; }  // nur bei Änderung ins DOM
+      if (t < 1) { el._raf = requestAnimationFrame(loop); }
+      else { el.textContent = orig; clearWidth(el); }
+    }
+    el._raf = requestAnimationFrame(loop);
+  }
+
+  function clearWidth(el) {
+    el.style.width = '';
+    el.style.display = '';
+    el.style.textAlign = '';
+    el.style.whiteSpace = '';
   }
 
   function unscramble(el) {
-    clearInterval(el._slot);
+    cancelAnimationFrame(el._raf || 0);
     if (el.dataset.orig) el.textContent = el.dataset.orig;
+    clearWidth(el);
   }
 
   document.querySelectorAll('.svc-item').forEach(item => {
@@ -1005,6 +1037,25 @@ ScrollTrigger.create({
     });
   }
 });
+
+/* ============================
+   PIXEL WIPE — an die Services-Section gekoppelt (nicht mehr am Hero-Pin)
+   Der gepixelte Übergang läuft, während #work in den Viewport scrollt.
+============================ */
+(function initPixelTrigger() {
+  const work = document.getElementById('work');
+  if (!work) return;
+  window.__heroPixel = 0;
+  ScrollTrigger.create({
+    trigger: work,
+    start: 'top bottom',   // Oberkante von #work erreicht den unteren Viewport-Rand
+    end:   'top top',      // … bis sie oben ankommt
+    scrub: true,
+    onUpdate(self) { window.__heroPixel = self.progress; },
+    onLeaveBack()  { window.__heroPixel = 0; },
+    onLeave()      { window.__heroPixel = 0; },   // danach Section erreicht → Effekt aus
+  });
+})();
 
 /* ============================
    GLOBE — Three.js
@@ -1386,22 +1437,30 @@ ScrollTrigger.create({
     { threshold: 0.01 }
   ).observe(container);
 
-  (function tick() {
+  let _lastT = performance.now();
+  (function tick(now) {
     requestAnimationFrame(tick);
+    now = now || performance.now();
+    const dt = Math.min((now - _lastT) || 16.7, 50) / 1000;   // s, gedeckelt
+    _lastT = now;
     if (!globeVisible) return;
-    clockS += 0.012;
-    cRotY += (tRotY - cRotY) * 0.028;
-    cRotX += (tRotX - cRotX) * 0.028;
-    _euler.set(cRotX, cRotY, 0, 'YXZ');
-    _q.setFromEuler(_euler);
-    globe.quaternion.copy(_q).multiply(baseQuat);
-    globe.position.y = Math.sin(clockS * 0.6) * 0.028;
-    const p1 = 0.5 + 0.5 * Math.sin(clockS * 2.6);
-    const p2 = 0.5 + 0.5 * Math.sin(clockS * 2.6 + Math.PI);
-    ring1.material.opacity = 0.45 + 0.45 * p1;
-    ring1.scale.setScalar(1 + 0.22 * p1);
-    ring2.material.opacity = 0.08 + 0.20 * p2;
-    ring2.scale.setScalar(1 + 0.45 * p2);
+    const noMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!noMotion) {
+      clockS += 0.72 * dt;                                       // vorher 0.012/Frame ≈ 0.72/s @60Hz
+      const kRot = 1 - Math.exp(-dt / 0.55);                     // vorher 0.028/Frame, jetzt framerate-unabhängig
+      cRotY += (tRotY - cRotY) * kRot;
+      cRotX += (tRotX - cRotX) * kRot;
+      _euler.set(cRotX, cRotY, 0, 'YXZ');
+      _q.setFromEuler(_euler);
+      globe.quaternion.copy(_q).multiply(baseQuat);
+      globe.position.y = Math.sin(clockS * 0.6) * 0.028;
+      const p1 = 0.5 + 0.5 * Math.sin(clockS * 2.6);
+      const p2 = 0.5 + 0.5 * Math.sin(clockS * 2.6 + Math.PI);
+      ring1.material.opacity = 0.45 + 0.45 * p1;
+      ring1.scale.setScalar(1 + 0.22 * p1);
+      ring2.material.opacity = 0.08 + 0.20 * p2;
+      ring2.scale.setScalar(1 + 0.45 * p2);
+    }
     drawAsciiOverlay();
     projectPin();
     renderer.render(scene, camera);

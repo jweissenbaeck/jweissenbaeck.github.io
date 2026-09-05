@@ -145,8 +145,10 @@ window.addEventListener('DOMContentLoaded', function () {
       ty = ((e.clientY - r.top) / r.height - 0.5);
     });
     stage.addEventListener('mouseleave', function () { tx = 0; ty = 0; });
-    gsap.ticker.add(function () {
-      gx += (tx - gx) * 0.06; gy += (ty - gy) * 0.06;
+    var smooth = window.__smoothTowards || function (c, t) { return c + (t - c) * 0.06; };
+    gsap.ticker.add(function (time, deltaTime) {
+      var dt = Math.min(deltaTime || 16.7, 50) / 1000;
+      gx = smooth(gx, tx, 0.13, dt); gy = smooth(gy, ty, 0.13, dt);   // Sekunden Nachlauf, framerate-unabhängig
       gsap.set(ghost,   { x: gx * -30, y: gy * -20 });
       gsap.set(mediaEl, { x: gx * 26,  y: gy * 22 });
     });

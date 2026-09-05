@@ -10,6 +10,16 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+
+<!-- three (ESM) für den ASCII-Hero-Hintergrund -->
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
 <link rel="stylesheet" href="style.css">
 
 <script>
@@ -61,6 +71,9 @@
 
 <!-- HERO -->
 <section class="hero" id="hero">
+
+  <!-- ASCII 3D Background (WebGL) -->
+  <div class="ascii-hero-bg" id="asciiHeroBg" aria-hidden="true"></div>
 
   <div class="hero-middle-row" id="heroStage">
     <div class="hero-name-row" id="heroNameOverlay"></div>
@@ -318,6 +331,10 @@
 
     <div class="globe-text-left" id="globeTextLeft">
 
+      <div class="globe-kicker">
+        <span class="globe-kicker-loc">47.80°N / 13.05°E · Salzburg, AT</span>
+      </div>
+
       <div class="globe-text-clip">
         <span class="globe-display-line" id="globeHeadline">Find me here</span>
       </div>
@@ -326,7 +343,6 @@
 
         <a href="mailto:j.weissenbaeck@gmx.at" class="globe-contact-item" data-label="E-MAIL">
           <span class="gc-fill" aria-hidden="true"></span>
-          <span class="gc-index">01</span>
           <span class="gc-body">
             <span class="gc-label">E-Mail</span>
             <span class="gc-value" data-text="j.weissenbaeck@gmx.at">j.weissenbaeck@gmx.at</span>
@@ -335,7 +351,6 @@
 
         <a href="https://www.linkedin.com/in/jweissenbaeck/" target="_blank" rel="noopener" class="globe-contact-item" data-label="LINKEDIN">
           <span class="gc-fill" aria-hidden="true"></span>
-          <span class="gc-index">02</span>
           <span class="gc-body">
             <span class="gc-label">LinkedIn</span>
             <span class="gc-value" data-text="/in/jweissenbaeck">/in/jweissenbaeck</span>
@@ -344,7 +359,6 @@
 
         <a href="https://www.instagram.com/jacobwssnbck" target="_blank" rel="noopener" class="globe-contact-item" data-label="INSTAGRAM">
           <span class="gc-fill" aria-hidden="true"></span>
-          <span class="gc-index">03</span>
           <span class="gc-body">
             <span class="gc-label">Instagram</span>
             <span class="gc-value" data-text="@jacobwssnbck">@jacobwssnbck</span>
@@ -365,5 +379,6 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="script.js" defer></script>
+<script type="module" src="ascii-hero.js"></script>
 </body>
 </html>
