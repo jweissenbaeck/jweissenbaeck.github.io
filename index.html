@@ -72,9 +72,6 @@
 <!-- HERO -->
 <section class="hero" id="hero">
 
-  <!-- ASCII 3D Background (WebGL) -->
-  <div class="ascii-hero-bg" id="asciiHeroBg" aria-hidden="true"></div>
-
   <div class="hero-middle-row" id="heroStage">
     <div class="hero-name-row" id="heroNameOverlay"></div>
     <div class="hero-img-card" id="heroImgCard">
@@ -376,9 +373,23 @@
 
 </div><!-- /bottom-sheet -->
 
+<!-- FOOTER — Pixel-Particle "JCKY" -->
+<footer class="site-footer" id="siteFooter">
+  <div class="site-footer-bar">
+    <span class="sf-left">My Portfolio — made with love</span>
+    <nav class="sf-links" aria-label="Footer">
+      <a href="#" class="sf-link">LinkedIn</a>
+      <a href="#" class="sf-link">Behance</a>
+      <a href="mailto:j.weissenbaeck@gmx.at" class="sf-link">Email</a>
+    </nav>
+  </div>
+  <div class="site-footer-text" id="footerText">
+    <span class="ftp-line ftp-line--lg">JCKY</span>
+  </div>
+</footer>
+
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
 <script src="script.js" defer></script>
-<script type="module" src="ascii-hero.js"></script>
 </body>
 </html>

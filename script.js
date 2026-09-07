@@ -1636,3 +1636,33 @@ ScrollTrigger.create({
     update();
   }, { threshold: 0.10 }).observe(workEl);
 })();
+
+
+
+
+
+/* ============================
+   FOOTER — Text auf volle Breite strecken
+============================ */
+(function initFooterStretch() {
+  const wrap = document.getElementById('footerText');
+  if (!wrap) return;
+  const line = wrap.querySelector('.ftp-line');
+  if (!line) return;
+
+  function fit() {
+    const cs = getComputedStyle(wrap);
+    const availW = wrap.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
+    const availH = wrap.clientHeight;
+    line.style.transform = 'none';
+    const rect = line.getBoundingClientRect();
+    const natW = rect.width || 1, natH = rect.height || 1;
+    // Höhe füllt die Bühne, Breite füllt (max.) die verfügbare Breite → getrennte Faktoren, nichts läuft über
+    const sy = (availH * 0.99) / natH;
+    const sx = Math.min((availW * 0.99) / natW, sy * 5.5);   // Breite füllen, Streckung großzügiger
+    line.style.transform = 'scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
