@@ -173,6 +173,7 @@ body::before {
 
 .nav-right {
   display: flex; align-items: center; gap: 10px; justify-content: flex-end;
+  mix-blend-mode: difference;
 }
 
 /* ── HERO CTA BUTTONS ──

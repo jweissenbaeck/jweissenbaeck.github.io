@@ -1619,22 +1619,57 @@ ScrollTrigger.create({
 /* ============================
    NAV LOGO — hide in "what i do" section
 ============================ */
-(function initLogoVisibility() {
+(function initNavChrome() {
+  const nav      = document.getElementById('mainNav');
   const logoName = document.getElementById('navLogoName');
   const logoSub  = document.getElementById('navLogoSub');
   const workEl   = document.getElementById('work');
-  if (!logoName || !logoSub || !workEl) return;
+  const globeEl  = document.getElementById('globeSection');
+  if (!nav) return;
 
-  let workVisible = false;
+  let workLocked = false, globeLocked = false;
+  let lastNav = null, lastLogo = null;
 
-  function update() {
-    gsap.to([logoName, logoSub], { opacity: workVisible ? 0 : 1, duration: 0.08, ease: 'none' });
+  /* „Locked" = Section dockt oben am Screen-Rand an (top top). */
+  if (workEl && typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.create({
+      trigger: workEl, start: 'top 12%',
+      onEnter:     () => { workLocked = true; },
+      onLeaveBack: () => { workLocked = false; },
+    });
+  }
+  if (globeEl && typeof ScrollTrigger !== 'undefined') {
+    ScrollTrigger.create({
+      trigger: globeEl, start: 'top top',
+      onEnter:     () => { globeLocked = true; },
+      onLeaveBack: () => { globeLocked = false; },
+    });
   }
 
-  new IntersectionObserver(([entry]) => {
-    workVisible = entry.isIntersecting;
-    update();
-  }, { threshold: 0.10 }).observe(workEl);
+  function apply() {
+    const fs = window.__heroFullscreen === true;
+
+    /* Nav + Projects + CV verschwinden nur im Showreel-Fullscreen — und kommen
+       schon wieder, sobald die Services oben am Screen-Rand einrasten. */
+    const navHide = fs && !workLocked && !globeLocked;
+    if (navHide !== lastNav) {
+      lastNav = navHide;
+      gsap.to(nav, { opacity: navHide ? 0 : 1, duration: navHide ? 0.18 : 0.35, ease: 'power2.out', overwrite: true });
+    }
+
+    /* JCKY-Logo bleibt in Fullscreen + Services aus und taucht erst wieder auf,
+       sobald die Globe-Section oben einrastet. */
+    if (logoName && logoSub) {
+      const logoHide = !globeLocked && (fs || workLocked);
+      if (logoHide !== lastLogo) {
+        lastLogo = logoHide;
+        gsap.to([logoName, logoSub], { opacity: logoHide ? 0 : 1, duration: 0.18, ease: 'none', overwrite: true });
+      }
+    }
+  }
+
+  function loop() { requestAnimationFrame(loop); apply(); }
+  requestAnimationFrame(loop);
 })();
 
 
