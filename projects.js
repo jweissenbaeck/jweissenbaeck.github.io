@@ -1,45 +1,53 @@
 /* ============================================================
-   PROJECTS — Full list (Index-Stil) + Image-Trail on hover
+   PROJECTS — Full list (Row-Layout wie Referenz)
 ============================================================ */
 window.addEventListener('DOMContentLoaded', function () {
   if (typeof gsap === 'undefined') return;
   if (typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-  /* ── Lenis ── */
-  if (typeof Lenis !== 'undefined' && !reduce) {
-    var lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add(function (t) { lenis.raf(t * 1000); });
-    gsap.ticker.lagSmoothing(0);
-  }
+  /* Smooth scroll läuft bereits über script.js (Lenis) — hier KEINE zweite Instanz,
+     sonst kämpfen zwei Controller um die Scrollposition ("Snapping"). */
 
-  function pic(id) { return 'https://picsum.photos/id/' + id + '/600/750'; }
+  function pic(id) { return 'https://picsum.photos/id/' + id + '/1200/675'; }
 
-  /* ── Projekte (chronologisch, neueste zuerst) ── */
+  /* ── Projekte ── */
   var PROJECTS = [
-    { name: 'Lumina', year: '2024', tags: ['UI/UX', 'Design System', 'AI'], link: '#', images: [pic(1015), pic(1016), pic(1018)] },
-    { name: 'Flux',   year: '2024', tags: ['Product', 'Collaboration'],     link: '#', images: [pic(1039), pic(1043), pic(1044)] },
-    { name: 'Prism',  year: '2023', tags: ['Tool', 'Color', 'Web'],         link: '#', images: [pic(1050), pic(1062), pic(1069)] },
-    { name: 'Vertex', year: '2023', tags: ['3D', 'Web', 'Toolkit'],         link: '#', images: [pic(1074), pic(1080), pic(1084)] }
+    { name: 'Lumina', lead: 'Our focus on – systems, structure and scale.',
+      desc: 'An AI-assisted design system that turns a handful of brand inputs into a coherent, production-ready component library — tokens, states and documentation included.',
+      cta: 'View our Lumina work', link: '#', images: [pic(1015), pic(1016), pic(1018)] },
+    { name: 'Flux', lead: 'Our focus on – collaboration, presence and flow.',
+      desc: 'Real-time collaboration for creative teams: shared canvases, live presence and a comment layer that keeps feedback attached to the pixels it belongs to.',
+      cta: 'View our Flux work', link: '#', images: [pic(1039), pic(1043), pic(1044)] },
+    { name: 'Prism', lead: 'Our focus on – colour, clarity and access.',
+      desc: 'Colour palette extraction from any image, tuned for accessibility. Drop an image, get a balanced, WCAG-checked palette you can export straight into your stack.',
+      cta: 'View our Prism work', link: '#', images: [pic(1050), pic(1062), pic(1069)] },
+    { name: 'Vertex', lead: 'Our focus on – space, form and the browser.',
+      desc: 'A lightweight 3D modelling toolkit for the browser — parametric primitives, real-time shading and a tiny footprint, built for designers who think in space.',
+      cta: 'View our Vertex work', link: '#', images: [pic(1074), pic(1080), pic(1084)] }
   ];
 
   var listEl = document.getElementById('pjList');
+  var MARK = '<svg class="pl-mark" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 0v14M0 7h14M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
 
-  PROJECTS.forEach(function (p, i) {
+  PROJECTS.forEach(function (p) {
     var row = document.createElement('li');
     row.className = 'pl-row';
-    row.dataset.images = p.images.join('|');
 
-    var tagsHtml = p.tags.map(function (t) { return '<span class="pl-tag">' + t + '</span>'; }).join('');
     row.innerHTML =
-      '<a class="pl-link" href="' + p.link + '" aria-label="' + p.name + ' — ' + p.year + '">' +
-        '<span class="pl-idx">' + String(i + 1).padStart(2, '0') + '</span>' +
-        '<span class="pl-name">' + p.name + '</span>' +
-        '<span class="pl-tags">' + tagsHtml + '</span>' +
-        '<span class="pl-year">' + p.year + '</span>' +
-        '<span class="pl-arrow">↗</span>' +
-      '</a>';
+      MARK +
+      '<div class="pl-inner">' +
+        '<h2 class="pl-title">' + p.name + '</h2>' +
+        '<div class="pl-mid">' +
+          '<p class="pl-desc">' + p.desc + '</p>' +
+          '<a class="pl-cta" href="' + p.link + '" aria-label="' + p.cta + '">' +
+            '<span class="pl-cta-txt">' + p.cta + '</span>' +
+          '</a>' +
+        '</div>' +
+        '<div class="pl-media">' +
+          '<span class="pl-media-img"><img src="' + p.images[0] + '" alt="' + p.name + '" loading="lazy" decoding="async" draggable="false"></span>' +
+        '</div>' +
+      '</div>';
     listEl.appendChild(row);
   });
 
@@ -53,7 +61,7 @@ window.addEventListener('DOMContentLoaded', function () {
 
   /* ── Zeilen-Reveal beim Scroll (Clip-Wipe, Index-Stil) ── */
   var rows = Array.prototype.slice.call(document.querySelectorAll('.pl-row'));
-  if (reduce) {
+  if (reduce || typeof ScrollTrigger === 'undefined') {
     gsap.set(rows, { clipPath: 'none', y: 0, opacity: 1 });
   } else {
     rows.forEach(function (row) {
@@ -67,62 +75,64 @@ window.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+
   /* ============================================================
-     IMAGE-TRAIL — Bilder haften beim Hover dem Cursor an
+     PIXEL-HOVER — Vorschaubild materialisiert beim Hover aus Pixeln
+     (Pixel-Signatur der Page-Transition, als Zeilen-Hintergrund)
   ============================================================ */
-  (function initImageTrail() {
-    var layer = document.getElementById('plTrail');
-    if (!layer || reduce) return;
-    var fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
-    if (!fine) return;
+  (function initRowPixelHover() {
+    if (reduce) return;
+    var BLOCK = 44, BIAS = 0.62, DUR = 520;
+    var PANEL = 'rgba(240,237,232,0.09)';    // subtiler Ink-Pixel-Hintergrund
 
-    /* Pool wiederverwendbarer Bild-Frames */
-    var POOL = 12;
-    var pool = [];
-    for (var k = 0; k < POOL; k++) {
-      var el = document.createElement('div');
-      el.className = 'pl-trail-img';
-      var im = document.createElement('img');
-      im.alt = ''; im.decoding = 'async'; im.draggable = false;
-      el.appendChild(im);
-      layer.appendChild(el);
-      pool.push({ el: el, img: im });
-    }
-    var poolIdx = 0;
-
-    var activeImages = null, imgCycle = 0;
-    var lastX = 0, lastY = 0, primed = false;
-    var THRESH = 70;        // px Cursorweg zwischen zwei Frames
-
-    /* Preload der Bilder beim Zeilen-Hover + aktive Bildmenge setzen */
-    rows.forEach(function (row) {
-      var imgs = (row.dataset.images || '').split('|').filter(Boolean);
-      imgs.forEach(function (src) { var pi = new Image(); pi.src = src; });
-      row.addEventListener('mouseenter', function () { activeImages = imgs; imgCycle = 0; });
-      row.addEventListener('mouseleave', function () { activeImages = null; });
-    });
-
-    function spawn(x, y) {
-      if (!activeImages || !activeImages.length) return;
-      var slot = pool[poolIdx % pool.length]; poolIdx++;
-      slot.img.src = activeImages[imgCycle % activeImages.length]; imgCycle++;
-      gsap.killTweensOf(slot.el);
-      gsap.set(slot.el, { xPercent: -50, yPercent: -50, x: x, y: y, rotation: (Math.random() * 8 - 4) });
-      gsap.fromTo(slot.el,
-        { opacity: 0, scale: 0.82 },
-        { opacity: 1, scale: 1, duration: 0.32, ease: 'power3.out' });
-      gsap.to(slot.el, { opacity: 0, scale: 0.92, duration: 0.55, delay: 0.18, ease: 'power2.in' });
+    function rnd(gx, gy) {
+      var x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
+      x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
+      return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
     }
 
-    window.addEventListener('mousemove', function (e) {
-      var x = e.clientX, y = e.clientY;
-      if (!primed) { lastX = x; lastY = y; primed = true; return; }
-      if (!activeImages) { lastX = x; lastY = y; return; }
-      var dx = x - lastX, dy = y - lastY;
-      if (Math.sqrt(dx * dx + dy * dy) >= THRESH) {
-        spawn(x, y); lastX = x; lastY = y;
+    Array.prototype.slice.call(document.querySelectorAll('.pl-row')).forEach(function (row) {
+      var cv = document.createElement('canvas');
+      cv.className = 'pl-bg-px'; cv.setAttribute('aria-hidden', 'true');
+      row.insertBefore(cv, row.firstChild);      // als Hintergrund hinter den Inhalt
+      var ctx = cv.getContext('2d');
+      var W = 0, H = 0, cols = 0, rows = 0, dpr = 1, raf = null;
+
+      function size() {
+        var r = row.getBoundingClientRect();
+        W = Math.max(1, r.width); H = Math.max(1, r.height);
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cols = Math.ceil(W / BLOCK); rows = Math.ceil(H / BLOCK);
       }
-    }, { passive: true });
+      /* reveal 0 = kein Hintergrund, 1 = voller Pixel-Hintergrund (baut von unten auf) */
+      function draw(reveal) {
+        ctx.clearRect(0, 0, W, H);
+        if (reveal <= 0) return;
+        ctx.fillStyle = PANEL;
+        for (var gy = 0; gy < rows; gy++) {
+          var rowBias = rows > 1 ? gy / (rows - 1) : 0;        // 0 oben, 1 unten
+          for (var gx = 0; gx < cols; gx++) {
+            var thr = (1 - rowBias) * BIAS + rnd(gx, gy) * (1 - BIAS);   // unten zuerst
+            if (reveal >= thr) ctx.fillRect(gx * BLOCK, gy * BLOCK, BLOCK + 1, BLOCK + 1);
+          }
+        }
+      }
+      function animate(to) {
+        if (raf) cancelAnimationFrame(raf);
+        var t0 = performance.now();
+        (function frame(now) {
+          var t = Math.min(1, (now - t0) / DUR);
+          var e = 1 - Math.pow(1 - t, 3);
+          draw(to === 1 ? e : 1 - e);
+          if (t < 1) raf = requestAnimationFrame(frame); else raf = null;
+        })(t0);
+      }
+
+      row.addEventListener('mouseenter', function () { size(); animate(1); });   // Pixel-Hintergrund baut sich auf
+      row.addEventListener('mouseleave', function () { animate(0); });            // und zieht sich zurück
+    });
   })();
 
 });

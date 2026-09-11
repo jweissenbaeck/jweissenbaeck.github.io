@@ -4,11 +4,7 @@
 
 window.addEventListener('DOMContentLoaded', function () {
 
-  /* ── Lenis smooth scroll ── */
-  var lenis = new Lenis({ lerp: 0.08, smoothWheel: true });
-  lenis.on('scroll', ScrollTrigger.update);
-  gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
-  gsap.ticker.lagSmoothing(0);
+  /* Smooth scroll läuft bereits über script.js (Lenis) — hier KEINE zweite Instanz. */
 
   var EXPO = 'cubic-bezier(0.16,1,0.3,1)';
 
