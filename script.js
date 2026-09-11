@@ -140,18 +140,85 @@ vtStoreDel('jcky:internalNav');
   function metaFor(url) { return PAGE[pageKey(url)] || { name: '', code: '', order: 0 }; }
   function dirBetween(fromU, toU) { return metaFor(toU).order < metaFor(fromU).order ? 'back' : 'forward'; }
 
+  const PANEL_COLOR = '#f5f5f0';
+  const PX_BLOCK = 72;          // gleiche Blockgröße wie der Scroll-Pixel-Wipe
+  const PX_BIAS  = 0.62;        // Anteil "von unten" (wie beim Scroll-Wipe)
+  function pxRnd(gx, gy) {
+    let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
+    x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
+    return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+  }
+
   function buildPanel(m) {
     const p = document.createElement('div');
     p.id = 'ainoPanel';
-    p.innerHTML =
-      '<span class="aino-meta aino-tl">JCKY&#8202;&#169;</span>' +
-      '<div class="aino-center">' +
-        '<span class="aino-code">' + m.code + '</span>' +
-        '<span class="aino-clip"><span class="aino-name-inner">' + m.name + '</span></span>' +
-      '</div>' +
-      '<span class="aino-meta aino-br">Salzburg, AT</span>';
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'aino-px';
+    canvas.setAttribute('aria-hidden', 'true');
+    p.appendChild(canvas);
+
+    const center = document.createElement('div');
+    center.className = 'aino-center';
+    center.innerHTML =
+      '<span class="aino-code">' + m.code + '</span>' +
+      '<span class="aino-clip"><span class="aino-name-inner">' + m.name + '</span></span>';
+    p.appendChild(center);
+
+    const meta = document.createElement('span');
+    meta.className = 'aino-meta aino-br';
+    meta.textContent = 'Salzburg, AT';
+    p.appendChild(meta);
+
     document.documentElement.appendChild(p);
+
+    /* Pixel-Engine: Fläche aus 72er-Blöcken. cover 0..1.
+       mode 'build' = von unten aufbauen · 'dissolve' = von unten abbauen (verschwindet nach oben). */
+    const ctx = canvas.getContext('2d');
+    let W = 0, H = 0, cols = 0, rows = 0, dpr = 1;
+    function resize() {
+      W = window.innerWidth; H = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cols = Math.ceil(W / PX_BLOCK); rows = Math.ceil(H / PX_BLOCK);
+    }
+    resize();
+    function draw(cover, mode) {
+      ctx.clearRect(0, 0, W, H);
+      if (cover <= 0) return;
+      ctx.fillStyle = PANEL_COLOR;
+      if (cover >= 1) { ctx.fillRect(0, 0, W, H); return; }
+      for (let gy = 0; gy < rows; gy++) {
+        const rowBias = rows > 1 ? gy / (rows - 1) : 0;     // 0 = oben, 1 = unten
+        for (let gx = 0; gx < cols; gx++) {
+          const r = pxRnd(gx, gy);
+          const thr = (mode === 'dissolve')
+            ? rowBias * PX_BIAS + r * (1 - PX_BIAS)          // unten hoch → löst zuerst auf (nach oben)
+            : (1 - rowBias) * PX_BIAS + r * (1 - PX_BIAS);   // unten niedrig → füllt zuerst (von unten)
+          if (cover >= thr) ctx.fillRect(gx * PX_BLOCK, gy * PX_BLOCK, PX_BLOCK + 1, PX_BLOCK + 1);
+        }
+      }
+    }
+    p._px = { draw, resize };
+    window.addEventListener('resize', resize);
+    p._pxCleanup = () => window.removeEventListener('resize', resize);
     return p;
+  }
+
+  /* cover-Wert von 'from' → 'to' animieren (rAF, easeInOut); onFrame(cover) pro Frame */
+  function animateCover(p, from, to, dur, mode, onFrame) {
+    return new Promise((resolve) => {
+      const t0 = performance.now();
+      (function frame(now) {
+        const t = Math.min(1, (now - t0) / dur);
+        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const cover = from + (to - from) * e;
+        p._px.draw(cover, mode);
+        if (onFrame) onFrame(cover);
+        if (t < 1) requestAnimationFrame(frame); else resolve();
+      })(performance.now());
+    });
   }
 
   function anim(el, keyframes, opts) {
@@ -180,11 +247,10 @@ vtStoreDel('jcky:internalNav');
 
     const go = () => { window.location.href = a.href; };
     const p = buildPanel(metaFor(a.href));
-    const from = dir === 'back' ? '-101%' : '101%';
 
     if (reduceMotion) {
-      p.style.transform = 'translateY(0)';
-      anim(p, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 }).finished.then(go);
+      p._px.draw(1, 'build');
+      setTimeout(go, 200);
       return;
     }
 
@@ -193,12 +259,14 @@ vtStoreDel('jcky:internalNav');
     nameInner.style.transform = 'translateY(110%)';
     code.style.opacity = '0';
 
-    const panelAnim = anim(p, [{ transform: 'translateY(' + from + ')' }, { transform: 'translateY(0%)' }], { duration: DUR, easing: EASE });
+    /* Panel baut sich aus Pixeln von unten auf, dann navigieren */
+    animateCover(p, 0, 1, DUR, 'build').then(() => setTimeout(go, 110));
+
+    /* Name/Code erscheinen, sobald die Fläche großteils aufgebaut ist */
     setTimeout(() => {
       anim(nameInner, [{ transform: 'translateY(110%)' }, { transform: 'translateY(0%)' }], { duration: 520, easing: EASE });
       anim(code, [{ opacity: 0 }, { opacity: 1 }], { duration: 460, easing: 'ease-out' });
-    }, DUR * 0.22);
-    panelAnim.finished.then(() => setTimeout(go, 110));
+    }, DUR * 0.5);
   }, true);
 
   /* ── Zurück-Button / bfcache: wiederhergestellte, noch verdeckte Seite befreien ── */
@@ -217,6 +285,7 @@ vtStoreDel('jcky:internalNav');
     vtStoreDel('jcky:vtDir');
 
     const cleanup = (p) => {
+      if (p && p._pxCleanup) p._pxCleanup();
       if (p && p.parentNode) p.parentNode.removeChild(p);
       document.documentElement.classList.remove('vt-arriving');
       try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
@@ -224,20 +293,25 @@ vtStoreDel('jcky:internalNav');
 
     const start = () => {
       const p = buildPanel(metaFor(location.href));
-      p.style.transform = 'translateY(0%)'; // deckt bereits
-      const to = dir === 'back' ? '101%' : '-101%';
+      p._px.draw(1, 'build');               // deckt bereits (volle Pixel-Fläche)
       const nameInner = p.querySelector('.aino-name-inner');
 
       if (reduceMotion) {
         document.documentElement.classList.remove('vt-arriving');
-        anim(p, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 }).finished.then(() => cleanup(p));
+        p.style.transition = 'opacity 220ms';
+        requestAnimationFrame(() => { p.style.opacity = '0'; });
+        setTimeout(() => cleanup(p), 240);
         return;
       }
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('vt-arriving');
         setTimeout(() => {
-          anim(nameInner, [{ transform: 'translateY(0%)' }, { transform: 'translateY(-110%)' }], { duration: DUR * 0.8, easing: EASE });
-          anim(p, [{ transform: 'translateY(0%)' }, { transform: 'translateY(' + to + ')' }], { duration: DUR, easing: EASE }).finished.then(() => cleanup(p));
+          const center = p.querySelector('.aino-center');
+          /* Text bleibt sichtbar, während die Pixel von unten abbauen — und verschwindet
+             genau dann, wenn der Abbau die Mitte der Seite (≈50%) erreicht (dort steht der Text). */
+          animateCover(p, 1, 0, DUR, 'dissolve', (cover) => {
+            if (center && cover <= 0.5) { center.style.opacity = '0'; }
+          }).then(() => cleanup(p));
         }, 150);
       });
     };
@@ -1689,13 +1763,72 @@ ScrollTrigger.create({
     const cs = getComputedStyle(wrap);
     const availW = wrap.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
     const availH = wrap.clientHeight;
-    line.style.transform = 'none';
-    const rect = line.getBoundingClientRect();
-    const natW = rect.width || 1, natH = rect.height || 1;
-    // Höhe füllt die Bühne, Breite füllt (max.) die verfügbare Breite → getrennte Faktoren, nichts läuft über
-    const sy = (availH * 0.99) / natH;
-    const sx = Math.min((availW * 0.99) / natW, sy * 5.5);   // Breite füllen, Streckung großzügiger
-    line.style.transform = 'scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
+    const text = (line.textContent || '').trim() || 'JCKY';
+
+    const ls = getComputedStyle(line);
+    const FS = parseFloat(ls.fontSize) || 100;              // Referenz-Schriftgröße (CSS)
+    const lh = parseFloat(ls.lineHeight) || FS * 0.75;      // Zeilenhöhe in px
+
+    /* Pixelgenauer Ink-Scan: JCKY auf ein Canvas rendern und die tatsächlich
+       gefüllten Spalten/Zeilen finden → exakte Ink-Grenzen (browserunabhängig). */
+    const PAD = Math.ceil(FS * 0.6);                         // Rand, damit nichts abgeschnitten wird
+    const cw = Math.ceil(FS * text.length * 1.6) + PAD * 2;
+    const chh = Math.ceil(FS * 1.6) + PAD * 2;
+    const cnv = document.createElement('canvas');
+    cnv.width = cw; cnv.height = chh;
+    const ctx = cnv.getContext('2d');
+    ctx.font = 'normal ' + FS + "px " + ls.fontFamily;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = '#fff';
+    const originX = PAD, baselineY = Math.round(chh * 0.68);
+    ctx.fillText(text, originX, baselineY);
+
+    const data = ctx.getImageData(0, 0, cw, chh).data;
+    let minX = cw, maxX = 0, minY = chh, maxY = 0;
+    for (let y = 0; y < chh; y++) {
+      for (let x = 0; x < cw; x++) {
+        if (data[(y * cw + x) * 4 + 3] > 20) {              // Alpha > 20 = Ink
+          if (x < minX) minX = x; if (x > maxX) maxX = x;
+          if (y < minY) minY = y; if (y > maxY) maxY = y;
+        }
+      }
+    }
+    const inkW = Math.max(1, maxX - minX + 1);
+    const inkH = Math.max(1, maxY - minY + 1);
+
+    // Ink-Mitte relativ zur Element-Box (Element-Origin: x=0 = originX, Baseline = baselineY)
+    const inkCenterX = (minX + maxX) / 2 - originX;          // ggü. Text-Origin (x=0)
+    const inkTopFromBaseline = baselineY - minY;             // Ink oben über Baseline
+    const inkBotFromBaseline = maxY - baselineY;             // Ink unten unter Baseline
+
+    // Baseline-Position innerhalb der Element-Zeilenbox
+    const m = ctx.measureText(text);
+    const fbAsc = m.fontBoundingBoxAscent  || inkTopFromBaseline;
+    const fbDesc = m.fontBoundingBoxDescent || inkBotFromBaseline;
+    const halfLeading = (lh - (fbAsc + fbDesc)) / 2;
+    const elBaselineY = halfLeading + fbAsc;                 // Baseline von Element-Box-Oberkante
+    const inkCenterY  = elBaselineY + (inkBotFromBaseline - inkTopFromBaseline) / 2;
+
+    // Versatz Ink-Mitte ggü. Element-Box-Mitte (Element-Box: Breite advW, Höhe lh)
+    const advW    = m.width || inkW;
+    const offsetX = inkCenterX - advW / 2;
+    const offsetY = inkCenterY - lh / 2;
+
+    // skalieren: Höhe mit Puffer, Breite füllt die Bühne (mit kleinem Sicherheitsabstand)
+    const factorH = 1.0, factorW = 1.0;   // Fill: JCKY füllt die Bühne randlos
+    const sy = (availH * factorH) / inkH;
+    const sx = (availW * factorW) / inkW;
+
+    line.style.transform =
+      'translate(' + (-offsetX * sx).toFixed(2) + 'px,' + (-offsetY * sy).toFixed(2) + 'px) ' +
+      'scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
+
+    /* Bar exakt an den sichtbaren JCKY-Kanten ausrichten (Einzug = Seitenabstand
+       + halber Sicherheits-Rest links/rechts). */
+    const footerPad = parseFloat(cs.paddingLeft || 0);
+    const barInset  = footerPad + (availW * (1 - factorW)) / 2;
+    const footer = document.getElementById('siteFooter');
+    if (footer) footer.style.setProperty('--bar-inset', barInset.toFixed(1) + 'px');
   }
   fit();
   window.addEventListener('resize', fit);
