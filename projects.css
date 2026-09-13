@@ -1,136 +1,139 @@
 /* ============================
-   PROJECTS — Full List (Row-Layout wie Referenz)
-   Background = Index (--bg #111110)
+   PROJECTS — Titel-Preview + Sticky-Filter + 2-Spalten-Grid
 ============================ */
 .projects-page { background: var(--bg); }
 
-.pjx {
+.pj {
+  --filter-h: 58px;
   width: 100%;
-  padding: 140px 28px 120px;               /* links/rechts wie die Navbar (28px) */
   background: var(--bg);
 }
 
-/* Head */
-.pjx-head {
+/* ── große Titel-Preview ── */
+.pj-hero {
+  height: calc(100vh - var(--filter-h));
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: clamp(24px, 4vw, 48px);
-}
-.pjx-kicker {
-  font-family: var(--font-mono);
-  font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase;
-  color: rgba(240,237,232,0.5);
-}
-.pjx-title {
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(2.6rem, 8vw, 7rem);
-  font-weight: 400; letter-spacing: -0.01em; line-height: 0.9;
-  text-transform: uppercase; color: var(--ink);
+  align-items: center;
+  padding: 0 clamp(20px, 4vw, 48px);
   overflow: hidden;
 }
-.pjx-title-inner { display: inline-block; transform: translateY(110%); will-change: transform; }
-
-/* ── LIST ── */
-.pl { list-style: none; margin: 0; padding: 0; }
-
-.pl-row {
-  position: relative;
-  --pl-top: clamp(10px, 1.1vw, 15px);      /* kleinerer Abstand zur Linie (oben & unten) */
-  border-top: 1px solid rgba(240,237,232,0.12);
-  will-change: clip-path, transform, opacity;
-}
-.pl-row:last-child { border-bottom: 1px solid rgba(240,237,232,0.12); }
-
-/* Symbol oben links in der Zeile */
-.pl-mark {
-  position: absolute; top: var(--pl-top); left: 0;
-  width: 14px; height: 14px;
-  color: rgba(240,237,232,0.6);
-  transition: transform 0.6s var(--ease-out-expo), color 0.4s ease;
-}
-.pl-row:hover .pl-mark { transform: rotate(90deg); color: var(--ink); }
-
-/* Grid: [Titel eingerückt] [Text + CTA] [kleines Bild 16:9] */
-.pl-inner {
-  display: flex;
-  align-items: flex-start;                  /* oben ausrichten */
-  justify-content: flex-end;                /* Gruppe an die rechte Wand */
-  gap: clamp(60px, 8vw, 160px);
-  min-height: clamp(150px, 18vw, 230px);    /* Mindesthöhe (≈ Höhe des längsten Items) */
-  padding: var(--pl-top) 0;                 /* oben und unten gleicher Abstand zur Linie */
-  padding-left: clamp(120px, 18vw, 360px);  /* Titel deutlich weiter rechts */
+.pj-hero-title {
+  margin: 0;
+  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
+  font-weight: 400; letter-spacing: -0.02em; line-height: 1.12;
+  font-size: clamp(6rem, 30vw, 32rem);
+  text-transform: uppercase; color: var(--ink);
+  white-space: nowrap; overflow: hidden;
+  padding: 0.06em 0;                    /* Puffer → Glyphen nicht abgeschnitten */
 }
 
-/* left — title (eingerückt, oben) */
-.pl-title {
-  flex: 0 0 auto;
-  width: clamp(160px, 16vw, 260px);
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 400; letter-spacing: 0.005em; line-height: 0.95;
-  font-size: clamp(1.5rem, 3.2vw, 2.8rem);
-  color: var(--ink); margin: 0;
-}
+/* ausgeblendete Nav fängt keine Klicks mehr ab (Filter liegt darüber) */
+.nav.pj-nav-off, .nav.pj-nav-off * { pointer-events: none !important; }
+.pj-hero-inner { display: inline-block; will-change: transform; }
 
-/* middle — text + cta */
-.pl-mid {
-  flex: 0 0 auto;
-  width: clamp(260px, 26vw, 380px);
+/* ── Filter-Leiste: startet unten, rastet oben sticky ein ──
+   Liegt UNTER der Nav und bildet mit ihr optisch eine Einheit: kein eigener
+   Top-Rand (die Nav-Unterkante ist die interne Trennlinie), gleicher Rahmenton. */
+.pj-filter {
+  position: sticky; top: 52px; z-index: 990;    /* unter der Nav (z 1000); top steuert JS synchron */
+  height: var(--filter-h);
+  display: flex; align-items: stretch;
+  padding: 0 28px;              /* bündig zur Nav → Einheit */
+  background: var(--bg);
+  border-top: 1px solid rgba(240,237,232,0.16);
+  border-bottom: 1px solid rgba(240,237,232,0.16);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
 }
-.pl-desc {
-  max-width: 42ch;
-  font-family: var(--font-mono);
-  font-size: clamp(10.5px, 0.85vw, 12.5px); font-weight: 400; line-height: 1.65;
-  color: rgba(240,237,232,0.62); margin: 0 0 20px;
+/* "Filter by Category" als eingefasste Zelle mit rechtem Stroke (volle Höhe) */
+.pj-filter-group {
+  display: flex; align-items: center; gap: clamp(16px, 2vw, 28px);
+  padding-right: clamp(20px, 3vw, 40px);
+  border-right: 1px solid rgba(240,237,232,0.16);
 }
-.pl-cta {
-  display: inline-flex; align-items: center; gap: 8px;
+/* Filter-Top-Stroke ist immer sichtbar. Sitzt die Nav direkt auf dem oben
+   geklemmten Filter, wird stattdessen die Nav-Unterkante ausgeblendet → nur EINE Linie. */
+.nav-shown.filter-stuck .nav { border-bottom-color: transparent; }
+.pj-filter-label { color: rgba(240,237,232,0.5); }
+
+.pj-filter-field { position: relative; align-self: stretch; display: flex; align-items: center; }
+.pj-filter-btn {
+  display: flex; align-items: center; gap: 10px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ink); font: inherit; letter-spacing: 0.18em; text-transform: uppercase;
   padding: 0;
-  border: none; background: none;
-  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--ink); text-decoration: none;
-  transition: gap 0.3s ease;
 }
-.pl-cta .pl-cta-txt { text-decoration: none; text-underline-offset: 3px; }
-/* Hover: Text unterstrichen */
-.pl-cta:hover .pl-cta-txt { text-decoration: underline; }
+.pj-filter-caret { font-size: 17px; line-height: 0; transition: transform 0.3s var(--ease-out-expo); }
+.pj-filter-field.is-open .pj-filter-caret { transform: rotate(180deg); }
 
-/* right — Bild füllt die Zeilenhöhe, Breite folgt aus 16:9 */
-.pl-media {
-  flex: 0 0 auto;
-  align-self: stretch;                      /* so hoch wie der Zeileninhalt */
-  display: flex; justify-content: flex-end;
+/* Dropdown: bündig unter der Filterzelle, dunkler Panel, gedämpfte Einträge */
+.pj-filter-menu {
+  position: absolute; top: 100%; left: 0;
+  min-width: 240px; margin: 0; padding: 12px 0 18px; list-style: none;
+  background: var(--bg);
+  border: 1px solid rgba(240,237,232,0.10);
+  border-top: 1px solid rgba(240,237,232,0.16);   /* Top-Rand sichtbar (war none) */
+  opacity: 0; visibility: hidden; transform: translateY(-4px);
+  transition: opacity 0.2s ease, transform 0.25s var(--ease-out-expo), visibility 0.2s;
+  z-index: 40;
 }
-.pl-media-img {
+.pj-filter-field.is-open .pj-filter-menu { opacity: 1; visibility: visible; transform: none; }
+.pj-filter-menu li {
+  padding: 11px 26px; cursor: pointer;
+  font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em;
+  text-transform: none;                       /* Einträge in Normalschreibung wie in der Inspo */
+  color: rgba(240,237,232,0.45);
+  transition: color 0.2s ease;
+}
+.pj-filter-menu li:hover { color: var(--ink); }
+.pj-filter-menu li.is-active { color: var(--ink); }
+
+/* ── Projekt-Liste: pro Projekt Kopf oben links + Reihe aus 3 Bildern ── */
+.pj-grid {
   display: block;
-  height: 100%;
-  max-height: clamp(120px, 14vw, 220px);   /* größer, 16:9 bleibt */
-  width: auto;
-  aspect-ratio: 16 / 9;
-  overflow: hidden; background: #16150f;
-  filter: grayscale(18%);
-  transition: filter 0.5s ease;
+  padding: clamp(28px, 3.5vw, 52px) clamp(20px, 4vw, 48px) 140px;
 }
-.pl-row:hover .pl-media-img { filter: grayscale(0%); }
-.pl-media-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pj-project { margin-bottom: clamp(56px, 7vw, 120px); }
+.pj-project:last-child { margin-bottom: 0; }
+.pj-project.is-hidden { display: none; }
 
-/* Pixel-Hintergrund der Zeile (hinter dem Inhalt) */
-.pl-bg-px {
-  position: absolute; inset: 0; z-index: 0;
-  pointer-events: none; display: block;
+/* Kopf — einmal oben links */
+.pj-project-head {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: clamp(14px, 1.6vw, 24px);
 }
-.pl-inner { position: relative; z-index: 1; }   /* Inhalt über dem Pixel-Hintergrund */
+.pj-project-name {
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-weight: 700; letter-spacing: 0.01em; line-height: 1;
+  font-size: clamp(1.3rem, 2.4vw, 2.1rem);
+  text-transform: uppercase; color: var(--ink);
+}
+.pj-project-meta {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: rgba(240,237,232,0.45);
+}
+
+/* Reihe aus 3 Bildern (16:9), unterschiedliche Breiten, oben ausgerichtet */
+.pj-project-row {
+  display: flex; align-items: flex-start;
+  gap: clamp(12px, 1.8vw, 28px);
+}
+.pj-shot {
+  flex-basis: 0; min-width: 0;
+  overflow: hidden; background: #16150f;
+}
+.pj-shot img {
+  width: 100%; aspect-ratio: 16 / 9;
+  object-fit: cover; display: block;
+  filter: grayscale(12%);
+}
 
 /* ── MOBILE ── */
-@media (max-width: 900px) {
-  .pl-inner {
-    flex-direction: column; gap: 18px; align-items: flex-start; justify-content: flex-start;
-    padding-left: clamp(28px, 8vw, 60px);
-  }
-  .pl-title, .pl-mid, .pl-media { width: auto; }
+@media (max-width: 720px) {
+  .pj-project-row { flex-direction: column; gap: 12px; }
+  .pj-shot { flex: none; width: 100%; }
+  .pj-hero-title { font-size: clamp(4rem, 26vw, 12rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pjx-title-inner { transform: none; }
+  .pj-hero-inner { transform: none; }
 }

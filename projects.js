@@ -1,138 +1,138 @@
 /* ============================================================
-   PROJECTS — Full list (Row-Layout wie Referenz)
+   PROJECTS — Titel-Preview + Sticky-Filter + 2-Spalten-Grid
 ============================================================ */
 window.addEventListener('DOMContentLoaded', function () {
   if (typeof gsap === 'undefined') return;
   if (typeof ScrollTrigger !== 'undefined') gsap.registerPlugin(ScrollTrigger);
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /* Smooth scroll läuft über script.js (Lenis) — keine zweite Instanz. */
 
-  /* Smooth scroll läuft bereits über script.js (Lenis) — hier KEINE zweite Instanz,
-     sonst kämpfen zwei Controller um die Scrollposition ("Snapping"). */
+  function pic(id) { return 'https://picsum.photos/id/' + id + '/1280/720'; }
+  function shots(a, b, c) { return [pic(a), pic(b), pic(c)]; }
 
-  function pic(id) { return 'https://picsum.photos/id/' + id + '/1200/675'; }
-
-  /* ── Projekte ── */
+  /* ── Projekte: je 3 Bilder (16:9) + Kategorie ── */
   var PROJECTS = [
-    { name: 'Lumina', lead: 'Our focus on – systems, structure and scale.',
-      desc: 'An AI-assisted design system that turns a handful of brand inputs into a coherent, production-ready component library — tokens, states and documentation included.',
-      cta: 'View our Lumina work', link: '#', images: [pic(1015), pic(1016), pic(1018)] },
-    { name: 'Flux', lead: 'Our focus on – collaboration, presence and flow.',
-      desc: 'Real-time collaboration for creative teams: shared canvases, live presence and a comment layer that keeps feedback attached to the pixels it belongs to.',
-      cta: 'View our Flux work', link: '#', images: [pic(1039), pic(1043), pic(1044)] },
-    { name: 'Prism', lead: 'Our focus on – colour, clarity and access.',
-      desc: 'Colour palette extraction from any image, tuned for accessibility. Drop an image, get a balanced, WCAG-checked palette you can export straight into your stack.',
-      cta: 'View our Prism work', link: '#', images: [pic(1050), pic(1062), pic(1069)] },
-    { name: 'Vertex', lead: 'Our focus on – space, form and the browser.',
-      desc: 'A lightweight 3D modelling toolkit for the browser — parametric primitives, real-time shading and a tiny footprint, built for designers who think in space.',
-      cta: 'View our Vertex work', link: '#', images: [pic(1074), pic(1080), pic(1084)] }
+    { name: 'Lumina',  year: '2026', cat: 'UI / UX Design', imgs: shots(1015, 1016, 1018) },
+    { name: 'Kane',    year: '2026', cat: 'Video Editing',  imgs: shots(1043, 1044, 1045) },
+    { name: 'The Feed',year: '2026', cat: 'Video Editing',  imgs: shots(1039, 1040, 1041) },
+    { name: 'Flux',    year: '2025', cat: 'UI / UX Design', imgs: shots(1050, 1051, 1052) },
+    { name: 'Prism',   year: '2025', cat: 'UI / UX Design', imgs: shots(1062, 1063, 1064) },
+    { name: 'Vertex',  year: '2024', cat: 'Photography',    imgs: shots(1074, 1075, 1076) },
+    { name: 'Halo',    year: '2024', cat: 'Photography',    imgs: shots(1084, 1080, 1081) },
+    { name: 'Orbit',   year: '2023', cat: 'Video Editing',  imgs: shots(1069, 1070, 1071) }
   ];
 
-  var listEl = document.getElementById('pjList');
-  var MARK = '<svg class="pl-mark" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 0v14M0 7h14M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>';
+  var grid = document.getElementById('pjGrid');
+  var SIZE_W = [2.2, 3.1, 4.4];   // klein · mittel · groß (Breiten-Gewichte)
+  function shuffle(arr) {
+    arr = arr.slice();
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
 
   PROJECTS.forEach(function (p) {
-    var row = document.createElement('li');
-    row.className = 'pl-row';
+    var proj = document.createElement('div');
+    proj.className = 'pj-project';
+    proj.setAttribute('data-cat', p.cat);
 
-    row.innerHTML =
-      MARK +
-      '<div class="pl-inner">' +
-        '<h2 class="pl-title">' + p.name + '</h2>' +
-        '<div class="pl-mid">' +
-          '<p class="pl-desc">' + p.desc + '</p>' +
-          '<a class="pl-cta" href="' + p.link + '" aria-label="' + p.cta + '">' +
-            '<span class="pl-cta-txt">' + p.cta + '</span>' +
-          '</a>' +
-        '</div>' +
-        '<div class="pl-media">' +
-          '<span class="pl-media-img"><img src="' + p.images[0] + '" alt="' + p.name + '" loading="lazy" decoding="async" draggable="false"></span>' +
-        '</div>' +
-      '</div>';
-    listEl.appendChild(row);
+    var weights = shuffle(SIZE_W);   // Reihenfolge klein/mittel/groß je Projekt zufällig
+    var row = p.imgs.map(function (src, k) {
+      return '<span class="pj-shot" style="flex-grow:' + weights[k] + '">' +
+               '<img src="' + src + '" alt="' + p.name + '" loading="lazy" decoding="async">' +
+             '</span>';
+    }).join('');
+
+    proj.innerHTML =
+      '<div class="pj-project-head">' +
+        '<span class="pj-project-name">' + p.name + '</span>' +
+        '<span class="pj-project-meta">' + p.cat + ' — ' + p.year + '</span>' +
+      '</div>' +
+      '<div class="pj-project-row">' + row + '</div>';
+
+    grid.appendChild(proj);
   });
 
+  /* ── Category-Filter (funktionsfähig) ── */
+  var field = document.getElementById('pjCatField');
+  var btn = document.getElementById('pjCatBtn');
+  var menu = document.getElementById('pjCatMenu');
+  var current = document.getElementById('pjCatCurrent');
+
+  var cats = ['All'].concat(PROJECTS.map(function (p) { return p.cat; })
+    .filter(function (c, i, arr) { return arr.indexOf(c) === i; }));
+
+  cats.forEach(function (c, i) {
+    var li = document.createElement('li');
+    li.textContent = c; li.setAttribute('role', 'option');
+    li.setAttribute('data-cat', c);
+    if (i === 0) li.classList.add('is-active');
+    menu.appendChild(li);
+  });
+
+  function setFilter(cat) {
+    current.textContent = cat === 'All' ? 'Category' : cat;
+    menu.querySelectorAll('li').forEach(function (li) {
+      li.classList.toggle('is-active', li.getAttribute('data-cat') === cat);
+    });
+    var items = grid.querySelectorAll('.pj-project');
+    items.forEach(function (it) {
+      var show = (cat === 'All' || it.getAttribute('data-cat') === cat);
+      it.classList.toggle('is-hidden', !show);
+    });
+    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.refresh();
+  }
+
+  function openMenu(open) {
+    field.classList.toggle('is-open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  btn.addEventListener('click', function (e) { e.stopPropagation(); openMenu(!field.classList.contains('is-open')); });
+  menu.addEventListener('click', function (e) {
+    var li = e.target.closest('li'); if (!li) return;
+    setFilter(li.getAttribute('data-cat'));
+    openMenu(false);
+  });
+  document.addEventListener('click', function () { openMenu(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') openMenu(false); });
+
   /* ── Titel-Reveal ── */
-  gsap.set('.pjx-title-inner', { yPercent: 110 });
+  gsap.set('.pj-hero-inner', { yPercent: 110 });
   function playTitle() {
-    if (reduce) { gsap.set('.pjx-title-inner', { yPercent: 0 }); return; }
-    gsap.to('.pjx-title-inner', { yPercent: 0, duration: 0.8, ease: 'power4.out' });
+    if (reduce) { gsap.set('.pj-hero-inner', { yPercent: 0 }); return; }
+    gsap.to('.pj-hero-inner', { yPercent: 0, duration: 0.9, ease: 'power4.out', delay: 0.1, overwrite: true });
   }
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(playTitle); else playTitle();
+  window.addEventListener('load', playTitle);
+  setTimeout(playTitle, 800);   // Sicherheits-Fallback, damit der Titel nie versteckt bleibt
 
-  /* ── Zeilen-Reveal beim Scroll (Clip-Wipe, Index-Stil) ── */
-  var rows = Array.prototype.slice.call(document.querySelectorAll('.pl-row'));
-  if (reduce || typeof ScrollTrigger === 'undefined') {
-    gsap.set(rows, { clipPath: 'none', y: 0, opacity: 1 });
-  } else {
-    rows.forEach(function (row) {
-      gsap.set(row, { clipPath: 'inset(0 0 100% 0)', y: 22, opacity: 0 });
+  /* Nav-Sichtbarkeit steuert global initNavScrollHide (script.js) — hier kein zweites System. */
+
+  /* Erkennen, ob die Filterleiste oben „klemmt" (sticky aktiv) → Klasse filter-stuck.
+     Sentinel an der natürlichen Flussposition des Filters; sobald er hinter die Nav
+     (52px) scrollt, ist der Filter geklemmt. */
+  (function initFilterStuck() {
+    var filter = document.getElementById('pjFilter');
+    if (!filter || !('IntersectionObserver' in window)) return;
+    var sentinel = document.createElement('div');
+    sentinel.setAttribute('aria-hidden', 'true');
+    sentinel.style.cssText = 'position:absolute; left:0; width:1px; height:1px; pointer-events:none;';
+    filter.parentNode.insertBefore(sentinel, filter);
+    new IntersectionObserver(function (entries) {
+      document.documentElement.classList.toggle('filter-stuck', !entries[0].isIntersecting);
+    }, { rootMargin: '-52px 0px 0px 0px', threshold: 0 }).observe(sentinel);
+  })();
+
+  /* ── Grid-Items beim Scroll einblenden ── */
+  if (!reduce && typeof ScrollTrigger !== 'undefined') {
+    gsap.utils.toArray('.pj-project').forEach(function (it) {
+      gsap.set(it, { y: 26, opacity: 0 });
       ScrollTrigger.create({
-        trigger: row, start: 'top 90%', once: true,
-        onEnter: function () {
-          gsap.to(row, { clipPath: 'inset(0 0 0% 0)', y: 0, opacity: 1, duration: 0.85, ease: 'power4.out' });
-        }
+        trigger: it, start: 'top 92%', once: true,
+        onEnter: function () { gsap.to(it, { y: 0, opacity: 1, duration: 0.7, ease: 'power3.out' }); }
       });
     });
   }
-
-
-  /* ============================================================
-     PIXEL-HOVER — Vorschaubild materialisiert beim Hover aus Pixeln
-     (Pixel-Signatur der Page-Transition, als Zeilen-Hintergrund)
-  ============================================================ */
-  (function initRowPixelHover() {
-    if (reduce) return;
-    var BLOCK = 44, BIAS = 0.62, DUR = 520;
-    var PANEL = 'rgba(240,237,232,0.09)';    // subtiler Ink-Pixel-Hintergrund
-
-    function rnd(gx, gy) {
-      var x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
-      x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
-      return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
-    }
-
-    Array.prototype.slice.call(document.querySelectorAll('.pl-row')).forEach(function (row) {
-      var cv = document.createElement('canvas');
-      cv.className = 'pl-bg-px'; cv.setAttribute('aria-hidden', 'true');
-      row.insertBefore(cv, row.firstChild);      // als Hintergrund hinter den Inhalt
-      var ctx = cv.getContext('2d');
-      var W = 0, H = 0, cols = 0, rows = 0, dpr = 1, raf = null;
-
-      function size() {
-        var r = row.getBoundingClientRect();
-        W = Math.max(1, r.width); H = Math.max(1, r.height);
-        dpr = Math.min(window.devicePixelRatio || 1, 2);
-        cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        cols = Math.ceil(W / BLOCK); rows = Math.ceil(H / BLOCK);
-      }
-      /* reveal 0 = kein Hintergrund, 1 = voller Pixel-Hintergrund (baut von unten auf) */
-      function draw(reveal) {
-        ctx.clearRect(0, 0, W, H);
-        if (reveal <= 0) return;
-        ctx.fillStyle = PANEL;
-        for (var gy = 0; gy < rows; gy++) {
-          var rowBias = rows > 1 ? gy / (rows - 1) : 0;        // 0 oben, 1 unten
-          for (var gx = 0; gx < cols; gx++) {
-            var thr = (1 - rowBias) * BIAS + rnd(gx, gy) * (1 - BIAS);   // unten zuerst
-            if (reveal >= thr) ctx.fillRect(gx * BLOCK, gy * BLOCK, BLOCK + 1, BLOCK + 1);
-          }
-        }
-      }
-      function animate(to) {
-        if (raf) cancelAnimationFrame(raf);
-        var t0 = performance.now();
-        (function frame(now) {
-          var t = Math.min(1, (now - t0) / DUR);
-          var e = 1 - Math.pow(1 - t, 3);
-          draw(to === 1 ? e : 1 - e);
-          if (t < 1) raf = requestAnimationFrame(frame); else raf = null;
-        })(t0);
-      }
-
-      row.addEventListener('mouseenter', function () { size(); animate(1); });   // Pixel-Hintergrund baut sich auf
-      row.addEventListener('mouseleave', function () { animate(0); });            // und zieht sich zurück
-    });
-  })();
-
 });

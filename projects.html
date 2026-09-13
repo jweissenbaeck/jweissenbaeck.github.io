@@ -26,31 +26,39 @@
 
 <!-- NAV -->
 <nav class="nav" id="mainNav">
-  <div class="nav-left" id="navBack">
-    <a href="index.html" class="hero-btn" aria-label="Start">
-      <span class="hero-btn-label">Start</span>
-    </a>
+  <div class="nav-left">
+    <a href="index.html" class="nav-cell" id="navBack"><span class="nav-txt">Start</span></a>
   </div>
-  <div class="nav-center-logo">
-    <span class="nav-logo-box" id="navLogoName">JCKY</span>
-    <span class="nav-logo-sub" id="navLogoSub">PORTFOLIO</span>
-  </div>
-  <div class="nav-right" id="navDownload">
-    <a href="cv.html" class="hero-btn" aria-label="CV">
-      <span class="hero-btn-label">CV</span>
-    </a>
+  <div class="nav-right">
+    <a href="projects.html" class="nav-cell is-active"><span class="nav-txt">Projects</span></a>
+    <a href="cv.html" class="nav-cell"><span class="nav-txt">CV</span></a>
   </div>
 </nav>
 
-<!-- PROJECTS — full list -->
-<main class="pjx" id="pjx">
+<!-- PROJECTS — Titel-Preview + Sticky-Filter + 2-Spalten-Grid -->
+<main class="pj" id="pj">
 
-  <header class="pjx-head">
-    <span class="pjx-kicker">All Work — Index</span>
-    <h1 class="pjx-title"><span class="pjx-title-inner">Projects</span></h1>
-  </header>
+  <!-- große Titel-Preview -->
+  <section class="pj-hero" id="pjHero">
+    <h1 class="pj-hero-title"><span class="pj-hero-inner">Projects</span></h1>
+  </section>
 
-  <ol class="pl" id="pjList"></ol>
+  <!-- Filter-Leiste: startet unten, rastet oben sticky ein -->
+  <div class="pj-filter" id="pjFilter">
+    <div class="pj-filter-group">
+      <span class="pj-filter-label">Filter</span>
+      <div class="pj-filter-field" id="pjCatField">
+        <button class="pj-filter-btn" id="pjCatBtn" type="button" aria-haspopup="listbox" aria-expanded="false">
+          <span id="pjCatCurrent">Category</span>
+          <span class="pj-filter-caret">▾</span>
+        </button>
+        <ul class="pj-filter-menu" id="pjCatMenu" role="listbox" aria-label="Category"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2-Spalten-Grid -->
+  <div class="pj-grid" id="pjGrid"></div>
 
 </main>
 

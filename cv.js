@@ -170,20 +170,19 @@ window.addEventListener('DOMContentLoaded', function () {
   if (document.fonts && document.fonts.ready) { document.fonts.ready.then(init); } else { init(); }
   window.addEventListener('resize', function () { moveMarker(current < 0 ? 0 : current); });
 
-  /* ── Nav buttons hide / Between-strip reveal at footer ── */
-  var navBack     = document.getElementById('navBack');
-  var navDownload = document.getElementById('navDownload');
+  /* ── Between-strip reveal at footer ── */
   var strip       = document.getElementById('cvNavStrip');
-  gsap.set(strip, { opacity: 0, y: 8 });
+  var navBtns     = [document.getElementById('navBack'), document.getElementById('navDownload')].filter(Boolean);
+  if (strip) gsap.set(strip, { opacity: 0, y: 8 });
   ScrollTrigger.create({
     trigger: '#cvFooter', start: 'top 95%',
     onEnter: function () {
-      gsap.to([navBack, navDownload], { opacity: 0, duration: 0.35, ease: 'power2.in', pointerEvents: 'none' });
-      gsap.to(strip, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.1 });
+      if (navBtns.length) gsap.to(navBtns, { opacity: 0, duration: 0.35, ease: 'power2.in', pointerEvents: 'none' });
+      if (strip) gsap.to(strip, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.1 });
     },
     onLeaveBack: function () {
-      gsap.to([navBack, navDownload], { opacity: 1, duration: 0.35, ease: 'power2.out', pointerEvents: 'all' });
-      gsap.to(strip, { opacity: 0, duration: 0.3, ease: 'power2.in' });
+      if (navBtns.length) gsap.to(navBtns, { opacity: 1, duration: 0.35, ease: 'power2.out', pointerEvents: 'all' });
+      if (strip) gsap.to(strip, { opacity: 0, duration: 0.3, ease: 'power2.in' });
     }
   });
 

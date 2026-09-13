@@ -514,7 +514,7 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
    (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
 ============================ */
 (function initContactPixels() {
-  const items = document.querySelectorAll('.globe-contact-item, .hero-btn, .projects-cta');
+  const items = document.querySelectorAll('.globe-contact-item, .projects-cta, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const BLOCK = 13;          // kleine Blöcke (Zeilen sind niedrig)
@@ -528,6 +528,7 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   }
 
+  const sizers = [];
   items.forEach((item) => {
     const cv = document.createElement('canvas');
     cv.className = 'gc-pixels';
@@ -537,14 +538,20 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
 
     let w = 0, h = 0, cols = 0, rows = 0, dpr = 1;
     function size() {
+      /* Exakte (fraktionale) Padding-Box → deckt sich präzise mit inset:0 des Canvas,
+         damit die Pixel bündig an den Trennlinien enden (kein Rundungs-Versatz). */
       const r = item.getBoundingClientRect();
-      w = Math.max(1, r.width); h = Math.max(1, r.height);
+      const cs = getComputedStyle(item);
+      const bl = parseFloat(cs.borderLeftWidth) || 0, brd = parseFloat(cs.borderRightWidth) || 0;
+      const bt = parseFloat(cs.borderTopWidth) || 0, bb = parseFloat(cs.borderBottomWidth) || 0;
+      w = Math.max(1, r.width - bl - brd); h = Math.max(1, r.height - bt - bb);
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      cv.width = Math.floor(w * dpr); cv.height = Math.floor(h * dpr);
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       cols = Math.ceil(w / BLOCK); rows = Math.max(1, Math.ceil(h / BLOCK));
     }
     size();
+    sizers.push(size);
     if ('ResizeObserver' in window) new ResizeObserver(size).observe(item);
 
     function draw(p) {
@@ -578,6 +585,11 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
     item.addEventListener('focus', () => go(1));
     item.addEventListener('blur', () => go(0));
   });
+
+  /* Nach Font-Laden und load neu vermessen → Canvas füllt das ganze Feld */
+  function resizeAll() { sizers.forEach((fn) => fn()); }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(resizeAll);
+  window.addEventListener('load', resizeAll);
 })();
 
 /* ============================
@@ -889,7 +901,7 @@ window.__heroInit = heroInit;
    NAV — Active section tracker
 ============================ */
 (function initNavActiveState() {
-  const links = [...document.querySelectorAll('.nav-link-1820[data-section]')];
+  const links = [...document.querySelectorAll('.nav-sec[data-section]')];
 
   const workEl    = document.getElementById('work');
   const contactEl = document.getElementById('globeSection') || document.getElementById('contact');
@@ -1309,10 +1321,7 @@ ScrollTrigger.create({
     for (let i = asciiClickWaves.length - 1; i >= 0; i--) {
       if (now - asciiClickWaves[i].time > 4500) asciiClickWaves.splice(i, 1);
     }
-    const FONT_SIZE = Math.max(6, Math.min(W, H) / DOT_ROWS * 1.6);
-    asciiCtx.font = `${FONT_SIZE}px monospace`;
-    asciiCtx.textAlign = 'center';
-    asciiCtx.textBaseline = 'middle';
+    const S = Math.max(2, Math.min(W, H) / DOT_ROWS * 1.25);   // Pixel-Blockgröße
     for (const pt of landPoints) {
       const { nx, ny, facing, depth } = projectPoint(pt.localPos);
       if (!facing || depth > 1) continue;
@@ -1334,10 +1343,9 @@ ScrollTrigger.create({
       }
       totalWave += getClickInfluence(nx, ny, now);
       const clamped = Math.max(0, Math.min(1, (totalWave + 2) / 4));
-      const char = ASCII_CHARS[Math.floor(clamped * (ASCII_CHARS.length - 1))] || ASCII_CHARS[0];
-      const opacity = Math.min(0.92, 0.4 + clamped * 0.5) * limbFade;
-      asciiCtx.fillStyle = `rgba(255,255,255,${opacity.toFixed(3)})`;
-      asciiCtx.fillText(char, nx * W, ny * H);
+      const opacity = Math.min(0.92, 0.34 + clamped * 0.5) * limbFade;
+      asciiCtx.fillStyle = 'rgba(240,237,232,' + opacity.toFixed(3) + ')';
+      asciiCtx.fillRect(nx * W - S / 2, ny * H - S / 2, S, S);
     }
   }
 
@@ -1428,31 +1436,35 @@ ScrollTrigger.create({
   container.appendChild(svg);
 
   const svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  svgLine.setAttribute('stroke', 'rgba(240,237,232,0.4)');
+  svgLine.setAttribute('stroke', 'rgba(240,237,232,0.55)');
   svgLine.setAttribute('stroke-width', '1');
   svgLine.setAttribute('stroke-dasharray', '3 3');
+  svgLine.style.opacity = '0';                 /* startet unsichtbar → kein Aufblitzen */
   svg.appendChild(svgLine);
 
   const svgBadge = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
   svgBadge.setAttribute('rx', '3');
-  svgBadge.setAttribute('fill', 'rgba(17,17,16,0.85)');
-  svgBadge.setAttribute('stroke', 'rgba(240,237,232,0.15)');
+  svgBadge.setAttribute('fill', '#0a0a09');
+  svgBadge.setAttribute('stroke', 'rgba(240,237,232,0.24)');
   svgBadge.setAttribute('stroke-width', '1');
+  svgBadge.style.opacity = '0';
   svg.appendChild(svgBadge);
 
   const svgAccentDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
   svgAccentDot.setAttribute('r', '2.5');
   svgAccentDot.setAttribute('fill', '#ff4040');
+  svgAccentDot.style.opacity = '0';
   svg.appendChild(svgAccentDot);
 
   const svgText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  svgText.setAttribute('fill', 'rgba(240,237,232,0.88)');
+  svgText.setAttribute('fill', '#F0EDE8');
   svgText.setAttribute('font-family', 'DM Mono, monospace');
-  svgText.setAttribute('font-size', '8.5');
-  svgText.setAttribute('letter-spacing', '0.18em');
+  svgText.setAttribute('font-size', '9');
+  svgText.setAttribute('letter-spacing', '0.2em');
   svgText.setAttribute('text-anchor', 'start');
   svgText.setAttribute('dominant-baseline', 'middle');
   svgText.textContent = 'SALZBURG, AT';
+  svgText.style.opacity = '0';
   svg.appendChild(svgText);
 
   function resizeAsciiCanvas() {
@@ -1486,7 +1498,7 @@ ScrollTrigger.create({
     const py   = (v.y * -0.5 + 0.5) * rH;
     const vis  = v.z < 1 ? 1 : 0;
     const PAD = 6, H = 17;
-    const textW = 75;
+    const textW = 84;
     const DOT_R = 5, DOT_GAP = 5;
     const badgeW = DOT_R * 2 + DOT_GAP + textW + PAD * 2;
     const bx = px + 14, by = py - 28;
@@ -1548,8 +1560,7 @@ ScrollTrigger.create({
     canvas.className = 'globe-section-ascii-bg';
     section.insertBefore(canvas, section.firstChild);
     const ctx = canvas.getContext('2d');
-    const CHARS = ASCII_CHARS;
-    const GRID = 60;
+    const BLOCK = 26;                     // Pixel-Blockgröße (Stil der übrigen Pixel-Effekte)
     const waves = [];
     for (let i = 0; i < 5; i++) {
       waves.push({
@@ -1588,17 +1599,16 @@ ScrollTrigger.create({
     function draw() {
       const W = canvas.width, H = canvas.height;
       if (W === 0 || H === 0) return;
-      time += 0.75 * 0.016;
+      time += 0.75 * 0.016 * 0.4;      // langsamer (ruhigere Bewegung)
       const now = Date.now();
       for (let i = clickWaves.length - 1; i >= 0; i--) { if (now - clickWaves[i].time > 4500) clickWaves.splice(i, 1); }
       ctx.clearRect(0, 0, W, H);
-      const cellW = W / GRID, cellH = H / GRID;
-      const fontSize = Math.min(cellW, cellH) * 0.72;
-      ctx.font = `${fontSize}px monospace`;
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      for (let gy = 0; gy < GRID; gy++) {
-        for (let gx = 0; gx < GRID; gx++) {
-          const nx = (gx + 0.5) / GRID, ny = (gy + 0.5) / GRID;
+      const cols = Math.ceil(W / BLOCK), rows = Math.ceil(H / BLOCK);
+      for (let gy = 0; gy < rows; gy++) {
+        const ny = (gy * BLOCK + BLOCK * 0.5) / H;
+        const rise = 0.7 + 0.3 * ny;                 // untere Blöcke minimal präsenter (Pixel-Signatur)
+        for (let gx = 0; gx < cols; gx++) {
+          const nx = (gx * BLOCK + BLOCK * 0.5) / W;
           let totalWave = 0;
           for (const wave of waves) {
             const dx = nx - wave.x, dy = ny - wave.y;
@@ -1607,14 +1617,13 @@ ScrollTrigger.create({
           }
           const mdx = nx - mouse.x, mdy = ny - mouse.y;
           const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-          if (mDist < 0.35) totalWave += (1 - mDist / 0.35) * 0.85 * Math.sin(time * 3.2);
+          if (mDist < 0.35) totalWave += (1 - mDist / 0.35) * 0.5 * Math.sin(time * 3.2);
           totalWave += bgClickInfluence(nx, ny, now);
           if (Math.abs(totalWave) < 0.18) continue;
           const norm = Math.max(0, Math.min(1, (totalWave + 2) / 4));
-          const char = CHARS[Math.floor(norm * (CHARS.length - 1))] || CHARS[0];
-          const opacity = (0.055 + norm * 0.085) * 0.9;
-          ctx.fillStyle = `rgba(200,196,190,${opacity.toFixed(4)})`;
-          ctx.fillText(char, (gx + 0.5) * cellW, (gy + 0.5) * cellH);
+          const opacity = (0.03 + norm * 0.075) * rise;    // dezenter
+          ctx.fillStyle = 'rgba(240,237,232,' + opacity.toFixed(4) + ')';
+          ctx.fillRect(gx * BLOCK, gy * BLOCK, BLOCK - 3, BLOCK - 3);   // kleine Lücke → Pixel-Raster
         }
       }
     }
@@ -1725,7 +1734,7 @@ ScrollTrigger.create({
 
     /* Nav + Projects + CV verschwinden nur im Showreel-Fullscreen — und kommen
        schon wieder, sobald die Services oben am Screen-Rand einrasten. */
-    const navHide = fs && !workLocked && !globeLocked;
+    const navHide = false;   /* Nav-Sichtbarkeit steuert jetzt initNavScrollHide */
     if (navHide !== lastNav) {
       lastNav = navHide;
       gsap.to(nav, { opacity: navHide ? 0 : 1, duration: navHide ? 0.18 : 0.35, ease: 'power2.out', overwrite: true });
@@ -1733,11 +1742,11 @@ ScrollTrigger.create({
 
     /* JCKY-Logo bleibt in Fullscreen + Services aus und taucht erst wieder auf,
        sobald die Globe-Section oben einrastet. */
-    if (logoName && logoSub) {
-      const logoHide = !globeLocked && (fs || workLocked);
+    if (logoName) {
+      const logoHide = false;
       if (logoHide !== lastLogo) {
         lastLogo = logoHide;
-        gsap.to([logoName, logoSub], { opacity: logoHide ? 0 : 1, duration: 0.18, ease: 'none', overwrite: true });
+        gsap.to(logoName, { opacity: logoHide ? 0 : 1, duration: 0.18, ease: 'none', overwrite: true });
       }
     }
   }
@@ -1766,11 +1775,11 @@ ScrollTrigger.create({
     const text = (line.textContent || '').trim() || 'JCKY';
 
     const ls = getComputedStyle(line);
-    const FS = parseFloat(ls.fontSize) || 100;              // Referenz-Schriftgröße (CSS)
-    const lh = parseFloat(ls.lineHeight) || FS * 0.75;      // Zeilenhöhe in px
+    const FS = parseFloat(ls.fontSize) || 100;              // Referenz-Schriftgroesse (CSS)
+    const lh = parseFloat(ls.lineHeight) || FS * 0.75;      // Zeilenhoehe in px
 
-    /* Pixelgenauer Ink-Scan: JCKY auf ein Canvas rendern und die tatsächlich
-       gefüllten Spalten/Zeilen finden → exakte Ink-Grenzen (browserunabhängig). */
+    /* Pixelgenauer Ink-Scan: JCKY auf ein Canvas rendern und die tatsaechlich
+       gefuellten Spalten/Zeilen finden -> exakte Ink-Grenzen (browserunabhaengig). */
     const PAD = Math.ceil(FS * 0.6);                         // Rand, damit nichts abgeschnitten wird
     const cw = Math.ceil(FS * text.length * 1.6) + PAD * 2;
     const chh = Math.ceil(FS * 1.6) + PAD * 2;
@@ -1796,41 +1805,83 @@ ScrollTrigger.create({
     const inkW = Math.max(1, maxX - minX + 1);
     const inkH = Math.max(1, maxY - minY + 1);
 
-    // Ink-Mitte relativ zur Element-Box (Element-Origin: x=0 = originX, Baseline = baselineY)
-    const inkCenterX = (minX + maxX) / 2 - originX;          // ggü. Text-Origin (x=0)
-    const inkTopFromBaseline = baselineY - minY;             // Ink oben über Baseline
-    const inkBotFromBaseline = maxY - baselineY;             // Ink unten unter Baseline
+    const inkCenterX = (minX + maxX) / 2 - originX;
+    const inkTopFromBaseline = baselineY - minY;
+    const inkBotFromBaseline = maxY - baselineY;
 
-    // Baseline-Position innerhalb der Element-Zeilenbox
     const m = ctx.measureText(text);
     const fbAsc = m.fontBoundingBoxAscent  || inkTopFromBaseline;
     const fbDesc = m.fontBoundingBoxDescent || inkBotFromBaseline;
     const halfLeading = (lh - (fbAsc + fbDesc)) / 2;
-    const elBaselineY = halfLeading + fbAsc;                 // Baseline von Element-Box-Oberkante
+    const elBaselineY = halfLeading + fbAsc;
     const inkCenterY  = elBaselineY + (inkBotFromBaseline - inkTopFromBaseline) / 2;
 
-    // Versatz Ink-Mitte ggü. Element-Box-Mitte (Element-Box: Breite advW, Höhe lh)
     const advW    = m.width || inkW;
     const offsetX = inkCenterX - advW / 2;
     const offsetY = inkCenterY - lh / 2;
 
-    // skalieren: Höhe mit Puffer, Breite füllt die Bühne (mit kleinem Sicherheitsabstand)
-    const factorH = 1.0, factorW = 1.0;   // Fill: JCKY füllt die Bühne randlos
+    const factorH = 0.9, factorW = 1.0;   // etwas Hoehen-Puffer -> JCKY unten nicht abgeschnitten
     const sy = (availH * factorH) / inkH;
     const sx = (availW * factorW) / inkW;
 
     line.style.transform =
       'translate(' + (-offsetX * sx).toFixed(2) + 'px,' + (-offsetY * sy).toFixed(2) + 'px) ' +
       'scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
-
-    /* Bar exakt an den sichtbaren JCKY-Kanten ausrichten (Einzug = Seitenabstand
-       + halber Sicherheits-Rest links/rechts). */
-    const footerPad = parseFloat(cs.paddingLeft || 0);
-    const barInset  = footerPad + (availW * (1 - factorW)) / 2;
-    const footer = document.getElementById('siteFooter');
-    if (footer) footer.style.setProperty('--bar-inset', barInset.toFixed(1) + 'px');
   }
   fit();
   window.addEventListener('resize', fit);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+})();
+
+
+/* ============================
+   NAV — Hide on scroll down, show on scroll up
+============================ */
+(function initNavScrollHide() {
+  const nav = document.getElementById('mainNav');
+  if (!nav) return;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const pjFilter = document.getElementById('pjFilter');   // Projects-Filter (falls vorhanden)
+  const NAV_H = 52;
+  let hidden = false;
+  nav.style.willChange = 'transform';
+  document.documentElement.classList.add('nav-shown');
+  if (pjFilter) gsap.set(pjFilter, { top: NAV_H });        // startet unter der Nav
+
+  function show() {
+    if (!hidden) return; hidden = false;
+    document.documentElement.classList.add('nav-shown');
+    if (reduce) { gsap.set(nav, { yPercent: 0 }); if (pjFilter) gsap.set(pjFilter, { top: NAV_H }); return; }
+    gsap.to(nav, { yPercent: 0, duration: 0.28, ease: 'power2.out', overwrite: true });
+    if (pjFilter) gsap.to(pjFilter, { top: NAV_H, duration: 0.28, ease: 'power2.out', overwrite: true });
+  }
+  function hide() {
+    if (hidden) return; hidden = true;
+    document.documentElement.classList.remove('nav-shown');
+    if (reduce) { gsap.set(nav, { yPercent: -100 }); if (pjFilter) gsap.set(pjFilter, { top: 0 }); return; }
+    gsap.to(nav, { yPercent: -100, duration: 0.24, ease: 'power2.in', overwrite: true });
+    if (pjFilter) gsap.to(pjFilter, { top: 0, duration: 0.24, ease: 'power2.in', overwrite: true });
+  }
+
+  function handle(y, dir) {
+    if (y < 48) { show(); return; }   // ganz oben immer sichtbar
+    if (dir > 0) hide();              // runter → sofort verstecken
+    else if (dir < 0) show();         // hoch → sofort zeigen
+  }
+
+  /* Lenis liefert die Scroll-Richtung sofort (1 = runter, -1 = hoch) → kein „aggressives" Scrollen nötig. */
+  if (typeof lenis !== 'undefined' && lenis && lenis.on) {
+    lenis.on('scroll', (e) => {
+      const y = (e && typeof e.scroll === 'number') ? e.scroll : (window.scrollY || 0);
+      const dir = (e && typeof e.direction === 'number') ? e.direction : 0;
+      handle(y, dir);
+    });
+  } else {
+    let lastY = window.scrollY || 0;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY || 0;
+      handle(y, y > lastY ? 1 : (y < lastY ? -1 : 0));
+      lastY = y;
+    }, { passive: true });
+  }
 })();

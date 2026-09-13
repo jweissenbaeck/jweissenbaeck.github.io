@@ -112,68 +112,51 @@ body::before {
 /* ============================
    NAV
 ============================ */
+/* ── NAV — segmentierte Leiste (Look wie Footer-Bar) ── */
 .nav {
   position: fixed; top: 0; left: 0; right: 0;
-  z-index: 1000; display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: start;
-  padding: 20px 28px 0;
-  background: transparent;
-  pointer-events: none;
+  z-index: 1000;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch;
+  height: 52px;
+  background: var(--bg);
+  border-bottom: 1px solid rgba(240,237,232,0.16);
+  pointer-events: none;                 /* nur die Zellen sind klickbar */
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
 }
+.nav-left   { grid-column: 1; justify-self: start;  display: flex; align-items: stretch; }
+.nav-center { grid-column: 2; justify-self: center; display: flex; align-items: stretch; }
+.nav-right  { grid-column: 3; justify-self: end;    display: flex; align-items: stretch; }
 
-.nav > * { pointer-events: all; }
-
-.nav-left {
-  display: flex; flex-direction: column; gap: 2px;
-  align-items: flex-start;
-  mix-blend-mode: difference;
+.nav-cell {
+  position: relative; overflow: hidden;   /* Basis für Pixel-Hover */
+  display: flex; align-items: center;
+  padding: 0 clamp(16px, 2vw, 30px);
+  color: rgba(240,237,232,0.6);
+  text-decoration: none;
+  pointer-events: auto;
+  transition: color 0.25s ease;
 }
+.nav-txt { position: relative; z-index: 1; }            /* Text über dem Pixel-Canvas */
+.nav-cell:hover { color: var(--bg-dark, #0a0a09); }     /* invertiert (Ink-Pixel füllen) */
 
-.nav-center-logo { mix-blend-mode: difference; }
+/* Trennlinien */
+.nav-left  .nav-cell { border-right: 1px solid rgba(240,237,232,0.16); }
+.nav-left  .nav-cell:first-child { padding-left: 28px; }
+.nav-center .nav-cell { border-left: 1px solid rgba(240,237,232,0.16); }
+.nav-center .nav-cell:last-child { border-right: 1px solid rgba(240,237,232,0.16); }
+.nav-right .nav-cell { border-left: 1px solid rgba(240,237,232,0.16); }
+.nav-right .nav-cell:last-child { padding-right: 28px; }
+.nav-brand { font-weight: 700; letter-spacing: 0.22em; color: var(--ink); }
+
+/* aktive Sektion: weißer Text + weißer Bottom-Stroke */
+.nav-cell.is-active { pointer-events: none; }
+.nav-cell.is-active .nav-txt { color: var(--ink); }
+.nav-cell.is-active { box-shadow: inset 0 -2px 0 var(--ink); }
 
 .nav-link-1820 {
   font-family: var(--font-mono); font-size: 11px; font-weight: 400;
-  letter-spacing: 0.14em; text-transform: uppercase; color: #fff;
-  text-decoration: none;
-  line-height: 1.85;
-  position: relative;
-  opacity: 0.4;
-  transition: opacity 0.3s ease;
-}
-
-.nav-link-1820.is-active {
-  opacity: 1;
-  pointer-events: none;
-}
-
-.nav-link-1820:not(.is-active):hover {
-  opacity: 0.85;
-}
-
-.nav-center-logo {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  justify-self: center;
-}
-
-.nav-logo-box {
-  display: inline-block;
-  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
-  letter-spacing: 0.22em; color: #fff;
-  line-height: 1.2;
-  transition: opacity 0.5s ease;
-}
-
-.nav-logo-sub {
-  font-family: var(--font-mono); font-size: 7px; font-weight: 400;
-  letter-spacing: 0.28em; color: #fff;
-  text-transform: uppercase;
-  transition: opacity 0.5s ease;
-}
-
-.nav-right {
-  display: flex; align-items: center; gap: 10px; justify-content: flex-end;
-  mix-blend-mode: difference;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink);
+  text-decoration: none; position: relative;
 }
 
 /* ── HERO CTA BUTTONS ──
@@ -823,6 +806,19 @@ body::before {
 
 /* ── Find me here — Textlayout ── */
 
+/* ── Bio-Text (ersetzt die Kontakt-Liste) ── */
+.globe-bio {
+  position: relative;
+  z-index: 1;
+  margin-top: 2.2em;
+  max-width: 46ch;
+  font-family: var(--font-mono);
+  font-size: clamp(12px, 1.05vw, 15px);
+  font-weight: 400;
+  line-height: 1.85;
+  color: rgba(240,237,232,0.62);
+}
+
 /* ── Globe contact block ── */
 .globe-contact-block {
   display: flex;
@@ -1053,35 +1049,47 @@ html.vt-arriving body { visibility: hidden; }
   position: relative;
   z-index: 20;
   background: var(--footer-bg);
-  padding: 22px 0 0;
+  padding: 0;
   overflow: hidden;
 }
 .site-footer-bar {
   display: flex;
-  align-items: center;
+  align-items: stretch;                      /* Links füllen Bar-Höhe → hohe Trennlinien */
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
-  padding: 0 var(--bar-inset, var(--footer-pad)) 8px;
+  min-height: 52px;
+  margin-top: 0;                                  /* Bar direkt unter JCKY */
+  border-top: 1px solid rgba(240,237,232,0.16);   /* durchgezogene Linie über die volle Breite */
+  padding: 0;
   font-family: var(--font-mono);
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(240,237,232,0.5);
 }
-.sf-links { display: flex; gap: clamp(14px, 2vw, 30px); }
-.sf-link {
+.sf-links { display: flex; align-items: stretch; gap: 0; }
+.sf-link, .sf-right {
+  position: relative; overflow: hidden;            /* Basis für Pixel-Hover */
+  display: flex; align-items: center;
+  padding: 0 clamp(16px, 2vw, 30px);
   color: rgba(240,237,232,0.5);
   text-decoration: none;
   transition: color 0.25s ease;
 }
-.sf-link:hover { color: var(--ink); }
+.sf-link { border-left: 1px solid rgba(240,237,232,0.16); }          /* Trennlinie vor jedem Link */
+.sf-links .sf-link:first-child { border-left: none; padding-left: var(--footer-pad); }  /* Einzug links (fix) */
+.sf-links .sf-link:last-child { border-right: 1px solid rgba(240,237,232,0.16); }  /* rechts von Email */
+.sf-right { border-left: 1px solid rgba(240,237,232,0.16); padding-right: var(--footer-pad); }  /* Einzug rechts (fix) + Linie links */
+.sf-txt { position: relative; z-index: 1; }                          /* Text über dem Pixel-Canvas */
+/* Hover: Text invertiert (Ink-Pixel füllen den Hintergrund) */
+.sf-link:hover, .sf-right:hover { color: var(--bg-dark, #0a0a09); }
 
 .site-footer-text {
   position: relative;
   width: 100%;
   height: clamp(340px, 62vh, 620px);   /* große Höhen-Bühne → JCKY riesig */
-  padding: 0 var(--footer-pad);
+  padding: 0;                          /* echtes Fill: JCKY randlos, kein Seitenabstand */
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -1092,7 +1100,7 @@ html.vt-arriving body { visibility: hidden; }
   font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
   font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;   /* 0 -> Canvas-Ink deckt sich mit DOM (symmetrisch) */
   white-space: nowrap;
   color: var(--ink);
   line-height: 0.75;
