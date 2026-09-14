@@ -14,22 +14,37 @@
   height: calc(100vh - var(--filter-h));
   display: flex;
   align-items: center;
-  padding: 0 clamp(20px, 4vw, 48px);
+  padding: 0;
   overflow: hidden;
 }
 .pj-hero-title {
   margin: 0;
   font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
   font-weight: 400; letter-spacing: -0.02em; line-height: 1.12;
-  font-size: clamp(6rem, 30vw, 32rem);
+  font-size: clamp(3.5rem, 17vw, 18rem);
   text-transform: uppercase; color: var(--ink);
-  white-space: nowrap; overflow: hidden;
+  width: 100%; overflow: hidden;
   padding: 0.06em 0;                    /* Puffer → Glyphen nicht abgeschnitten */
+}
+/* Endlosschleife nach links */
+.pj-hero-marquee {
+  display: flex; width: max-content;
+  transform: scaleX(1.18);              /* horizontal gestretcht */
+  will-change: transform;
+  animation: pj-marquee 26s linear infinite;
+}
+.pj-hero-group { display: flex; flex-shrink: 0; }
+.pj-hero-word { display: block; white-space: nowrap; padding-right: 0.18em; }
+@keyframes pj-marquee {
+  from { transform: scaleX(1.18) translateX(0); }
+  to   { transform: scaleX(1.18) translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pj-hero-marquee { animation: none; }
 }
 
 /* ausgeblendete Nav fängt keine Klicks mehr ab (Filter liegt darüber) */
 .nav.pj-nav-off, .nav.pj-nav-off * { pointer-events: none !important; }
-.pj-hero-inner { display: inline-block; will-change: transform; }
 
 /* ── Filter-Leiste: startet unten, rastet oben sticky ein ──
    Liegt UNTER der Nav und bildet mit ihr optisch eine Einheit: kein eigener
@@ -90,7 +105,7 @@
 /* ── Projekt-Liste: pro Projekt Kopf oben links + Reihe aus 3 Bildern ── */
 .pj-grid {
   display: block;
-  padding: clamp(28px, 3.5vw, 52px) clamp(20px, 4vw, 48px) 140px;
+  padding: clamp(28px, 3.5vw, 52px) 28px 140px;
 }
 .pj-project { margin-bottom: clamp(56px, 7vw, 120px); }
 .pj-project:last-child { margin-bottom: 0; }
@@ -135,5 +150,4 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pj-hero-inner { transform: none; }
 }

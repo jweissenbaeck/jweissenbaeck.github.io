@@ -124,7 +124,7 @@ vtStoreDel('jcky:internalNav');
 (function initEditorialTransition() {
   const PAGE = {
     'index.html':    { name: 'Start',    code: 'A—01', order: 0 },
-    'projects.html': { name: 'Projects', code: 'A—02', order: 1 },
+    'projects.html': { name: 'My Work', code: 'A—02', order: 1 },
     'cv.html':       { name: 'CV',       code: 'A—03', order: 2 },
   };
   const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -517,7 +517,7 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
   const items = document.querySelectorAll('.globe-contact-item, .projects-cta, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const BLOCK = 13;          // kleine Blöcke (Zeilen sind niedrig)
+  const ROWS = 6;            // feste Zeilenzahl → Blockgröße skaliert mit dem Feld (zoom-stabil)
   const BIAS  = 0.6;         // Anteil "von unten"
   const SMOOTH = 0.11;       // Sekunden – Ein-/Ausblenden
   const INK = '240, 237, 232';
@@ -536,7 +536,7 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
     item.insertBefore(cv, item.firstChild);
     const ctx = cv.getContext('2d');
 
-    let w = 0, h = 0, cols = 0, rows = 0, dpr = 1;
+    let w = 0, h = 0, cols = 0, rows = 0, dpr = 1, bs = 13;
     function size() {
       /* Exakte (fraktionale) Padding-Box → deckt sich präzise mit inset:0 des Canvas,
          damit die Pixel bündig an den Trennlinien enden (kein Rundungs-Versatz). */
@@ -548,7 +548,8 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      cols = Math.ceil(w / BLOCK); rows = Math.max(1, Math.ceil(h / BLOCK));
+      bs = Math.max(6, h / ROWS);   // Blockgröße relativ zur Feldhöhe → konstante Dichte bei jedem Zoom
+      cols = Math.ceil(w / bs); rows = Math.max(1, Math.ceil(h / bs));
     }
     size();
     sizers.push(size);
@@ -562,7 +563,7 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
         const rowBias = rows > 1 ? gy / (rows - 1) : 1;      // 0 oben, 1 unten
         for (let gx = 0; gx < cols; gx++) {
           const thr = (1 - rowBias) * BIAS + rnd(gx, gy) * (1 - BIAS); // unten zuerst
-          if (p >= thr) ctx.fillRect(gx * BLOCK, gy * BLOCK, BLOCK + 1, BLOCK + 1);
+          if (p >= thr) ctx.fillRect(gx * bs, gy * bs, bs + 1, bs + 1);
         }
       }
     }
@@ -1760,7 +1761,11 @@ ScrollTrigger.create({
 
 
 /* ============================
-   FOOTER — Text auf volle Breite strecken
+   FOOTER — JCKY: OPTISCHES Tracking (visuell gleiche Abstände)
+   Pro Buchstabe werden die echten Ink-Kanten per Pixel-Scan gemessen; die
+   Buchstaben werden per margin-left so gesetzt, dass die LÜCKE ZWISCHEN DEN
+   INK-KANTEN überall gleich ist (nicht nur die Box-Abstände). Danach wird die
+   ganze Zeile EINHEITLICH auf die Bühne skaliert (kein Per-Buchstabe-Transform).
 ============================ */
 (function initFooterStretch() {
   const wrap = document.getElementById('footerText');
@@ -1768,70 +1773,91 @@ ScrollTrigger.create({
   const line = wrap.querySelector('.ftp-line');
   if (!line) return;
 
-  function fit() {
-    const cs = getComputedStyle(wrap);
-    const availW = wrap.clientWidth - parseFloat(cs.paddingLeft || 0) - parseFloat(cs.paddingRight || 0);
-    const availH = wrap.clientHeight;
-    const text = (line.textContent || '').trim() || 'JCKY';
+  const FACTOR_H = 0.86, FACTOR_W = 1.0;
+  const REF_FS  = 100;
+  const VGAP    = REF_FS * 0.035;   // gewünschte VISUELLE Lücke zwischen den Ink-Kanten
 
-    const ls = getComputedStyle(line);
-    const FS = parseFloat(ls.fontSize) || 100;              // Referenz-Schriftgroesse (CSS)
-    const lh = parseFloat(ls.lineHeight) || FS * 0.75;      // Zeilenhoehe in px
+  const text = (line.getAttribute('data-text') || line.textContent || 'JCKY').trim() || 'JCKY';
+  line.textContent = '';
+  const letters = text.split('').map(function (ch) {
+    const s = document.createElement('span');
+    s.className = 'ftp-letter';
+    s.textContent = ch;
+    line.appendChild(s);
+    return s;
+  });
 
-    /* Pixelgenauer Ink-Scan: JCKY auf ein Canvas rendern und die tatsaechlich
-       gefuellten Spalten/Zeilen finden -> exakte Ink-Grenzen (browserunabhaengig). */
-    const PAD = Math.ceil(FS * 0.6);                         // Rand, damit nichts abgeschnitten wird
-    const cw = Math.ceil(FS * text.length * 1.6) + PAD * 2;
-    const chh = Math.ceil(FS * 1.6) + PAD * 2;
-    const cnv = document.createElement('canvas');
-    cnv.width = cw; cnv.height = chh;
+  /* Ink-Metriken pro Buchstabe per Pixel-Scan */
+  const fontFam = getComputedStyle(line).fontFamily;
+  function measureLetter(ch) {
+    const pad = Math.ceil(REF_FS * 0.6);
+    const cw = Math.ceil(REF_FS * 2) + pad * 2;
+    const chh = Math.ceil(REF_FS * 2) + pad * 2;
+    const cnv = document.createElement('canvas'); cnv.width = cw; cnv.height = chh;
     const ctx = cnv.getContext('2d');
-    ctx.font = 'normal ' + FS + "px " + ls.fontFamily;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#fff';
-    const originX = PAD, baselineY = Math.round(chh * 0.68);
-    ctx.fillText(text, originX, baselineY);
-
+    ctx.font = 'normal ' + REF_FS + 'px ' + fontFam;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#fff';
+    const originX = pad, baselineY = Math.round(chh * 0.7);
+    ctx.fillText(ch, originX, baselineY);
+    const advance = ctx.measureText(ch).width;
     const data = ctx.getImageData(0, 0, cw, chh).data;
-    let minX = cw, maxX = 0, minY = chh, maxY = 0;
+    let minX = cw, maxX = 0, minY = chh, maxY = 0, any = false;
     for (let y = 0; y < chh; y++) {
       for (let x = 0; x < cw; x++) {
-        if (data[(y * cw + x) * 4 + 3] > 20) {              // Alpha > 20 = Ink
+        if (data[(y * cw + x) * 4 + 3] > 20) {
+          any = true;
           if (x < minX) minX = x; if (x > maxX) maxX = x;
           if (y < minY) minY = y; if (y > maxY) maxY = y;
         }
       }
     }
-    const inkW = Math.max(1, maxX - minX + 1);
-    const inkH = Math.max(1, maxY - minY + 1);
+    if (!any) return { advance: advance, leftBearing: 0, rightBearing: advance, inkTop: REF_FS * 0.7, inkBottom: 0 };
+    return {
+      advance: advance,
+      leftBearing: (minX - originX),                 // Box-Links → Ink-Links
+      rightBearing: advance - (maxX - originX),        // Ink-Rechts → Box-Rechts
+      inkTop: baselineY - minY,
+      inkBottom: maxY - baselineY
+    };
+  }
+  const metrics = text.split('').map(measureLetter);
 
-    const inkCenterX = (minX + maxX) / 2 - originX;
-    const inkTopFromBaseline = baselineY - minY;
-    const inkBotFromBaseline = maxY - baselineY;
+  /* Margins so setzen, dass die Ink-Lücke überall = VGAP ist (optisch gleich) */
+  letters.forEach(function (el, i) {
+    if (i === 0) { el.style.marginLeft = '0px'; return; }
+    const m = VGAP - metrics[i - 1].rightBearing - metrics[i].leftBearing;
+    el.style.marginLeft = m.toFixed(2) + 'px';
+  });
 
-    const m = ctx.measureText(text);
-    const fbAsc = m.fontBoundingBoxAscent  || inkTopFromBaseline;
-    const fbDesc = m.fontBoundingBoxDescent || inkBotFromBaseline;
-    const halfLeading = (lh - (fbAsc + fbDesc)) / 2;
-    const elBaselineY = halfLeading + fbAsc;
-    const inkCenterY  = elBaselineY + (inkBotFromBaseline - inkTopFromBaseline) / 2;
+  /* Ink-Höhe für die Höhenfüllung */
+  let inkTopMax = 0, inkBotMax = 0;
+  metrics.forEach(function (mt) { if (mt.inkTop > inkTopMax) inkTopMax = mt.inkTop; if (mt.inkBottom > inkBotMax) inkBotMax = mt.inkBottom; });
+  const inkHRatio = (inkTopMax + inkBotMax) / REF_FS || 0.72;
 
-    const advW    = m.width || inkW;
-    const offsetX = inkCenterX - advW / 2;
-    const offsetY = inkCenterY - lh / 2;
-
-    const factorH = 0.9, factorW = 1.0;   // etwas Hoehen-Puffer -> JCKY unten nicht abgeschnitten
-    const sy = (availH * factorH) / inkH;
-    const sx = (availW * factorW) / inkW;
-
-    line.style.transform =
-      'translate(' + (-offsetX * sx).toFixed(2) + 'px,' + (-offsetY * sy).toFixed(2) + 'px) ' +
-      'scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
+  function fit() {
+    const availW = wrap.clientWidth, availH = wrap.clientHeight;
+    if (!availW || !availH) return;
+    line.style.transform = 'none';
+    const FS = parseFloat(getComputedStyle(line).fontSize) || REF_FS;
+    const natW = line.getBoundingClientRect().width || 1;
+    const inkH = inkHRatio * FS;
+    const sx = (availW * FACTOR_W) / natW;
+    const sy = (availH * FACTOR_H) / inkH;
+    line.style.transform = 'scale(' + sx.toFixed(4) + ',' + sy.toFixed(4) + ')';
   }
   fit();
   window.addEventListener('resize', fit);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () {
+    // Fonts können die Metriken ändern → neu messen
+    for (var i = 0; i < text.length; i++) metrics[i] = measureLetter(text[i]);
+    letters.forEach(function (el, i) {
+      el.style.marginLeft = (i === 0) ? '0px' : (VGAP - metrics[i - 1].rightBearing - metrics[i].leftBearing).toFixed(2) + 'px';
+    });
+    fit();
+  });
 })();
+
+
 
 
 /* ============================

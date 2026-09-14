@@ -98,15 +98,35 @@ window.addEventListener('DOMContentLoaded', function () {
   document.addEventListener('click', function () { openMenu(false); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') openMenu(false); });
 
-  /* ── Titel-Reveal ── */
-  gsap.set('.pj-hero-inner', { yPercent: 110 });
-  function playTitle() {
-    if (reduce) { gsap.set('.pj-hero-inner', { yPercent: 0 }); return; }
-    gsap.to('.pj-hero-inner', { yPercent: 0, duration: 0.9, ease: 'power4.out', delay: 0.1, overwrite: true });
-  }
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(playTitle); else playTitle();
-  window.addEventListener('load', playTitle);
-  setTimeout(playTitle, 800);   // Sicherheits-Fallback, damit der Titel nie versteckt bleibt
+  /* ── Work-Titel: Endlosschleife nach links (Marquee) ── */
+  (function initHeroMarquee() {
+    var marquee = document.getElementById('pjHeroMarquee');
+    if (!marquee) return;
+    var WORD = 'My Work';
+    function wordEl() {
+      var s = document.createElement('span');
+      s.className = 'pj-hero-word';
+      s.textContent = WORD;
+      return s;
+    }
+    function build() {
+      marquee.innerHTML = '';
+      var g1 = document.createElement('div');
+      g1.className = 'pj-hero-group';
+      marquee.appendChild(g1);
+      var guard = 0;
+      /* so viele Wörter, dass die Gruppe mind. die Viewport-Breite füllt */
+      do { g1.appendChild(wordEl()); guard++; }
+      while (g1.offsetWidth < window.innerWidth * 1.05 && guard < 40);
+      if (g1.children.length < 2) g1.appendChild(wordEl());
+      /* Gruppe duplizieren → nahtlose Schleife bei translateX(-50%) */
+      marquee.appendChild(g1.cloneNode(true));
+    }
+    build();
+    var rt;
+    window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(build, 200); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(build);
+  })();
 
   /* Nav-Sichtbarkeit steuert global initNavScrollHide (script.js) — hier kein zweites System. */
 

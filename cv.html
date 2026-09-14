@@ -1,17 +1,15 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jacob Weissenbäck — Erfahrung</title>
+  <title>Jacob Weissenbäck — CV</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="cv.css">
-
   <script>
-    /* Flash-Schutz: Inhalt bei interner Navigation verbergen, bis das ASCII-Overlay übernimmt. */
     try {
       if (sessionStorage.getItem('jcky:internalNav') === '1') {
         document.documentElement.classList.add('vt-arriving');
@@ -22,131 +20,83 @@
 </head>
 <body class="cv-page">
 
-
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <div class="nav-left">
     <a href="index.html" class="nav-cell" id="navBack"><span class="nav-txt">Start</span></a>
   </div>
   <div class="nav-right">
-    <a href="projects.html" class="nav-cell"><span class="nav-txt">Projects</span></a>
+    <a href="projects.html" class="nav-cell"><span class="nav-txt">My Work</span></a>
     <a href="cv.html" class="nav-cell is-active"><span class="nav-txt">CV</span></a>
   </div>
 </nav>
 
+<main class="cv" id="cv">
 
-<!-- EXPERIENCE DOSSIER -->
-<main class="cvx" id="cvx">
-
-  <div class="cvx-head">
-    <span class="cvx-kicker">Curriculum Vitae — 01/03</span>
-    <h1 class="cvx-title"><span class="cvx-title-inner">Experience</span></h1>
-  </div>
-
-  <div class="cvx-body">
-
-    <!-- LEFT: index list -->
-    <div class="cvx-list-wrap">
-      <ol class="cvx-list" id="cvxList">
-        <li class="cvx-item is-active" data-i="0">
-          <button class="cvx-item-btn" type="button" aria-label="UI / UX Designer — Websline, 2025 to now">
-            <span class="cvx-item-idx">01</span>
-            <span class="cvx-item-main">
-              <span class="cvx-item-role">UI / UX Designer</span>
-              <span class="cvx-item-company">Websline</span>
-            </span>
-            <span class="cvx-item-year">’25 — now</span>
-          </button>
-        </li>
-        <li class="cvx-item" data-i="1">
-          <button class="cvx-item-btn" type="button" aria-label="B.Sc. Student — Paris Lodron University of Salzburg, 2022 to 2025">
-            <span class="cvx-item-idx">02</span>
-            <span class="cvx-item-main">
-              <span class="cvx-item-role">B.Sc. Student</span>
-              <span class="cvx-item-company">PLUS Salzburg</span>
-            </span>
-            <span class="cvx-item-year">’22 — ’25</span>
-          </button>
-        </li>
-        <li class="cvx-item" data-i="2">
-          <button class="cvx-item-btn" type="button" aria-label="Pupil and Intern — BRG Seekirchen, 2013 to 2021">
-            <span class="cvx-item-idx">03</span>
-            <span class="cvx-item-main">
-              <span class="cvx-item-role">Pupil &amp; Intern</span>
-              <span class="cvx-item-company">BRG Seekirchen</span>
-            </span>
-            <span class="cvx-item-year">’13 — ’21</span>
-          </button>
-        </li>
-        <span class="cvx-marker" id="cvxMarker" aria-hidden="true"></span>
-      </ol>
-    </div>
-
-    <!-- RIGHT: morphing stage -->
-    <div class="cvx-stage" id="cvxStage">
-      <div class="cvx-ghost" id="cvxGhost" aria-hidden="true">01</div>
-      <div class="cvx-media" id="cvxMedia" aria-hidden="true">
-        <img id="cvxMediaImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600'%3E%3Crect width='600' height='600' fill='%230d0d0c'/%3E%3Crect x='88' y='96' width='180' height='320' rx='28' fill='%23f0ede8'/%3E%3Crect x='318' y='132' width='170' height='90' rx='20' fill='%23938d82'/%3E%3Crect x='318' y='252' width='170' height='110' rx='20' fill='%235e594f'/%3E%3C/svg%3E" alt="">
-      </div>
-      <div class="cvx-detail">
-        <div class="cvx-detail-kicker" id="cvxYear">Sept. 2025 — now</div>
-        <h2 class="cvx-detail-title"><span id="cvxRole">UI / UX Designer</span></h2>
-        <div class="cvx-detail-company" id="cvxCompany">Websline</div>
-        <p class="cvx-detail-desc" id="cvxDesc"></p>
-        <ul class="cvx-tags" id="cvxTags"></ul>
+  <!-- HERO -->
+  <header class="cv-hero">
+    <span class="cv-kicker"><span class="cv-kicker-dot"></span>Curriculum Vitae — Salzburg, AT</span>
+    <h1 class="cv-hero-title">
+      <span class="cv-line"><span class="cv-line-in">Jacob</span></span>
+      <span class="cv-line"><span class="cv-line-in">Weissenbäck</span></span>
+    </h1>
+    <div class="cv-hero-foot">
+      <p class="cv-intro">
+        UI/UX Designer with a focus on design systems, prototyping and clear
+        developer handoff — plus photography and video on the side. I turn ideas
+        into clear, usable and considered interfaces.
+      </p>
+      <div class="cv-hero-side">
+        <div class="cv-fact"><span class="cv-fact-k">Role</span><span class="cv-fact-v">UI / UX Designer</span></div>
+        <div class="cv-fact"><span class="cv-fact-k">Based in</span><span class="cv-fact-v">Salzburg, Austria</span></div>
+        <div class="cv-fact"><span class="cv-fact-k">Status</span><span class="cv-fact-v">Open to work</span></div>
+        <a class="cv-dl" href="#" download>
+          <span class="cv-dl-txt">Download CV</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2v9M4.5 7.5 8 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </a>
       </div>
     </div>
+  </header>
 
-  </div>
-
-</main>
-
-<!-- BETWEEN STRIP — reveals when footer approaches -->
-<div class="cv-nav-strip" id="cvNavStrip">
-  <a href="index.html" class="hero-btn" aria-label="Start">
-    <span class="hero-btn-label">Start</span>
-  </a>
-  <a href="#" class="hero-btn" download aria-label="Lebenslauf">
-    <span class="hero-btn-label">Lebenslauf</span>
-  </a>
-</div>
-
-<!-- FOOTER -->
-<footer class="cv-footer" id="cvFooter">
-  <div class="cv-footer-bg-text" aria-hidden="true">JCKY</div>
-
-  <div class="cv-footer-top">
-    <div class="cv-footer-label">Bereit für das nächste Projekt</div>
-    <a href="mailto:jacob@weissenbaeck.at" class="cv-footer-cta">
-      <span class="cv-footer-cta-text">Kontakt aufnehmen</span>
-      <svg class="cv-footer-cta-arrow" width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="13" stroke="currentColor" stroke-width="1"/>
-        <path d="M10 14h8M15 11l3 3-3 3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </a>
-  </div>
-
-  <div class="cv-footer-divider"></div>
-
-  <div class="cv-footer-bottom">
-    <div class="cv-footer-left">
-      <span class="cv-footer-name">Jacob Weissenbäck</span>
-      <span class="cv-footer-role">Junior UI/UX Designer · Salzburg, AT</span>
+  <!-- EXPERIENCE -->
+  <section class="cv-section" id="cvExperience">
+    <div class="cv-sec-head">
+      <span class="cv-sec-idx">01</span>
+      <h2 class="cv-sec-title">Experience</h2>
+      <span class="cv-sec-note">Work &amp; Education</span>
     </div>
-    <div class="cv-footer-links">
-      <a href="#" class="cv-footer-link">LinkedIn</a>
-      <a href="#" class="cv-footer-link">Behance</a>
-      <a href="#" class="cv-footer-link cv-footer-link--download" download>
-        Lebenslauf
-        <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-          <path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+    <ol class="cv-list" id="cvList"></ol>
+  </section>
+
+  <!-- CAPABILITIES -->
+  <section class="cv-section" id="cvCaps">
+    <div class="cv-sec-head">
+      <span class="cv-sec-idx">02</span>
+      <h2 class="cv-sec-title">Capabilities</h2>
+      <span class="cv-sec-note">Tools &amp; Skills</span>
+    </div>
+    <div class="cv-caps" id="cvCapsGrid"></div>
+  </section>
+
+  <!-- CONTACT / FOOTER -->
+  <footer class="cv-foot" id="cvFoot">
+    <div class="cv-foot-cta">
+      <span class="cv-foot-kicker">Let's talk</span>
+      <a href="mailto:j.weissenbaeck@gmx.at" class="cv-foot-mail">
+        <span class="cv-line"><span class="cv-line-in">Get in touch</span></span>
       </a>
     </div>
-    <div class="cv-footer-copy">© 2025</div>
-  </div>
-</footer>
+    <div class="cv-foot-bar">
+      <nav class="cv-foot-links" aria-label="Contact">
+        <a href="mailto:j.weissenbaeck@gmx.at" class="cv-foot-link"><span class="cv-foot-link-txt">Email</span></a>
+        <a href="#" class="cv-foot-link"><span class="cv-foot-link-txt">LinkedIn</span></a>
+        <a href="#" class="cv-foot-link"><span class="cv-foot-link-txt">Instagram</span></a>
+      </nav>
+      <span class="cv-foot-copy">© 2026 Jacob Weissenbäck — JCKY</span>
+    </div>
+  </footer>
+
+</main>
 
 <script src="script.js"></script>
 <script src="cv.js"></script>
