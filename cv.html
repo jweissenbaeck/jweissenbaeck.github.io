@@ -8,6 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="cv.css">
   <script>
     try {
@@ -35,64 +36,48 @@
 
   <!-- HERO -->
   <header class="cv-hero">
-    <span class="cv-kicker"><span class="cv-kicker-dot"></span>Curriculum Vitae — Salzburg, AT</span>
-    <h1 class="cv-hero-title">
-      <span class="cv-line"><span class="cv-line-in">Jacob</span></span>
-      <span class="cv-line"><span class="cv-line-in">Weissenbäck</span></span>
-    </h1>
-    <div class="cv-hero-foot">
-      <p class="cv-intro">
-        UI/UX Designer with a focus on design systems, prototyping and clear
-        developer handoff — plus photography and video on the side. I turn ideas
-        into clear, usable and considered interfaces.
-      </p>
-      <div class="cv-hero-side">
-        <div class="cv-fact"><span class="cv-fact-k">Role</span><span class="cv-fact-v">UI / UX Designer</span></div>
-        <div class="cv-fact"><span class="cv-fact-k">Based in</span><span class="cv-fact-v">Salzburg, Austria</span></div>
-        <div class="cv-fact"><span class="cv-fact-k">Status</span><span class="cv-fact-v">Open to work</span></div>
-        <a class="cv-dl" href="#" download>
-          <span class="cv-dl-txt">Download CV</span>
-          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2v9M4.5 7.5 8 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        </a>
-      </div>
-    </div>
+    <span class="cv-eyebrow reveal">Curriculum Vitae</span>
+    <h1 class="cv-name reveal">Jacob Weissenbäck</h1>
+    <p class="cv-role reveal">UI / UX Designer — Salzburg, Austria</p>
+    <p class="cv-intro reveal">
+      Designer with a focus on design systems, prototyping and clear developer
+      handoff — plus photography and video on the side. I turn ideas into clear,
+      usable and considered interfaces.
+    </p>
+    <a class="cv-dl reveal" href="#" download>
+      Download CV
+      <svg width="11" height="11" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 2v9M4.5 7.5 8 11l3.5-3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </a>
   </header>
 
   <!-- EXPERIENCE -->
-  <section class="cv-section" id="cvExperience">
-    <div class="cv-sec-head">
-      <span class="cv-sec-idx">01</span>
-      <h2 class="cv-sec-title">Experience</h2>
-      <span class="cv-sec-note">Work &amp; Education</span>
+  <section class="cv-block">
+    <div class="cv-block-label"><span class="cv-label reveal">Experience</span></div>
+    <div class="cv-block-body">
+      <ol class="cv-list" id="cvList"></ol>
     </div>
-    <ol class="cv-list" id="cvList"></ol>
   </section>
 
   <!-- CAPABILITIES -->
-  <section class="cv-section" id="cvCaps">
-    <div class="cv-sec-head">
-      <span class="cv-sec-idx">02</span>
-      <h2 class="cv-sec-title">Capabilities</h2>
-      <span class="cv-sec-note">Tools &amp; Skills</span>
+  <section class="cv-block">
+    <div class="cv-block-label"><span class="cv-label reveal">Capabilities</span></div>
+    <div class="cv-block-body">
+      <dl class="cv-caps" id="cvCaps"></dl>
     </div>
-    <div class="cv-caps" id="cvCapsGrid"></div>
   </section>
 
-  <!-- CONTACT / FOOTER -->
-  <footer class="cv-foot" id="cvFoot">
-    <div class="cv-foot-cta">
-      <span class="cv-foot-kicker">Let's talk</span>
-      <a href="mailto:j.weissenbaeck@gmx.at" class="cv-foot-mail">
-        <span class="cv-line"><span class="cv-line-in">Get in touch</span></span>
-      </a>
-    </div>
-    <div class="cv-foot-bar">
-      <nav class="cv-foot-links" aria-label="Contact">
-        <a href="mailto:j.weissenbaeck@gmx.at" class="cv-foot-link"><span class="cv-foot-link-txt">Email</span></a>
-        <a href="#" class="cv-foot-link"><span class="cv-foot-link-txt">LinkedIn</span></a>
-        <a href="#" class="cv-foot-link"><span class="cv-foot-link-txt">Instagram</span></a>
-      </nav>
-      <span class="cv-foot-copy">© 2026 Jacob Weissenbäck — JCKY</span>
+  <!-- CONTACT -->
+  <footer class="cv-foot">
+    <div class="cv-block-label"><span class="cv-label reveal">Contact</span></div>
+    <div class="cv-block-body">
+      <a href="mailto:j.weissenbaeck@gmx.at" class="cv-foot-mail reveal">j.weissenbaeck@gmx.at</a>
+      <div class="cv-foot-row reveal">
+        <div class="cv-foot-links">
+          <a href="#" class="cv-foot-link">LinkedIn</a>
+          <a href="#" class="cv-foot-link">Instagram</a>
+        </div>
+        <span class="cv-foot-copy">© 2026 — JCKY</span>
+      </div>
     </div>
   </footer>
 

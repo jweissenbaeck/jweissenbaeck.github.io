@@ -644,7 +644,7 @@ const heroInit = (instant) => {
 
   const fitFullname = () => {
     if (!elName) return;
-    const targetW = document.documentElement.clientWidth / 3;
+    const targetW = document.documentElement.clientWidth / 2.2;
     let lo = 10, hi = targetW * 2;
     elName.style.visibility = 'hidden';
     for (let i = 0; i < 40; i++) {
@@ -1891,8 +1891,8 @@ ScrollTrigger.create({
 
   function handle(y, dir) {
     if (y < 48) { show(); return; }   // ganz oben immer sichtbar
-    if (dir > 0) hide();              // runter → sofort verstecken
-    else if (dir < 0) show();         // hoch → sofort zeigen
+    if (dir > 0) hide();              // runter → smooth nach oben
+    else if (dir < 0) show();         // hoch → einblenden
   }
 
   /* Lenis liefert die Scroll-Richtung sofort (1 = runter, -1 = hoch) → kein „aggressives" Scrollen nötig. */

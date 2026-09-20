@@ -67,7 +67,7 @@
 }
 /* Filter-Top-Stroke ist immer sichtbar. Sitzt die Nav direkt auf dem oben
    geklemmten Filter, wird stattdessen die Nav-Unterkante ausgeblendet → nur EINE Linie. */
-.nav-shown.filter-stuck .nav { border-bottom-color: transparent; }
+.nav-shown.filter-stuck .nav { box-shadow: none; }
 .pj-filter-label { color: rgba(240,237,232,0.5); }
 
 .pj-filter-field { position: relative; align-self: stretch; display: flex; align-items: center; }
@@ -87,11 +87,10 @@
   background: var(--bg);
   border: 1px solid rgba(240,237,232,0.10);
   border-top: 1px solid rgba(240,237,232,0.16);   /* Top-Rand sichtbar (war none) */
-  opacity: 0; visibility: hidden; transform: translateY(-4px);
-  transition: opacity 0.2s ease, transform 0.25s var(--ease-out-expo), visibility 0.2s;
+  opacity: 0; visibility: hidden;
   z-index: 40;
 }
-.pj-filter-field.is-open .pj-filter-menu { opacity: 1; visibility: visible; transform: none; }
+.pj-filter-field.is-open .pj-filter-menu { opacity: 1; visibility: visible; }
 .pj-filter-menu li {
   padding: 11px 26px; cursor: pointer;
   font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em;
