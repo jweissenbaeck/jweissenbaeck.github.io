@@ -151,64 +151,19 @@ body::before {
 .nav-right .nav-cell { border-left: 1px solid rgba(240,237,232,0.16); }
 .nav-right .nav-cell:last-child { padding-right: 28px; }
 .nav-brand { letter-spacing: 0.04em; color: var(--ink); }
+/* JCKY-Logo in der Nav (erbt Farbe + Hover über currentColor) */
+.nav-logo { display: block; height: 20px; width: auto; }
+/* JCKY-Logo im Footer (groß, mittig; erbt Farbe über currentColor) */
+.ftp-logo { display: block; width: min(90vw, 1400px); height: auto; color: var(--ink); }
 
 /* aktive Sektion: weißer Text + weißer Bottom-Stroke */
 .nav-cell.is-active { pointer-events: none; }
 .nav-cell.is-active .nav-txt { color: var(--ink); }
 .nav-cell.is-active { box-shadow: inset 0 -2px 0 var(--ink); }
 
-.nav-link-1820 {
-  font-family: var(--font-mono); font-size: 11px; font-weight: 400;
-  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink);
-  text-decoration: none; position: relative;
-}
 
-/* ── HERO CTA BUTTONS ──
-   Dunkel gefüllt, Mono-Versaltext. Default: durchgezogener Rahmen.
-   Hover: laufender gestrichelter Rahmen ("marching ants"). Reines CSS. */
-.hero-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 4px;
-  background: rgba(18, 18, 22, 0.66);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-  border: 1px solid transparent;
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  line-height: 1;
-  white-space: nowrap;
-  text-decoration: none;
 
-  overflow: hidden;                 /* clippt den Pixel-Canvas auf den Radius */
-  transition: border-color 0.3s ease, color 0.3s ease;
-}
 
-.hero-btn-label {
-  position: relative;
-  z-index: 1;                       /* Text über dem Pixel-Canvas */
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.hero-btn:hover,
-.hero-btn:focus-visible {
-  color: var(--bg-dark);            /* Text invertiert (Pixel-Füllung übernimmt den Hintergrund) */
-}
-.hero-btn:focus-visible { outline: none; }
 
 /* ── ALL PROJECTS — eigenständiger Section-CTA ──
    Eigene Font (Barlow Condensed 700, nicht die Service-Namen/Skills);
@@ -244,10 +199,6 @@ body::before {
 }
 .projects-cta:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .hero-btn:hover::after,
-  .hero-btn:focus-visible::after { animation: none; }
-}
 
 /* ============================
    HERO
@@ -629,61 +580,7 @@ body::before {
   color: var(--ink-muted);
 }
 
-/* ============================
-   WHAT I DO — Flip Button
-============================ */
-.svc-flip-btn {
-  position: relative;
-  display: inline-block;
-  width: 260px;
-  height: 56px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  border: 2px solid rgba(240,237,232,0.18);
-  border-radius: 12px;
-  background: transparent;
 
-  perspective: 800px;
-  overflow: hidden;
-  color: transparent;
-  transition: border-color 0.4s ease;
-}
-.svc-flip-btn:hover { border-color: rgba(240,237,232,0.55); }
-
-.svc-flip-front,
-.svc-flip-back {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  backface-visibility: hidden;
-  transition: opacity 0.30s var(--ease-out-expo),
-              transform 0.42s var(--ease-out-expo);
-}
-.svc-flip-front {
-  color: var(--ink);
-  background: transparent;
-  opacity: 1;
-  transform: rotateX(0deg) translateY(0%);
-}
-.svc-flip-back {
-  color: #111110;
-  background: #F0EDE8;
-  opacity: 0;
-  transform: rotateX(-90deg) translateY(50%);
-}
-.svc-flip-btn:hover .svc-flip-front {
-  opacity: 0;
-  transform: rotateX(90deg) translateY(-50%);
-}
-.svc-flip-btn:hover .svc-flip-back {
-  opacity: 1;
-  transform: rotateX(0deg) translateY(0%);
-}
 
 /* ============================
    GLOBE SECTION
@@ -788,11 +685,6 @@ body::before {
   letter-spacing: 0.24em;
   text-transform: uppercase;
 }
-.globe-kicker-code {
-  color: var(--ink);
-  border: 1px solid rgba(240,237,232,0.25);
-  padding: 5px 10px;
-}
 .globe-kicker-loc { color: rgba(240,237,232,0.5); letter-spacing: 0.16em; }
 
 .globe-text-clip {
@@ -829,30 +721,10 @@ body::before {
   color: rgba(240,237,232,0.62);
 }
 
-/* ── Globe contact block ── */
-.globe-contact-block {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: 2.2em;
-}
 
-.globe-contact-item {
-  display: grid;
-  grid-template-columns: 1fr;   /* nur Body */
-  align-items: center;
-  gap: 24px;
-  padding: 22px 18px;
-  text-decoration: none;
-  color: rgba(240,237,232,0.6);
-  transition: color 0.6s ease;
-  position: relative;
-  overflow: hidden;               /* clippt die Pixel-Füllung */
-  will-change: opacity;
-}
 
 /* Hover im Pixel-Stil: Ink-Blöcke steigen verstreut von unten auf (Canvas .gc-pixels) */
-.gc-fill { display: none; }               /* alten Radial-Fill stilllegen */
+               /* alten Radial-Fill stilllegen */
 .gc-pixels {
   position: absolute;
   inset: 0;
@@ -861,41 +733,10 @@ body::before {
   border-radius: inherit;                /* respektiert den Button-Radius */
 }
 
-.globe-contact-item:hover,
-.globe-contact-item:focus-visible { color: var(--bg-dark); }
 
 /* Body: Label oben (klein/mono), Wert darunter (größer) */
-.gc-body {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
 
-.gc-label {
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(1.15rem, 1.7vw, 1.6rem);
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  line-height: 1;
-  color: currentColor;
-}
 
-.gc-value {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: rgba(240,237,232,0.4);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: color 0.6s ease;
-}
-.globe-contact-item:hover .gc-value,
-.globe-contact-item:focus-visible .gc-value { color: rgba(10,10,9,0.7); }
 
 /* ============================
    PAGE LOADER
@@ -1120,20 +961,6 @@ html.vt-arriving body { visibility: hidden; }
   line-height: 1.5;
   color: rgba(240,237,232,0.5);
 }
-.ftp-line {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0;                            /* optisches Tracking wird per JS über Margins gesetzt */
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 400;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--ink);
-  line-height: 0.75;
-  transform-origin: center center;   /* Größe/Streckung wird per JS gesetzt */
-  font-size: 100px;                  /* Referenzgröße; JS skaliert auf die Bühne */
-}
-.ftp-letter { display: block; }
 
 @media (max-width: 720px) {
   .site-footer-bar { justify-content: center; text-align: center; }

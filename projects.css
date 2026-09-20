@@ -43,8 +43,6 @@
   .pj-hero-marquee { animation: none; }
 }
 
-/* ausgeblendete Nav fängt keine Klicks mehr ab (Filter liegt darüber) */
-.nav.pj-nav-off, .nav.pj-nav-off * { pointer-events: none !important; }
 
 /* ── Filter-Leiste: startet unten, rastet oben sticky ein ──
    Liegt UNTER der Nav und bildet mit ihr optisch eine Einheit: kein eigener
@@ -146,7 +144,4 @@
   .pj-project-row { flex-direction: column; gap: 12px; }
   .pj-shot { flex: none; width: 100%; }
   .pj-hero-title { font-size: clamp(4rem, 26vw, 12rem); }
-}
-
-@media (prefers-reduced-motion: reduce) {
 }
