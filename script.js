@@ -11,6 +11,449 @@ const ARRIVED_VIA_INTERNAL_NAV = vtStoreGet('jcky:internalNav') === '1';
 vtStoreDel('jcky:internalNav');
 
 /* ============================
+   FOOTER — JCKY (Anton-Text), randlos über die volle Breite
+   Jeder Buchstabe wird einzeln gesetzt. Seine echte Form wird zeilenweise
+   per Canvas abgetastet, damit:
+   · die Buchstabenhöhe exakt die Höhe von .ftp-word füllt,
+   · die ENGSTE Stelle zwischen zwei Buchstaben überall gleich ist (optisch),
+   · J bündig links und Y bündig rechts sitzt (28px Padding, per scaleX),
+   · .ftp-note genau so breit ist wie der linke Haken des J und darüber sitzt.
+   Steht bewusst oben in der Datei + try/catch → läuft unabhängig vom Rest.
+============================ */
+(function initFooterWord() {
+  var GAP = 0.03;   // Buchstabenabstand als Anteil der Buchstabenhöhe
+  var SZ = 200;     // Abtast-Schriftgröße (px)
+
+  function setup() {
+    var box = document.getElementById('footerWord');
+    var inner = box && box.querySelector('.ftp-word-inner');
+    if (!box || !inner) return;
+    var note = box.parentNode.querySelector('.ftp-note');
+    var chars = inner.textContent.trim().split('');
+    if (chars.length < 2) return;
+
+    inner.textContent = '';
+    var spans = chars.map(function (ch) {
+      var s = document.createElement('span');
+      s.className = 'ftp-ch';
+      s.textContent = ch;
+      inner.appendChild(s);
+      return s;
+    });
+    var marker = document.createElement('span');
+    marker.setAttribute('aria-hidden', 'true');
+    marker.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline;';
+    spans[0].appendChild(marker);
+    inner.classList.add('is-fit');
+
+    var cache = { key: null, data: null };
+    var probe = document.createElement('canvas').getContext('2d');
+
+    /* Tastet jeden Buchstaben ab: pro Zeile linke/rechte Tintenkante + Ende des ersten Tintenlaufs */
+    function scan(fam) {
+      /* Fingerabdruck der TATSÄCHLICH gerenderten Schrift: ändert sich, sobald Anton
+         wirklich geladen ist → nie wieder Positionen der Ersatzschrift im Cache */
+      probe.font = '400 ' + SZ + 'px ' + fam;
+      var pm = probe.measureText(chars.join(''));
+      var key = fam + '|' + pm.width.toFixed(2) + '|' + (pm.actualBoundingBoxAscent || 0).toFixed(2);
+      if (cache.key === key) return cache.data;
+      var cw = Math.round(SZ * 2.5), ch = Math.round(SZ * 2), ox = Math.round(SZ * 0.5), base = Math.round(SZ * 1.4);
+      var c = document.createElement('canvas'); c.width = cw; c.height = ch;
+      var x = c.getContext('2d');
+      if (!x) return null;
+      var top = Infinity, bottom = -Infinity;
+      var list = chars.map(function (letter) {
+        x.clearRect(0, 0, cw, ch);
+        x.font = '400 ' + SZ + 'px ' + fam;
+        x.fillStyle = '#000';
+        x.fillText(letter, ox, base);
+        var d = x.getImageData(0, 0, cw, ch).data;
+        var left = new Array(ch), right = new Array(ch), run = new Array(ch);
+        var l = Infinity, r = -Infinity, tt = Infinity, bb = -Infinity;
+        for (var y = 0; y < ch; y++) {
+          var first = -1, last = -1, runEnd = -1, row = y * cw * 4;
+          for (var i = 0; i < cw; i++) {
+            if (d[row + i * 4 + 3] > 127) {
+              if (first < 0) first = i;
+              last = i;
+            } else if (first >= 0 && runEnd < 0) runEnd = i;
+          }
+          if (first >= 0) {
+            left[y] = first; right[y] = last + 1; run[y] = runEnd < 0 ? last + 1 : runEnd;
+            if (first < l) l = first;
+            if (last + 1 > r) r = last + 1;
+            if (y < top) top = y;
+            if (y + 1 > bottom) bottom = y + 1;
+            if (y < tt) tt = y;
+            bb = y + 1;
+          } else { left[y] = right[y] = run[y] = null; }
+        }
+        return { l: l, r: r, tt: tt, bb: bb, left: left, right: right, run: run };
+      });
+      if (!(bottom > top) || list.some(function (g) { return !(g.r > g.l); })) return null;
+      cache.key = key;
+      cache.data = { ox: ox, base: base, top: top, bottom: bottom, list: list, rows: ch };
+      return cache.data;
+    }
+
+    function fit() {
+      try {
+        var W = box.clientWidth, H = box.clientHeight;
+        if (!W || !H) return;
+        var fam = getComputedStyle(inner).fontFamily;
+        var g = scan(fam);
+        if (!g) return;
+        var inkH = g.bottom - g.top;
+        var gap = GAP * inkH;
+
+        /* Position der linken Tintenkante jedes Buchstabens: engste Stelle = gap */
+        var pos = [0], i, y;
+        for (i = 0; i < g.list.length - 1; i++) {
+          var a = g.list[i], b = g.list[i + 1], need = -Infinity;
+          for (y = g.top; y < g.bottom; y++) {
+            if (a.right[y] == null || b.left[y] == null) continue;
+            var v = (a.right[y] - a.l) - (b.left[y] - b.l);
+            if (v > need) need = v;
+          }
+          if (need === -Infinity) need = a.r - a.l;          // keine gemeinsamen Zeilen
+          pos.push(pos[i] + need + gap);
+        }
+        var total = 0;
+        g.list.forEach(function (gl, k2) { total = Math.max(total, pos[k2] + gl.r - gl.l); });
+
+        var k = H / inkH;                                       // Bildschirm-px pro Abtast-px (vertikal)
+        var sx = W / (total * k);                               // horizontale Streckung
+        inner.style.fontSize = (SZ * k) + 'px';
+        var top = (g.base - g.top) * k - marker.offsetTop;      // Tinten-Oberkante = Box-Oberkante
+        spans.forEach(function (s, n) {
+          var gl = g.list[n];
+          s.style.top = top + 'px';
+          s.style.left = ((pos[n] - (gl.l - g.ox)) * k * sx) + 'px';
+          s.style.transform = 'scaleX(' + sx.toFixed(4) + ')';
+        });
+        /* Layout merken → Footer-Explosion (Treffertest + Pixel aus der Buchstabenfläche) */
+        box._jcky = {
+          v: box._jcky ? box._jcky.v + 1 : 1,
+          fs: SZ * k, sx: sx, fam: fam, base: (g.base - g.top) * k, chars: chars, spans: spans,
+          xs: g.list.map(function (gl, n) { return (pos[n] - (gl.l - g.ox)) * k * sx; }),
+          boxes: g.list.map(function (gl, n) {           // Tinten-Rechteck je Buchstabe (Box-Koordinaten)
+            return { x: pos[n] * k * sx, y: (gl.tt - g.top) * k, w: (gl.r - gl.l) * k * sx, h: (gl.bb - gl.tt) * k };
+          })
+        };
+
+        /* Dankestext: so breit wie der linke Haken des J, oberhalb davon */
+        if (note) {
+          var J = g.list[0], jw = J.r - J.l, hook = -1;
+          for (y = g.top; y < g.bottom; y++) {
+            if (J.left[y] != null && J.left[y] - J.l < jw * 0.25) { hook = y; break; }
+          }
+          if (hook > g.top) {
+            var probe = Math.min(g.bottom - 1, hook + Math.round(inkH * 0.03));
+            var hookW = (J.run[probe] != null ? J.run[probe] - J.l : 0) * k * sx;
+            var room = (hook - g.top) * k - 12;
+            if (hookW > 60 && room > 30) {
+              note.style.width = hookW + 'px';
+              note.style.maxHeight = room + 'px';
+            }
+          }
+        }
+      } catch (err) {}
+    }
+
+    fit();
+    requestAnimationFrame(fit);
+    if (document.fonts) {
+      try { document.fonts.load('400 100px "Anton"').then(fit, fit); } catch (e) {}
+      if (document.fonts.ready) document.fonts.ready.then(fit);
+      try { document.fonts.addEventListener('loadingdone', fit); } catch (e) {}   // jede nachgeladene Schrift → neu messen
+    }
+    window.addEventListener('load', fit);
+    if ('ResizeObserver' in window) new ResizeObserver(fit).observe(box);
+    else window.addEventListener('resize', fit);
+  }
+  try {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+    else setup();
+  } catch (e) {}
+})();
+
+/* ============================
+   EASTER EGG — Klick auf JCKY (Logo oben links)
+   Klick 1–4: Buchstaben hüpfen + kurzer Hinweis.
+   Klick 5:   Scramble + Pixel-Regen über die Seite.
+   Nach 4s ohne Klick fängt der Zähler von vorn an.
+============================ */
+(function initLogoEasterEgg() {
+  var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var LINES = ['Press me again', 'Again', 'Once more', 'Last one'];
+  var FINAL = 'Press me again';
+  var GLYPHS = '#%&@$*+=?!01';
+
+  /* ── gemeinsame Sprechblase ── */
+  var toast = null, toastTimer = null;
+  function say(msg, ms, x, y) {
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = 'egg-toast';
+      toast.setAttribute('role', 'status');
+      toast.setAttribute('aria-live', 'polite');
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    var tw = toast.offsetWidth, th = toast.offsetHeight;
+    var left = Math.max(12, Math.min(window.innerWidth - tw - 12, x + 16));
+    var top = y + 18;
+    if (top + th > window.innerHeight - 12) top = y - th - 14;   // unten kein Platz → über den Zeiger
+    toast.style.left = left + 'px';
+    toast.style.top = Math.max(12, top) + 'px';
+    toast.classList.add('is-on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('is-on'); }, ms);
+  }
+
+  /* ── gemeinsamer Pixel-Regen ── */
+  var rain = null;
+  function burst(cx, cy) {
+    if (reduce) return;
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
+    if (!rain) {
+      var cv = document.createElement('canvas');
+      cv.className = 'egg-canvas';
+      cv.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(cv);
+      rain = { cv: cv, ctx: cv.getContext('2d'), parts: [], last: performance.now() };
+      requestAnimationFrame(frame);
+    }
+    var up = cy > window.innerHeight * 0.5;          // unten geklickt → Fontäne nach oben
+    var SIZES = [6, 9, 12, 12, 18];
+    for (var n = 0; n < 190; n++) {
+      var a = up ? (-Math.PI + Math.random() * Math.PI)
+                 : (-Math.PI * 0.45 + Math.random() * Math.PI * 1.1);
+      var v = (up ? 8 : 4) + Math.random() * (up ? 16 : 14);
+      rain.parts.push({
+        x: cx, y: cy,
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4,
+        s: SIZES[Math.floor(Math.random() * SIZES.length)],
+        age: 0, life: 2600 + Math.random() * 1400,
+        c: Math.random() < 0.15 ? 'rgba(240,237,232,0.35)' : ink
+      });
+    }
+  }
+
+  /* Dieselbe Explosion, aber die Pixel entstehen verteilt auf einer Fläche (Footer-Buchstabe).
+     Gleiche Größen, Farben, Tempo und Physik wie oben; Richtung: weg von der Mitte, nach oben. */
+  function burstFrom(points, cx, halfW) {
+    if (reduce || !points.length) return;
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
+    if (!rain) {
+      var cv = document.createElement('canvas');
+      cv.className = 'egg-canvas';
+      cv.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(cv);
+      rain = { cv: cv, ctx: cv.getContext('2d'), parts: [], last: performance.now() };
+      requestAnimationFrame(frame);
+    }
+    var SIZES = [6, 9, 12, 12, 18];
+    points.forEach(function (pt) {
+      var side = Math.max(-1, Math.min(1, (pt[0] - cx) / (halfW || 1)));
+      var a = -Math.PI / 2 + side * Math.PI * 0.45 + (Math.random() - 0.5) * 0.6;
+      var v = 8 + Math.random() * 16;
+      rain.parts.push({
+        x: pt[0], y: pt[1],
+        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4,
+        s: SIZES[Math.floor(Math.random() * SIZES.length)],
+        age: 0, life: 2600 + Math.random() * 1400,
+        c: Math.random() < 0.15 ? 'rgba(240,237,232,0.35)' : ink
+      });
+    });
+  }
+  function frame(now) {
+    if (!rain) return;
+    var dt = Math.min(48, now - rain.last), f = dt / 16.67;
+    rain.last = now;
+    var cv = rain.cv, ctx = rain.ctx, dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = window.innerWidth, h = window.innerHeight;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    rain.parts = rain.parts.filter(function (p) {
+      p.age += dt;
+      if (p.age > p.life) return false;
+      p.vy += 0.42 * f;
+      p.vx *= Math.pow(0.992, f);
+      p.x += p.vx * f; p.y += p.vy * f;
+      if (p.y > h - p.s) { p.y = h - p.s; p.vy *= -0.42; p.vx *= 0.82; }
+      if (p.x < 0) { p.x = 0; p.vx *= -0.6; }
+      if (p.x > w - p.s) { p.x = w - p.s; p.vx *= -0.6; }
+      ctx.globalAlpha = Math.min(1, (p.life - p.age) / 700);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(Math.round(p.x / 3) * 3, Math.round(p.y / 3) * 3, p.s, p.s);   // aufs Raster snappen
+      return true;
+    });
+    ctx.globalAlpha = 1;
+    if (rain.parts.length) requestAnimationFrame(frame);
+    else { rain.cv.remove(); rain = null; }
+  }
+
+  /* ── ein Easter Egg an ein Element binden ── */
+  function attach(el, letters, word) {
+    if (!el || !letters.length) return;
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', word);
+    el.classList.add('egg-target');
+    letters.forEach(function (s, i) {
+      s.style.setProperty('--egg-r', (i % 2 ? 8 : -8) + 'deg');
+      s.style.setProperty('--egg-r2', (i % 2 ? 1.5 : -1.5) + 'deg');
+    });
+    var count = 0, idle = null, scrambling = false;
+
+    function jump(big) {
+      var cls = big ? 'is-jump-big' : 'is-jump';
+      letters.forEach(function (s, i) {
+        s.classList.remove('is-jump', 'is-jump-big');
+        void s.offsetWidth;                         // Animation neu starten
+        s.style.animationDelay = (i * 0.05) + 's';
+        s.classList.add(cls);
+      });
+    }
+    function scramble() {
+      if (scrambling || reduce) return;
+      scrambling = true;
+      /* Breiten fixieren → breitere Scramble-Zeichen verschieben weder Zelle noch Trennlinie */
+      letters.forEach(function (s) { s.style.width = parseFloat(getComputedStyle(s).width) + 'px'; s.style.textAlign = 'center'; });
+      var t0 = performance.now(), DUR = 700;
+      (function tick(now) {
+        var p = (now - t0) / DUR;
+        letters.forEach(function (s, i) {
+          s.textContent = p >= (i + 1) / letters.length ? word[i] : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
+        });
+        if (p < 1) requestAnimationFrame(tick);
+        else { letters.forEach(function (s, i) { s.textContent = word[i]; s.style.width = ''; s.style.textAlign = ''; }); scrambling = false; }
+      })(t0);
+    }
+    function hit(x, y) {
+      clearTimeout(idle);
+      idle = setTimeout(function () { count = 0; }, 4000);
+      count++;
+      if (count < 5) {
+        jump(false);
+        say(LINES[count - 1], 1600, x, y);
+      } else {
+        count = 0;
+        jump(true);
+        scramble();
+        burst(x, y);
+        say(FINAL, 2200, x, y);
+      }
+    }
+    el.addEventListener('click', function (e) {
+      var r = el.getBoundingClientRect();
+      var x = e.clientX || (r.left + r.width / 2), y = e.clientY || (r.top + r.height / 2);
+      hit(x, y);
+    });
+    el.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      var r = el.getBoundingClientRect();
+      hit(r.left + r.width / 2, r.top + r.height / 2);
+    });
+  }
+
+  /* ── Footer: Klick auf einen Buchstaben → genau dieser explodiert, kommt danach zurück ── */
+  function initFooterExplode() {
+    var box = document.getElementById('footerWord');
+    if (!box || reduce) return;
+    var PARTS = 190, BACK = 2400;                   // Pixel pro Buchstabe · ms bis zum Wieder-Einblenden
+    var masks = null, maskKey = null;
+
+    /* Alpha-Maske je Buchstabe (für Treffertest + Pixel-Startpunkte), neu nur bei Layout-Änderung */
+    function getMasks(Lay) {
+      if (maskKey === Lay.v && masks) return masks;
+      var color = '#000';
+      masks = Lay.boxes.map(function (b, n) {
+        var w = Math.max(1, Math.ceil(b.w)), h = Math.max(1, Math.ceil(b.h));
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        var x = c.getContext('2d');
+        x.fillStyle = color;
+        x.font = '400 ' + Lay.fs + 'px ' + Lay.fam;
+        x.translate(Lay.xs[n] - b.x, Lay.base - b.y);
+        x.scale(Lay.sx, 1);
+        x.fillText(Lay.chars[n], 0, 0);
+        return { w: w, h: h, a: x.getImageData(0, 0, w, h).data };
+      });
+      maskKey = Lay.v;
+      return masks;
+    }
+    function inkAt(m, x, y) {
+      x = Math.round(x); y = Math.round(y);
+      if (x < 0 || y < 0 || x >= m.w || y >= m.h) return false;
+      return m.a[(y * m.w + x) * 4 + 3] > 127;
+    }
+
+    box.addEventListener('click', function (e) {
+      var Lay = box._jcky;
+      if (!Lay) return;
+      var r = box.getBoundingClientRect();
+      var px = e.clientX - r.left, py = e.clientY - r.top;
+      var M = getMasks(Lay), pick = -1, pickD = Infinity;
+      /* Treffer: Punkt liegt auf der Tinte (mit 14px Toleranz), sonst nächster Buchstabe im Rechteck */
+      Lay.boxes.forEach(function (b, n) {
+        var lx = px - b.x, ly = py - b.y;
+        if (lx < -14 || ly < -14 || lx > b.w + 14 || ly > b.h + 14) return;
+        var d = Infinity;
+        for (var oy = -14; oy <= 14 && d > 0; oy += 7) {
+          for (var ox = -14; ox <= 14; ox += 7) {
+            if (inkAt(M[n], lx + ox, ly + oy)) d = Math.min(d, Math.abs(ox) + Math.abs(oy));
+          }
+        }
+        if (d < pickD) { pickD = d; pick = n; }
+      });
+      if (pick < 0) return;
+      var span = Lay.spans[pick];
+      if (!span || span.classList.contains('is-gone')) return;
+
+      /* Startpunkte zufällig auf der Buchstabenfläche (Viewport-Koordinaten) */
+      var b = Lay.boxes[pick], m = M[pick], pts = [], tries = 0;
+      while (pts.length < PARTS && tries < PARTS * 40) {
+        tries++;
+        var sx = Math.random() * m.w, sy = Math.random() * m.h;
+        if (inkAt(m, sx, sy)) pts.push([r.left + b.x + sx, r.top + b.y + sy]);
+      }
+      span.classList.add('is-gone');
+      burstFrom(pts, r.left + b.x + b.w / 2, b.w / 2);
+      setTimeout(function () { span.classList.remove('is-gone'); }, BACK);
+    });
+  }
+
+  function setup() {
+    /* Nav-Logo: Buchstaben einzeln wrappen */
+    var cell = document.getElementById('navLogoName');
+    var txt = cell && cell.querySelector('.nav-logo-text');
+    if (cell && txt) {
+      var word = txt.textContent.trim();
+      txt.textContent = '';
+      var navLetters = word.split('').map(function (ch) {
+        var s = document.createElement('span');
+        s.className = 'egg-ch';
+        s.setAttribute('aria-hidden', 'true');
+        s.textContent = ch;
+        txt.appendChild(s);
+        return s;
+      });
+      attach(cell, navLetters, word);
+    }
+    initFooterExplode();
+  }
+  try {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
+    else setup();
+  } catch (e) {}
+})();
+
+/* ============================
    PAGE LOADER
 ============================ */
 (function initLoader() {

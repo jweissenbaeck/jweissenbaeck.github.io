@@ -1,153 +1,404 @@
 /* ============================
-   CV PAGE — minimal & ruhig
+   CV PAGE — Bento-Board
+   Ein Board füllt den Screen unter der Nav (Desktop: kein Scrollen).
+   1px-Fugen wie die Nav-Zellen → das Board ist die Fortsetzung der Nav.
+   Klick auf eine Kachel → sie wächst zur Detail-Ansicht über der Seite.
 ============================ */
-.cv-page { background: var(--bg); color: var(--ink); }
+.cv-page { background: var(--bg); color: var(--ink); }   /* auch von projects.html genutzt */
+:root:has(body.cv-page:not(.projects-page)) { scrollbar-gutter: auto; }   /* kein leerer Scrollbar-Streifen rechts */
 
-.cv {
-  width: 100%;
-  max-width: 1180px;
-  margin: 0 auto;
-  padding: 0 clamp(22px, 5vw, 64px);
+/* ── Tokens ── */
+.bn, .bnm {
+  --line:   rgba(240, 237, 232, 0.12);
+  --muted:  rgba(240, 237, 232, 0.5);
+  --faint:  rgba(240, 237, 232, 0.32);
+  --lift:   #171715;                     /* Kachel-Hover */
+  --pad:    clamp(16px, min(1.6vw, 2.6vh), 28px);
+  /* Typo: Display (nur Name) · Einträge · Text · Meta */
+  --tx:     clamp(12px, min(0.85vw, 1.7vh), 13.5px);
+  --lg:     clamp(14px, 2.2vh, 22px);          /* fester Abstand Label → Inhalt */
 }
 
-/* Reveal-Basis */
-.reveal { will-change: transform, opacity; }
-
-/* ── HERO ── */
-.cv-hero {
-  padding: clamp(150px, 22vh, 260px) 0 clamp(90px, 14vh, 170px);
-  max-width: 720px;
+/* ── Board ── */
+.bn {
+  margin-top: 52px;                                   /* unter der fixen Nav */
+  height: calc(100vh - 52px);
+  height: calc(100dvh - 52px);
+  min-height: 600px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) auto auto auto;   /* Name flexibel; Tools, Skills, Interests = Inhaltshöhe */
+  /* links: Person · Mitte: Portrait · rechts (rc): Experience füllt, Education sitzt ganz unten */
+  grid-template-areas:
+    "pl pl pl pl pl po po po rc rc rc rc"
+    "in in in in in po po po rc rc rc rc"
+    "sk sk sk sk sk po po po rc rc rc rc"
+    "sq sq sq sq sq po po po rc rc rc rc";
+  gap: 1px;
+  background: var(--line);                            /* Fugen */
 }
-.cv-eyebrow {
-  display: block;
+
+/* ── Kachel (gemeinsamer Aufbau für Kachel + Vorschau im Panel) ── */
+.bn-card {
+  position: relative;
+  min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
+  padding: var(--pad);
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+}
+.bn-tile {
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.35s ease;
+}
+.bn-tile:hover { background: var(--lift); }
+.bn-tile:focus-visible { outline: 1px solid var(--ink); outline-offset: -6px; }
+.bn-tile.is-lifted { visibility: hidden; }           /* Kachel „schwebt" gerade als Panel */
+
+.bn-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.bn-label {
   font-family: var(--font-mono);
-  font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase;
-  color: rgba(240,237,232,0.42);
-  margin-bottom: clamp(28px, 5vh, 56px);
+  font-size: 11px; line-height: 1.3; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted);
 }
-.cv-name {
-  margin: 0 0 14px;
+/* Öffnen-Hinweis: im Ruhezustand unsichtbar, beim Hover gleitet ein Pfeil nach rechts oben herein */
+.bn-open { position: relative; flex: none; width: 13px; height: 13px; overflow: hidden; color: var(--ink); }
+.bn-open svg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  opacity: 0; transform: translate(-6px, 6px);
+  transition: opacity 0.25s ease, transform 0.45s var(--ease-out-expo);
+}
+.bn-tile:hover .bn-open svg, .bn-tile:focus-visible .bn-open svg { opacity: 1; transform: none; }
+
+.bn-body { min-height: 0; }
+
+/* Typo-Rollen */
+.bn-display {                                         /* große Werte */
+  margin: 0;
+  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  font-weight: 400; line-height: 0.9; letter-spacing: 0.005em; text-transform: uppercase;
+}
+.bn-value {                                           /* mittlere Werte */
+  margin: 0;
   font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 600; letter-spacing: 0.005em; line-height: 1.0;
-  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 700; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;
+  font-size: clamp(1.15rem, min(1.7vw, 3vh), 2rem);
+}
+.bn-meta {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 12px; line-height: 1.5; letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* ── Profile ── */
+.bn-pl .bn-display { font-size: clamp(3rem, min(6.1vw, 11.2vh), 8rem); }
+
+/* ── Portrait ── */
+.bn-po { padding: 0; }
+.bn-po .bn-head { position: absolute; top: 0; left: 0; right: 0; z-index: 2; padding: var(--pad); }
+.bn-photo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  object-position: 50% 30%;                          /* Kachel: Gesicht bleibt im Ausschnitt */
+  transform: scale(1.001);
+  transition: transform 0.9s var(--ease-out-expo);
+}
+.bn-tile.bn-po:hover .bn-photo { transform: scale(1.035); }
+.bn-po::after {                                       /* Label bleibt auf hellen Fotos lesbar */
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40%; z-index: 1;
+  background: linear-gradient(rgba(17,17,16,0.55), rgba(17,17,16,0));
+  pointer-events: none;
+}
+/* ohne Foto: Monogramm aus dem Pixelraster */
+.bn-mono {
+  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif; font-size: clamp(4rem, 9vw, 10rem);
+  color: rgba(240,237,232,0.1);
+  background-image: radial-gradient(rgba(240,237,232,0.1) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+.no-photo .bn-photo { display: none; }
+.no-photo .bn-mono { display: flex; }
+
+/* ── Tools: kompakter Streifen, alle Icons in einer Reihe ── */
+/* Listen-Kacheln: Inhalt direkt unter dem Label → alle Inhalte einer Reihe starten auf derselben Linie.
+   Der Name (Profile) bleibt unten verankert. */
+.bn-in, .bn-ql, .bn-ed, .bn-sk, .bn-sq { justify-content: flex-start; gap: var(--lg); }
+.bn-toolgroups {
+  --ig: 6px;                                    /* Abstand zwischen Icons */
+  --gg: clamp(14px, 1.6vw, 26px);               /* Abstand zwischen Gruppen */
+  display: flex; gap: var(--gg);
+  max-width: calc(13 * 48px + 10 * var(--ig) + 2 * var(--gg));   /* Felder max. 48px */
+}
+/* flex-grow = Anzahl Icons, flex-basis = Summe der Lücken → jedes Feld exakt gleich breit */
+.bn-tg { flex: var(--n) 1 calc((var(--n) - 1) * var(--ig)); min-width: 0; }
+.bn-tg-label { display: block; margin-bottom: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; color: var(--muted); white-space: nowrap; }
+.bn-icons {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: var(--ig);
+}
+.bn-icons li {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line); border-radius: 8px;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+}
+.bn-icons li:hover { border-color: rgba(240,237,232,0.4); background: rgba(240,237,232,0.04); }
+.bn-icons .bn-ico { width: 56%; height: 56%; }
+/* Icon-Feld: festes Quadrat → alle Logos sitzen auf derselben Achse */
+.bn-ico { position: relative; flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+.bn-ico img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.bn-ico.is-empty img { display: none; }
+.bn-ico.is-light img { filter: invert(1); }            /* fast schwarzes Mark (z. B. GitHub) → helle Variante */
+.bn-ico.is-empty::after {                          /* Platzhalter, bis die offizielle Datei da ist */
+  content: attr(data-letter);
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  border: 1px solid var(--faint); border-radius: 4px;
+  font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+}
+.bnm-tool { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.bnm-tool .bn-ico { width: 28px; height: 28px; }
+.bnm-group { margin: 34px 0 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; color: var(--muted); }
+.bnm-title + .bnm-group { margin-top: 0; }
+
+/* Tooltip (fix über allem, damit keine Kachel ihn abschneidet) */
+.bn-tip {
+  position: fixed; top: 0; left: 0; z-index: 1400;
+  max-width: 260px; padding: 7px 10px;
+  background: var(--ink); color: var(--bg-dark, #0a0a09);
+  border-radius: 4px;
+  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.45; letter-spacing: 0.01em;
+  pointer-events: none;
+  opacity: 0; transform: translateY(3px);
+  transition: opacity 0.18s ease, transform 0.25s var(--ease-out-expo);
+}
+.bn-tip strong { display: block; margin-bottom: 2px; font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.03em; text-transform: uppercase; }
+.bn-tip.is-on { opacity: 1; transform: none; }
+
+/* ── Listen (Skills, Interests) ── */
+.bn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(2px, 0.45vh, 5px); }
+.bn-list li { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.bn-list li::before { content: ''; flex: none; width: 5px; height: 5px; background: var(--faint); }  /* Pixel statt Bullet */
+.bn-item { font-family: var(--font-mono); font-size: var(--tx); line-height: 1.4; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Einträge laufen spaltenweise; Reihenzahl setzt cv.js */
+.bn-sk .bn-list, .bn-sq .bn-list { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; row-gap: clamp(4px, 0.7vh, 8px); }
+.bn-sk .bn-list, .bn-sq .bn-list { grid-template-rows: repeat(var(--rows, 3), auto); }   /* Skills 2 Spalten, Interests 3 Spalten */
+
+/* ── Rechte Spalte: Experience + Education gestapelt, Education nur so hoch wie ihr Inhalt ── */
+.bn-stack { grid-area: rc; display: flex; flex-direction: column; gap: 1px; background: var(--line); min-width: 0; min-height: 0; }
+.bn-stack > .bn-ql { flex: 1 1 auto; }
+.bn-stack > .bn-ed { flex: 0 0 auto; }
+
+/* ── Experience + Education: Jahres-Spalte links, Einrichtung/Firma als Überschrift ── */
+.bn-tls { list-style: none; margin: 0; padding: 0; }
+.bn-tl {
+  display: grid; grid-template-columns: 5rem minmax(0, 1fr); column-gap: clamp(12px, 1.2vw, 20px);
+  padding: clamp(9px, 1.5vh, 18px) 0;
+  border-top: 1px solid var(--line);
+}
+.bn-tl:first-child { border-top: none; padding-top: 0; }
+.bn-tl:last-child { padding-bottom: 0; }           /* unten nur das Kachel-Padding → gleicher Abstand wie Interests */
+.bn-tl-years { align-self: start; padding-top: 0.35em; font-size: 11.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }   /* auf Höhe der Überschrift */
+.bn-tl-body { min-width: 0; }
+.bn-tl-body .bn-value { font-size: clamp(1.05rem, min(1.45vw, 2.6vh), 1.65rem); line-height: 1.05; text-wrap: balance; }
+.bn-tl-body > .bn-meta { margin-top: 3px; }
+.bn-tl-sub { margin: 4px 0 0; }                   /* Unterüberschrift (Abschluss) */
+.bn-xp-sum {
+  margin: clamp(6px, 1vh, 10px) 0 0; max-width: 54ch;
+  font-family: var(--font-mono); font-size: var(--tx); line-height: 1.55; color: rgba(240,237,232,0.6);
+}
+/* Rollen unter der Firma. Mehrere Rollen = Beförderung: Punkte stehen genau unter dem Firmennamen,
+   die Linie beginnt direkt darunter und endet am letzten Punkt */
+.bn-roles {
+  --rg: clamp(3px, 0.6vh, 6px);
+  list-style: none; margin: clamp(5px, 0.9vh, 9px) 0 0; padding: 0;
+  display: grid; gap: var(--rg);
+}
+.bn-roles li { display: flex; align-items: center; min-height: 18px; }
+.bn-role { margin: 0; font-family: var(--font-mono); font-size: var(--tx); line-height: 1.35; color: var(--ink); min-width: 0; }
+.bn-roles.is-multi { padding-left: 16px; }
+.bn-roles.is-multi li { position: relative; }
+.bn-roles.is-multi li:not(:last-child)::after {  /* Linie: nur Punktmitte → nächste Punktmitte */
+  content: ''; position: absolute; left: -13px; top: 50%;
+  width: 1px; height: calc(100% + var(--rg));
+  background: rgba(240,237,232,0.22);
+}
+.bn-roles.is-multi li::before {                   /* Punkt: linke Kante = linke Kante des Firmennamens */
+  content: ''; position: absolute; left: -16px; top: 50%;
+  width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; box-sizing: border-box;
+  background: var(--bg); border: 1px solid rgba(240,237,232,0.5);
+}
+.bn-roles.is-multi li.is-current::before { background: var(--ink); border-color: var(--ink); }
+.bn-roles.is-multi li:not(.is-current) .bn-role { color: var(--muted); }
+/* ============================
+   DETAIL-PANEL
+============================ */
+.bnm[hidden] { display: none; }
+.bnm { position: fixed; inset: 0; z-index: 1500; }
+.bnm-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(10, 10, 9, 0.72);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  opacity: 0;
+}
+.bnm-panel {
+  position: fixed; top: 0; left: 0;
+  background: var(--bg);
+  outline: 1px solid rgba(240,237,232,0.2);
+  overflow: hidden;
+  will-change: left, top, width, height;
+}
+.bnm-preview { position: absolute; inset: 0; pointer-events: none; }
+.bnm-content {
+  position: absolute; top: 0; left: 0;                /* feste Zielgröße → kein Umbruch während der Animation */
+  display: flex; flex-direction: column;
+  overflow-y: auto; overscroll-behavior: contain;
+  opacity: 0;
+}
+.bnm-head {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 22px clamp(20px, 3vw, 40px);
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.bnm-close {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 0; background: none; border: none; cursor: pointer;
+  font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
+  font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--ink);
 }
-.cv-role {
-  margin: 0 0 clamp(28px, 4vh, 44px);
-  font-family: var(--font-mono);
-  font-size: clamp(12px, 1vw, 14px); letter-spacing: 0.08em;
-  color: rgba(240,237,232,0.55);
+.bnm-close kbd {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  padding: 3px 6px; border: 1px solid var(--faint); border-radius: 4px; color: var(--muted);
 }
-.cv-intro {
-  margin: 0 0 clamp(30px, 4.5vh, 48px);
-  max-width: 54ch;
-  font-family: var(--font-mono);
-  font-size: clamp(13px, 1.05vw, 15px); line-height: 1.9;
-  color: rgba(240,237,232,0.6);
-}
-.cv-dl {
-  display: inline-flex; align-items: center; gap: 9px;
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--ink); text-decoration: none;
-  padding-bottom: 3px;
-  border-bottom: 1px solid rgba(240,237,232,0.3);
-  transition: border-color 0.3s ease, gap 0.3s var(--ease-out-expo);
-}
-.cv-dl svg { transition: transform 0.35s var(--ease-out-expo); }
-.cv-dl:hover { gap: 13px; border-color: var(--ink); }
-.cv-dl:hover svg { transform: translateY(2px); }
+.bnm-close:hover kbd { border-color: var(--ink); color: var(--ink); }
+.bnm-close:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; }
 
-/* ── BLOCKS: Label links, Inhalt rechts ── */
-.cv-block {
-  display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: clamp(24px, 5vw, 80px);
-  padding: clamp(56px, 9vh, 110px) 0;
-  border-top: 1px solid rgba(240,237,232,0.08);
+.bnm-inner { padding: clamp(24px, 4vh, 48px) clamp(20px, 3vw, 40px) clamp(32px, 5vh, 56px); }
+.bnm-title {
+  margin: 0 0 clamp(24px, 4vh, 44px);
+  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
+  font-weight: 400; line-height: 0.92; text-transform: uppercase;
+  font-size: clamp(2.6rem, 5.4vw, 5.2rem);
 }
-.cv-label {
-  position: sticky; top: 96px;
-  display: inline-block;
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
-  color: rgba(240,237,232,0.42);
+.bnm-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
+.bnm-text p {
+  margin: 0 0 1.1em; max-width: 60ch;
+  font-family: var(--font-mono); font-size: clamp(13px, 1vw, 14.5px); line-height: 1.85;
+  color: rgba(240,237,232,0.72);
+}
+.bnm-text p:last-child { margin-bottom: 0; }
+
+/* Fakten (dl) */
+.bnm-facts { margin: 0; border-top: 1px solid var(--line); }
+.bnm-facts > div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.bnm-facts dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+.bnm-facts dd { margin: 0; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.55; color: var(--ink); font-variant-numeric: tabular-nums; }
+.bnm-facts a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--faint); }
+.bnm-facts a:hover { text-decoration-color: var(--ink); }
+
+/* Einträge mit Beschreibung (Tools, Skills, Timeline) */
+.bnm-rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.bnm-rows > li { display: grid; grid-template-columns: 21rem minmax(0, 1fr); gap: 8px 32px; align-items: start; padding: 18px 0; border-bottom: 1px solid var(--line); }   /* feste, breite Namensspalte */
+.bnm-rows .bn-value { font-size: clamp(1.15rem, 1.5vw, 1.5rem); line-height: 1.05; text-wrap: balance; }
+.bnm-rows .bn-meta { margin-top: 6px; }
+.bnm-rows .bnm-role .bn-meta { margin-top: 2px; }
+.bnm-roles { --rg: 18px; display: grid; gap: var(--rg); }
+.bnm-role { position: relative; }
+.bnm-role-title {
+  margin: 0; font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
+  font-size: 1.1rem; line-height: 26px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink);
+}
+.bnm-roles.is-multi .bnm-role:not(.is-current) .bnm-role-title { color: rgba(240,237,232,0.55); }
+.bnm-roles.is-multi .bnm-role::before {          /* Punkt mittig zur Titelzeile (26px) */
+  content: ''; position: absolute; left: -18px; top: 8.5px;               /* hängt im Spaltenabstand */
+  width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box;
+  background: var(--bg); border: 1px solid rgba(240,237,232,0.5);
+}
+.bnm-roles.is-multi .bnm-role:not(:last-child)::after {
+  content: ''; position: absolute; left: -14px; top: 13px;
+  width: 1px; height: calc(100% + var(--rg));
+  background: rgba(240,237,232,0.22);
+}
+.bnm-roles.is-multi .bnm-role.is-current::before { background: var(--ink); border-color: var(--ink); }
+.bnm-role .bn-meta { margin-top: 2px; }
+.bnm-note { margin: 0 0 4px; }
+.bnm-sub { margin: 4px 0 0; font-size: 1rem; }
+.bnm-points { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 4px; max-width: 60ch; }
+.bnm-points:last-child { margin-bottom: 0; }
+.bnm-points li { position: relative; padding-left: 16px; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.7; color: rgba(240,237,232,0.72); }
+.bnm-points li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 5px; height: 5px; background: var(--faint); }
+.bnm-rows > li > p { margin: 0; max-width: 60ch; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.8; color: rgba(240,237,232,0.72); }
+
+/* großer Live-Zähler */
+
+
+
+/* Portrait-Lightbox: nur das Foto, groß in der Mitte */
+.bnl { position: fixed; inset: 0; z-index: 1500; cursor: zoom-out; }
+.bnl:focus { outline: none; }
+.bnl-backdrop {
+  position: absolute; inset: 0; opacity: 0;
+  background: rgba(10, 10, 9, 0.84);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.bnl-img { position: fixed; top: 0; left: 0; display: block; object-fit: cover; object-position: 50% 30%; will-change: left, top, width, height; }
+.bn-tile.bn-po { cursor: zoom-in; }
+
+html.bn-locked, html.bn-locked body { overflow: hidden; }
+
+/* ============================
+   RESPONSIVE
+============================ */
+/* Tablet: 6 Spalten, Board darf scrollen */
+@media (max-width: 1100px), (max-height: 600px) {
+  .bn {
+    height: auto; min-height: 0;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: minmax(110px, auto);
+    grid-template-areas:
+      "pl pl pl pl po po"
+      "pl pl pl pl po po"
+      "in in in in in in"
+      "sk sk sk sk sk sk"
+      "sq sq sq sq sq sq"
+      "rc rc rc rc rc rc";
+  }
+  .bn-pl .bn-display { font-size: clamp(3rem, 9vw, 6rem); }
+}
+/* Mobile: 2 Spalten */
+@media (max-width: 640px) {
+  .bn-toolgroups { flex-direction: column; gap: 14px; }
+  .bn-tg { flex: none; max-width: calc(var(--n) * 48px + (var(--n) - 1) * var(--ig)); width: 100%; }
+  .bn {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(100px, auto);
+    grid-template-areas:
+      "pl pl" "po po" "in in" "sk sk" "sq sq" "rc rc";
+  }
+  .bn-po { min-height: 360px; }
+  .bn-pl .bn-display { font-size: clamp(2.8rem, 15vw, 4.5rem); }
+  .bn-icons { --cols: 7; }
+  .bn-sk .bn-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); }
+  .bn-sq .bn-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bnm-grid { grid-template-columns: minmax(0, 1fr); }
+  .bnm-rows > li { grid-template-columns: minmax(0, 1fr); }
+  .bnm-facts > div { grid-template-columns: 7em minmax(0, 1fr); }
+  .bnm-close kbd { display: none; }
 }
 
-/* ── EXPERIENCE ── */
-.cv-list { list-style: none; margin: 0; padding: 0; }
-.cv-row { padding: 0 0 clamp(38px, 5vw, 56px); }
-.cv-row:last-child { padding-bottom: 0; }
-.cv-row-year {
-  display: block;
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
-  color: rgba(240,237,232,0.4);
-  margin-bottom: 12px;
-}
-.cv-row-role {
-  margin: 0 0 6px;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 600; letter-spacing: 0.01em; line-height: 1.05;
-  font-size: clamp(1.35rem, 2.4vw, 1.9rem);
-  color: var(--ink);
-}
-.cv-row-co {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(240,237,232,0.45);
-}
-.cv-row-desc {
-  margin: 14px 0 0;
-  max-width: 58ch;
-  font-family: var(--font-mono); font-size: clamp(12px, 0.95vw, 13.5px); line-height: 1.85;
-  color: rgba(240,237,232,0.55);
+/* Sehr niedrige Desktop-Bildschirme: Kurzfassungen ausblenden (stehen im Detail), Titel bleiben */
+@media (max-height: 740px) and (min-width: 1101px) {
+  .bn-ed .bn-xp-sum { display: none; }
 }
 
-/* ── CAPABILITIES ── */
-.cv-caps { margin: 0; }
-.cv-cap {
-  display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: 24px;
-  padding: 16px 0;
-}
-.cv-cap + .cv-cap { border-top: 1px solid rgba(240,237,232,0.06); }
-.cv-cap-k {
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(240,237,232,0.45);
-}
-.cv-cap-v {
-  font-family: var(--font-mono); font-size: clamp(12px, 0.95vw, 13.5px); line-height: 1.7;
-  color: var(--ink);
-}
-
-/* ── CONTACT ── */
-.cv-foot {
-  display: grid;
-  grid-template-columns: 160px minmax(0, 1fr);
-  gap: clamp(24px, 5vw, 80px);
-  padding: clamp(56px, 9vh, 110px) 0 clamp(70px, 12vh, 140px);
-  border-top: 1px solid rgba(240,237,232,0.08);
-}
-.cv-foot-mail {
-  display: inline-block;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 600; letter-spacing: 0.005em; line-height: 1;
-  font-size: clamp(1.6rem, 4vw, 3rem);
-  color: var(--ink); text-decoration: none;
-  transition: opacity 0.3s ease;
-}
-.cv-foot-mail:hover { opacity: 0.6; }
-.cv-foot-row {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 24px; flex-wrap: wrap;
-  margin-top: clamp(32px, 5vh, 56px);
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-}
-.cv-foot-links { display: flex; gap: 26px; }
-.cv-foot-link { color: rgba(240,237,232,0.5); text-decoration: none; transition: color 0.25s ease; }
-.cv-foot-link:hover { color: var(--ink); }
-.cv-foot-copy { color: rgba(240,237,232,0.35); }
-
-/* ── MOBILE ── */
-@media (max-width: 760px) {
-  .cv-block, .cv-foot { grid-template-columns: 1fr; gap: 20px; }
-  .cv-label { position: static; }
-  .cv-cap { grid-template-columns: 1fr; gap: 6px; }
+@media (prefers-reduced-motion: reduce) {
+  .bn-photo, .bn-open svg, .bn-tip { transition: none; }
 }

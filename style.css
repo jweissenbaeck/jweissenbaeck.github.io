@@ -134,8 +134,8 @@ body::before {
   display: flex; align-items: center;
   padding: 0 clamp(16px, 2vw, 30px);
   color: rgba(240,237,232,0.6);
-  font-family: 'Space Grotesk', 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 700; font-size: 15px; letter-spacing: 0.005em;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-weight: 700; font-size: 15px; letter-spacing: 0.04em;
   text-decoration: none;
   pointer-events: auto;
   transition: color 0.25s ease;
@@ -151,10 +151,86 @@ body::before {
 .nav-right .nav-cell { border-left: 1px solid rgba(240,237,232,0.16); }
 .nav-right .nav-cell:last-child { padding-right: 28px; }
 .nav-brand { letter-spacing: 0.04em; color: var(--ink); }
-/* JCKY-Logo in der Nav (erbt Farbe + Hover über currentColor) */
-.nav-logo { display: block; height: 20px; width: auto; }
-/* JCKY-Logo im Footer (groß, mittig; erbt Farbe über currentColor) */
-.ftp-logo { display: block; width: min(90vw, 1400px); height: auto; color: var(--ink); }
+/* ── Easter Egg: Klick auf JCKY (Logo oben links) ── */
+.egg-target { cursor: pointer; user-select: none; -webkit-user-select: none; }
+.egg-target:focus-visible { outline: 1px solid var(--ink); outline-offset: -4px; }
+.egg-ch { display: inline-block; }
+.egg-ch.is-jump { animation: egg-jump 0.55s var(--ease-out-expo) both; }
+.egg-ch.is-jump-big { animation: egg-jump-big 0.8s var(--ease-out-expo) both; }
+@keyframes egg-jump {
+  0%   { transform: translateY(0) rotate(0); }
+  35%  { transform: translateY(-8px) rotate(var(--egg-r, -8deg)); }
+  70%  { transform: translateY(1px) rotate(0); }
+  100% { transform: none; }
+}
+@keyframes egg-jump-big {
+  0%   { transform: none; }
+  25%  { transform: translateY(-14px) scale(1.25) rotate(var(--egg-r, -12deg)); }
+  55%  { transform: translateY(3px) scale(0.9); }
+  100% { transform: none; }
+}
+.egg-toast {
+  position: fixed; top: 0; left: 0; z-index: 2001;   /* Position setzt JS (neben dem Klickpunkt) */
+  max-width: min(320px, calc(100vw - 56px));
+  padding: 9px 12px;
+  background: var(--ink); color: var(--bg-dark, #0a0a09);
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.5;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0; transform: translateY(-6px);
+  transition: opacity 0.25s ease, transform 0.4s var(--ease-out-expo);
+}
+.egg-toast.is-on { opacity: 1; transform: none; }
+.egg-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000; }
+/* Footer: Klick auf einen Buchstaben → er explodiert (sofort weg) und blendet danach sanft wieder ein */
+.ftp-ch { cursor: pointer; transition: opacity 0.7s var(--ease-out-expo); }
+.ftp-ch.is-gone { opacity: 0; transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .egg-ch.is-jump, .egg-ch.is-jump-big { animation: none; }
+}
+/* JCKY-Logo oben links — jetzt echter Text in Anton (wie der Hero-Name) */
+.nav-logo-text {
+  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+/* JCKY im Footer — Textwort in Anton (wie im Hero), per JS randlos über die volle Breite
+   gestreckt (transform: scale). Der 28px-Seitenabstand kommt von .site-footer-text. */
+/* Wort-Bühne: volle Breite (innerhalb 28px Padding), Höhe = Buchstabenhöhe */
+.ftp-word {
+  position: relative;
+  width: 100%;
+  height: clamp(160px, 22vw, 460px);
+}
+/* Fallback ohne JS: schon groß. JS (initFooterWord) setzt Größe, Lage und
+   horizontale Streckung exakt auf die Tinten-Kanten. */
+.ftp-word-inner {
+  position: absolute;
+  left: 0; bottom: 0;
+  display: block;
+  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  font-weight: 400;
+  font-size: 28vw;
+  line-height: 0.78;
+  letter-spacing: 0;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: var(--ink);
+  transform-origin: 0 0;
+}
+/* Nach dem Fit: Container füllt die Bühne, Buchstaben einzeln positioniert (gleiche Abstände) */
+.ftp-word-inner.is-fit { top: 0; right: 0; bottom: 0; left: 0; line-height: 1; }
+.ftp-ch {
+  position: absolute;
+  top: 0; left: 0;
+  display: block;
+  line-height: 1;
+  white-space: nowrap;
+  transform-origin: 0 0;
+}
 
 /* aktive Sektion: weißer Text + weißer Bottom-Stroke */
 .nav-cell.is-active { pointer-events: none; }
@@ -914,9 +990,10 @@ html.vt-arriving body { visibility: hidden; }
   margin-top: 0;                                  /* Bar direkt unter JCKY */
   border-top: 1px solid rgba(240,237,232,0.16);   /* durchgezogene Linie über die volle Breite */
   padding: 0;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(240,237,232,0.5);
 }
@@ -940,20 +1017,18 @@ html.vt-arriving body { visibility: hidden; }
 .site-footer-text {
   position: relative;
   width: 100%;
-  height: clamp(340px, 62vh, 620px);   /* große Höhen-Bühne → JCKY riesig */
-  padding: 0;                          /* echtes Fill: JCKY randlos, kein Seitenabstand */
+  padding: 28px;                       /* 28px rundherum: links, rechts, oben, unten */
   overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-start;
 }
-/* kleiner Dankestext oben links, über dem "J" — schmale Spalte, bleibt in der Box */
+/* Dankestext oben links — jetzt im Fluss, in derselben Box wie der JCKY-Schriftzug */
 .ftp-note {
   position: absolute;
-  top: clamp(16px, 4.5vh, 48px);
-  left: clamp(18px, 2vw, 36px);
+  top: 28px; left: 28px;               /* = Ecke der Wort-Box → sitzt im freien Feld oben links im J */
   z-index: 2;
-  width: clamp(150px, 12vw, 210px);
+  width: clamp(150px, 12vw, 210px);    /* JS passt die Breite exakt an die J-Aussparung an */
   font-family: var(--font-mono);
   font-size: clamp(11px, 1.05vw, 15px);
   letter-spacing: 0.12em;
