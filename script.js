@@ -865,32 +865,7 @@ function smoothTowards(cur, target, smooth, dt) {
   const k = 1 - Math.exp(-dt / smooth);
   return cur + (target - cur) * k;
 }
-window.__smoothTowards = smoothTowards;
 
-/* ============================
-   SCROLL VELOCITY SKEW
-   Elemente mit .skew-on-scroll bekommen beim schnellen Scrollen einen minimalen
-   Skew/Scale, der beim Stoppen ausläuft — der typische "flüssige" Trägheits-Look.
-   Nutzt Lenis-Velocity, framerate-unabhängig geglättet, respektiert Reduced-Motion.
-============================ */
-(function initScrollSkew() {
-  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  if (reduce || typeof lenis === 'undefined') return;
-  const els = Array.prototype.slice.call(document.querySelectorAll('.skew-on-scroll'));
-  if (!els.length) return;
-
-  let skew = 0;
-  gsap.ticker.add((time, deltaTime) => {
-    const dt = Math.min(deltaTime || 16.7, 50) / 1000;
-    const v = lenis.velocity || 0;                       // px/frame-ish
-    const target = Math.max(-6, Math.min(6, v * 0.35));  // Grad, gedeckelt
-    skew = smoothTowards(skew, target, 0.12, dt);
-    if (Math.abs(skew) < 0.01) skew = 0;
-    for (let i = 0; i < els.length; i++) {
-      els[i].style.transform = 'skewY(' + skew.toFixed(3) + 'deg)';
-    }
-  });
-})();
 
 /* ============================
    MAGNETIC BUTTONS
@@ -903,11 +878,10 @@ window.__smoothTowards = smoothTowards;
   if (!fine || reduce) return;
 
   const STRENGTH = 0.28;   // wie stark der Button dem Cursor folgt (Anteil des Offsets)
-  const RADIUS   = 1.6;    // Aktionsradius als Vielfaches der halben Buttonbreite
   const SMOOTH   = 0.09;   // Sekunden Nachlauf
 
   const items = [];
-  document.querySelectorAll('.hero-btn, .projects-cta').forEach((el) => {
+  document.querySelectorAll('.projects-cta').forEach((el) => {
     const state = { el, tx: 0, ty: 0, cx: 0, cy: 0, active: false, parked: true };
     el.addEventListener('mouseenter', () => { state.active = true; });
     el.addEventListener('mousemove', (e) => {
@@ -946,7 +920,7 @@ window.__smoothTowards = smoothTowards;
 /* ============================
    NAV — Click to scroll via Lenis
 ============================ */
-document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(link => {
+document.querySelectorAll('a[href^="#"]').forEach(link => {
   link.addEventListener('click', (e) => {
     let href = link.getAttribute('href');
     if (!href || href === '#') return;
@@ -972,7 +946,7 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
    (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
 ============================ */
 (function initContactPixels() {
-  const items = document.querySelectorAll('.globe-contact-item, .projects-cta, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
+  const items = document.querySelectorAll('.projects-cta, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const ROWS = 6;            // feste Zeilenzahl → Blockgröße skaliert mit dem Feld (zoom-stabil)
@@ -1053,8 +1027,9 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
 
 /* ============================
    PLAY CURSOR — Hero-Bild im Vollbild
-   Kreisrunder Cursor mit Play-Icon, nur wenn das Bild Vollbild ist und
-   man drüber hovert. Blendet in dem Zustand den Dot-Trail aus.
+   Eckiges Label im Stil der Nav-Hover-Zellen (helle Fläche, dunkle Schrift, Barlow):
+   Play-Dreieck + „Play“. Wischt von unten herein, folgt der Maus mit leichter Verzögerung;
+   der System-Cursor wird dabei ausgeblendet. Nur wenn das Bild Vollbild ist und man drüber hovert.
 ============================ */
 (function initPlayCursor() {
   const card = document.getElementById('heroImgCard');
@@ -1064,28 +1039,30 @@ document.querySelectorAll('.nav-link-1820[data-section], a[href^="#"]').forEach(
 
   const cur = document.createElement('div');
   cur.id = 'playCursor';
-  cur.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  cur.setAttribute('aria-hidden', 'true');
+  cur.innerHTML = '<span class="pc-inner"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg><span class="pc-txt">Play</span></span>';
   document.body.appendChild(cur);
 
-  let overCard = false;
-  let cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+  let overCard = false, wasOn = false;
+  let cx = window.innerWidth / 2, cy = window.innerHeight / 2, px = cx, py = cy;
 
   card.addEventListener('mouseenter', () => { overCard = true; });
   card.addEventListener('mouseleave', () => { overCard = false; });
-
-  window.addEventListener('mousemove', (e) => {
-    cx = e.clientX; cy = e.clientY;
-  }, { passive: true });
+  window.addEventListener('mousemove', (e) => { cx = e.clientX; cy = e.clientY; }, { passive: true });
 
   function active() { return overCard && window.__heroFullscreen === true; }
 
   (function loop() {
     requestAnimationFrame(loop);
     const on = active();
+    if (on && !wasOn) { px = cx; py = cy; }          // beim Erscheinen direkt am Zeiger starten
+    wasOn = on;
     cur.classList.toggle('is-visible', on);
-    window.__playCursorActive = on;   // vom Trail gelesen → Trail aus, wenn Play-Cursor an
+    document.documentElement.classList.toggle('play-cursor-on', on);
+    window.__playCursorActive = on;                  // Hero-Partikel pausieren, solange das Label sichtbar ist
     if (on) {
-      cur.style.transform = 'translate(' + cx + 'px,' + cy + 'px) scale(1)';
+      px += (cx - px) * 0.28; py += (cy - py) * 0.28; // leicht nachgezogen
+      cur.style.transform = 'translate3d(' + px.toFixed(1) + 'px,' + py.toFixed(1) + 'px,0)';
     }
   })();
 })();
@@ -1265,7 +1242,6 @@ window.__heroInit = heroInit;
     const cardZoom = 1 + pA * 0.05 + pCardZoom * (maxScale - 1.05);
     gsap.set(imgCard, { scale: cardZoom, opacity: imgCardFadeIn, xPercent: -50, transformOrigin: '50% 50%' });
     window.__heroFullscreen = pCardZoom > 0.9;   // Bild praktisch Vollbild → Play-Cursor aktiv
-    window.__heroPhotos = p >= 0.34 && p < 0.95;  // nur während die Parallax-Bilder sichtbar sind → Trail aus
 
     if (heroImgWrap) {
       if (p >= 0.35) {
@@ -1312,7 +1288,6 @@ window.__heroInit = heroInit;
   }
 
   function resetAll() {
-    window.__heroPhotos = false;
     window.__heroPixel = 0;
     gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
     letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none' }));
@@ -1456,7 +1431,6 @@ window.__heroInit = heroInit;
 (function initServices() {
   const imgPanel = document.getElementById('svcImgPanel');
   const section  = document.querySelector('.services-section');
-  const CHARS    = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789·—';
 
   if (imgPanel) gsap.set(imgPanel, { opacity: 0 });
 
@@ -1646,7 +1620,6 @@ ScrollTrigger.create({
 
   const RC = R + 0.008;
   const DOT_ROWS = 120;
-  const ASCII_CHARS = '⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿⠁⠂⠄⠈⠐⠠⡀⢀⠃⠅⠘⠨⠊⠋⠌⠍⠎⠏⠑⠒⠓⠔⠕⠖⠗⠙⠚⠛⠜⠝⠞⠟⠡⠢⠣⠤⠥⠦⠧⠩⠪⠫⠬⠭⠮⠯⠱⠲⠳⠴⠵⠶⠷⠹⠺⠻⠼⠽⠾⠿⡁⡂⡃⡄⡅⡆⡇⡉⡊⡋⡌⡍⡎⡏⡑⡒⡓⡔⡕⡖⡗⡙⡚⡛⡜⡝⡞⡟⡡⡢⡣⡤⡥⡦⡧⡩⡪⡫⡬⡭⡮⡯⡱⡲⡳⡴⡵⡶⡷⡹⡺⡻⡼⡽⡾⡿⢁⢂⢃⢄⢅⢆⢇⢉⢊⢋⢌⢍⢎⢏⢑⢒⢓⢔⢕⢖⢗⢙⢚⢛⢜⢝⢞⢟⢡⢢⢣⢤⢥⢦⢧⢩⢪⢫⢬⢭⢮⢯⢱⢲⢳⢴⢵⢶⢷⢹⢺⢻⢼⢽⢾⢿⣀⣁⣂⣃⣄⣅⣆⣇⣉⣊⣋⣌⣍⣎⣏⣑⣒⣓⣔⣕⣖⣗⣙⣚⣛⣜⣝⣞⣟⣡⣢⣣⣤⣥⣦⣧⣩⣪⣫⣬⣭⣮⣯⣱⣲⣳⣴⣵⣶⣷⣹⣺⣻⣼⣽⣾⣿';
 
   const asciiCanvas = document.createElement('canvas');
   asciiCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%;z-index:2;';
@@ -2103,8 +2076,6 @@ ScrollTrigger.create({
   const canvasWrap = document.getElementById('globeSectionCanvas');
   const textLeft   = document.getElementById('globeTextLeft');
   const line1      = document.getElementById('globeHeadline');
-  const contactBlock = document.getElementById('globeContactList');
-  const contactItems = contactBlock ? [...contactBlock.querySelectorAll('.globe-contact-item')] : [];
 
   if (!section || !canvasWrap || !textLeft) return;
 
@@ -2117,7 +2088,6 @@ ScrollTrigger.create({
   gsap.set(canvasWrap, { x: 0, scale: 1, transformOrigin: 'center center' });
   gsap.set(textLeft,   { opacity: 0 });
   gsap.set(line1, { y: '110%' });
-  gsap.set(contactItems, { y: 24, opacity: 0 });
 
   function getTargetX() {
     const vw = window.innerWidth;
@@ -2132,11 +2102,6 @@ ScrollTrigger.create({
     gsap.set(canvasWrap, { x: move * getTargetX(), scale: 1 + move * 0.18 });
     gsap.set(textLeft, { opacity: ph(p, 0.55, 0.88) });
     gsap.set(line1,    { y: (1 - ph(p, 0.60, 0.90)) * 110 + '%' });
-    contactItems.forEach((item, i) => {
-      const start = 0.68 + i * 0.05;
-      const t     = ph(p, start, start + 0.20);
-      gsap.set(item, { y: (1 - t) * 24, opacity: t });
-    });
   }
 
   ScrollTrigger.create({
@@ -2153,7 +2118,6 @@ ScrollTrigger.create({
       gsap.set(canvasWrap, { x: 0, scale: 1 });
       gsap.set(textLeft,   { opacity: 0 });
       gsap.set(line1, { y: '110%' });
-      gsap.set(contactItems, { y: 24, opacity: 0 });
     },
   });
 })();

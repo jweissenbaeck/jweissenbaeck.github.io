@@ -86,8 +86,7 @@
      years = Jahres-Spalte (Kachel) · period = Zeitraum (Detail) · roles: mehrere = Beförderung in derselben Firma
      role.when = Zeitraum der Rolle (nur bei mehreren Rollen in der Kachel) · points = Aufgaben (Detail) */
   var EXPERIENCE = [
-    { org: 'Websline', type: 'Full-time', meta: 'Salzburg, Austria', years: '2025 — Now', period: 'September 2025 — Now',
-      sum: 'Hi-fi prototypes, design system architecture, close and smooth dev handover.',
+    { org: 'Websline', type: 'Full-time', meta: 'Salzburg, Austria', years: 'Sep 2025<br>— Now', period: 'September 2025 — Now',
       roles: [
         { title: 'Junior UI / UX Designer', when: 'Mar 2026 — Now', period: 'March 2026 — Now', current: true,
           points: [
@@ -98,17 +97,12 @@
             ] },
         { title: 'UI / UX Design Trainee', when: 'Sep 2025 — Feb 2026', period: 'September 2025 — February 2026, 6 months' }
       ] },
-    { org: 'Austrian Red Cross', type: 'Internship', meta: 'Salzburg, Austria, on-site', years: '2023', period: 'August 2023, 1 month',
-      sum: 'Digital design and databases.',
+    /* zwei Praktika unter einer Überschrift; stack = untereinander, ohne Beförderungs-Linie */
+    { org: 'Austrian Red Cross', type: 'Internship', meta: 'Salzburg, Austria, on-site', years: 'Aug 2023<br>Aug 2019',
+      period: 'August 2023 and August 2019', sub: 'Information Technology Internship', sum: 'Two one-month internships in the IT department, working on digital design and database management and gaining hands-on experience during my education.', stack: true,
       roles: [
-        { title: 'Information Technology Internship',
-          points: ['Digital design', 'Database maintenance'] }
-      ] },
-    { org: 'Austrian Red Cross', type: 'Internship', meta: 'Salzburg, Austria, on-site', years: '2019', period: 'August 2019, 1 month',
-      sum: 'Digital design and databases.',
-      roles: [
-        { title: 'Information Technology Internship',
-          points: ['Digital design', 'Database maintenance'] }
+        { title: 'Information Technology Internship', period: 'August 2023, 1 month', points: ['Digital design', 'Database maintenance'] },
+        { title: 'Information Technology Internship', period: 'August 2019, 1 month', points: ['Digital design', 'Database maintenance'] }
       ] }
   ];
   /* Education: neueste zuerst */
@@ -136,6 +130,16 @@
   /* Öffnen-Hinweis oben rechts: unsichtbar, beim Hover gleitet ein Pfeil nach rechts oben herein */
   var OPEN_ICON = '<span class="bn-open" aria-hidden="true"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 9 9 3M4.5 3H9v4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="square"/></svg></span>';
   function head(label, noOpen) { return '<header class="bn-head"><span class="bn-label">' + label + '</span>' + (noOpen ? '' : OPEN_ICON) + '</header>'; }
+  /* Rollenblock wie im Modal: Titel · Zeitraum · Stichpunkte; mehrere Rollen = Punkte + Linie.
+     Kachel und Modal nutzen dieselbe Funktion → sehen identisch aus. */
+  function rolesBlock(x) {
+    var multi = x.roles.length > 1 && !x.stack;      // Punkte + Linie nur bei Beförderung (nicht bei stack)
+    return '<div class="bnm-roles' + (multi ? ' is-multi' : '') + '">' + x.roles.map(function (r) {
+      return '<div class="bnm-role' + (r.current ? ' is-current' : '') + '"><p class="bnm-role-title">' + esc(r.title) + '</p>' +
+        (r.period ? '<p class="bn-meta bnm-role-date">' + esc(r.period) + '</p>' : '') +
+        (r.points ? '<ul class="bnm-points">' + r.points.map(function (pt) { return '<li>' + esc(pt) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
   /* Eintrag mit Jahres-Spalte links (Experience + Education) */
   function tlItem(years, body) {
     return '<li class="bn-tl"><span class="bn-meta bn-tl-years">' + years + '</span><div class="bn-tl-body">' + body + '</div></li>';
@@ -220,12 +224,13 @@
 
     { id: 'ql', label: 'Experience',
       tile: function () {
-        /* Jahr · FIRMA · Titel · Kurzbeschreibung; mehrere Rollen = verbunden (Beförderung) */
+        /* Jahr · FIRMA · Titel · Kurzbeschreibung; mehrere Rollen = Rollenblock wie im Modal */
         return head('Experience') + '<div class="bn-body"><ol class="bn-tls">' + EXPERIENCE.map(function (x) {
-          var multi = x.roles.length > 1;
-          var roles = '<ol class="bn-roles' + (multi ? ' is-multi' : '') + '">' + x.roles.map(function (r) {
-            return '<li' + (r.current ? ' class="is-current"' : '') + '><span class="bn-role">' + esc(r.title) + '</span></li>';
-          }).join('') + '</ol>';
+          var roles = x.stack
+            ? '<ol class="bn-roles"><li><span class="bn-role">' + esc(x.sub) + '</span></li></ol>'   // zusammengefasst: Titel einmal
+            : x.roles.length > 1
+              ? rolesBlock(x)                              // Beförderung: exakt wie im Modal
+              : '<ol class="bn-roles">' + x.roles.map(function (r) { return '<li><span class="bn-role">' + esc(r.title) + '</span></li>'; }).join('') + '</ol>';
           return tlItem(x.years, '<p class="bn-xp-org"><span class="bn-value">' + esc(x.org) + '</span><span class="bn-type">' + esc(x.type) + '</span></p>' + roles +
             (x.sum ? '<p class="bn-xp-sum">' + esc(x.sum) + '</p>' : ''));
         }).join('') + '</ol></div>';
@@ -233,14 +238,8 @@
       title: 'Experience',
       detail: function () {
         return '<ul class="bnm-rows">' + EXPERIENCE.map(function (x) {
-          var multi = x.roles.length > 1;
           var left = '<div><p class="bn-xp-org"><span class="bn-value">' + esc(x.org) + '</span><span class="bn-type">' + esc(x.type) + '</span></p><p class="bn-meta">' + esc(x.meta) + '<br>' + esc(x.period) + '</p></div>';
-          var right = '<div class="bnm-roles' + (multi ? ' is-multi' : '') + '">' + x.roles.map(function (r) {
-            return '<div class="bnm-role' + (r.current ? ' is-current' : '') + '"><p class="bnm-role-title">' + esc(r.title) + '</p>' +
-              (r.period ? '<p class="bn-meta">' + esc(r.period) + '</p>' : '') +
-              (r.note ? '<p class="bn-meta bnm-note">' + esc(r.note) + '</p>' : '') +
-              (r.points ? '<ul class="bnm-points">' + r.points.map(function (pt) { return '<li>' + esc(pt) + '</li>'; }).join('') + '</ul>' : '') + '</div>';
-          }).join('') + '</div>';
+          var right = rolesBlock(x);
           return '<li>' + left + right + '</li>';
         }).join('') + '</ul>';
       } },
@@ -430,7 +429,10 @@
     tile.addEventListener('mousemove', function (e) {
       if (!ready) return;
       var r = tile.getBoundingClientRect();
-      mx = e.clientX - r.left; my = e.clientY - r.top; inside = true; kick();
+      mx = e.clientX - r.left; my = e.clientY - r.top;
+      var pr = tile._parallax;                          // Mosaik ist per Parallax verschoben/skaliert → zurückrechnen
+      if (pr) { mx = (mx - W / 2 - pr.tx) / pr.s + W / 2; my = (my - H / 2 - pr.ty) / pr.s + H / 2; }
+      inside = true; kick();
     });
     tile.addEventListener('mouseleave', function () { inside = false; kick(); });
     if (img.complete && img.naturalWidth) build();
@@ -439,6 +441,38 @@
       img.addEventListener('error', function () { tile.classList.remove('px-pending'); cv.remove(); });
     }
     window.addEventListener('resize', function () { ready = false; build(); });
+  })();
+
+  /* ── Portrait-Parallax: das Foto wandert ganz leicht gegenläufig zur Mausposition auf der Seite.
+     Max. 8px, weich nachgezogen. Foto + Mosaik bewegen sich gemeinsam; die minimale Vergrößerung
+     deckt genau den Spielraum ab, damit nie eine Kante sichtbar wird. */
+  (function portraitParallax() {
+    var tile = byId.po && byId.po.el;
+    if (!tile || reduce) return;
+    if (window.matchMedia && !window.matchMedia('(any-hover: hover)').matches) return;
+    var MAX = 8, EASE_K = 0.08;
+    var tx = 0, ty = 0, gx = 0, gy = 0, s = 1, raf = 0;
+    function scale() { var m = Math.min(tile.clientWidth, tile.clientHeight) || 1; s = 1 + (2 * MAX + 2) / m; }
+    function apply() {
+      var tf = 'translate3d(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px,0) scale(' + s.toFixed(4) + ')';
+      tile.querySelectorAll('.bn-photo, .bn-po-mosaic').forEach(function (el) { el.style.transform = tf; });
+      tile._parallax = { tx: tx, ty: ty, s: s };
+    }
+    function frame() {
+      raf = 0;
+      tx += (gx - tx) * EASE_K; ty += (gy - ty) * EASE_K;
+      if (Math.abs(gx - tx) < 0.02 && Math.abs(gy - ty) < 0.02) { tx = gx; ty = gy; } else raf = requestAnimationFrame(frame);
+      apply();
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+    window.addEventListener('mousemove', function (e) {
+      gx = -((e.clientX / window.innerWidth) - 0.5) * 2 * MAX;     // gegenläufig zur Maus
+      gy = -((e.clientY / window.innerHeight) - 0.5) * 2 * MAX;
+      kick();
+    }, { passive: true });
+    document.addEventListener('mouseleave', function () { gx = gy = 0; kick(); });   // Maus verlässt das Fenster → Mitte
+    window.addEventListener('resize', function () { scale(); apply(); });
+    scale(); apply();
   })();
 
   /* Name passt immer in die Kachel (egal welche Schrift gerade geladen ist) */

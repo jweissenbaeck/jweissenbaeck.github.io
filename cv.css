@@ -104,9 +104,9 @@
   width: 100%; height: 100%; object-fit: cover;
   object-position: 50% 30%;                          /* Kachel: Gesicht bleibt im Ausschnitt */
   transform: scale(1.001);
-  transition: transform 0.9s var(--ease-out-expo);
+  will-change: transform;                             /* Parallax (cv.js) setzt die Verschiebung pro Frame */
 }
-.bn-po-mosaic { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }   /* Pixel-Mosaik über dem Foto, wird beim Hover aufgedeckt */
+.bn-po-mosaic { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; will-change: transform; }   /* Pixel-Mosaik über dem Foto, wird beim Hover aufgedeckt */
 .px-pending .bn-photo { opacity: 0; }                /* kein scharfes Aufblitzen, bevor das Mosaik steht */
 .bn-po::after {                                       /* Label bleibt auf hellen Fotos lesbar */
   content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40%; z-index: 1;
@@ -198,13 +198,13 @@
 /* ── Experience + Education: Jahres-Spalte links, Einrichtung/Firma als Überschrift ── */
 .bn-tls { list-style: none; margin: 0; padding: 0; }
 .bn-tl {
-  display: grid; grid-template-columns: 5rem minmax(0, 1fr); column-gap: clamp(12px, 1.2vw, 20px);
+  display: grid; grid-template-columns: 5rem minmax(0, 1fr); column-gap: clamp(24px, 2.2vw, 48px);   /* viel Luft zwischen Zeit und Eintrag */
   padding: clamp(9px, 1.5vh, 18px) 0;
   border-top: 1px solid var(--line);
 }
 .bn-tl:first-child { border-top: none; padding-top: 0; }
 .bn-tl:last-child { padding-bottom: 0; }           /* unten nur das Kachel-Padding → gleicher Abstand wie Interests */
-.bn-tl-years { align-self: start; padding-top: 0.35em; font-size: 11.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }   /* auf Höhe der Überschrift */
+.bn-tl-years { align-self: start; padding-top: 0.35em; font-size: 11.5px; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; }   /* auf Höhe der Überschrift */
 .bn-tl-body { min-width: 0; }
 .bn-tl-body .bn-value { font-size: clamp(1.05rem, min(1.45vw, 2.6vh), 1.65rem); line-height: 1.05; text-wrap: balance; }
 .bn-tl-body > .bn-meta { margin-top: 3px; }
@@ -232,20 +232,6 @@
 }
 .bn-roles li { display: flex; align-items: center; }
 .bn-role { margin: 0; font-family: var(--font-mono); font-size: var(--tx); line-height: 1.35; color: var(--ink); min-width: 0; }
-.bn-roles.is-multi { padding-left: 16px; }
-.bn-roles.is-multi li { position: relative; }
-.bn-roles.is-multi li:not(:last-child)::after {  /* Linie: nur Punktmitte → nächste Punktmitte */
-  content: ''; position: absolute; left: -13px; top: 50%;
-  width: 1px; height: calc(100% + var(--rg));
-  background: rgba(240,237,232,0.22);
-}
-.bn-roles.is-multi li::before {                   /* Punkt: linke Kante = linke Kante des Firmennamens */
-  content: ''; position: absolute; left: -16px; top: 50%;
-  width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; box-sizing: border-box;
-  background: var(--bg); border: 1px solid rgba(240,237,232,0.5);
-}
-.bn-roles.is-multi li.is-current::before { background: var(--ink); border-color: var(--ink); }
-.bn-roles.is-multi li:not(.is-current) .bn-role { color: var(--muted); }
 /* ============================
    DETAIL-PANEL
 ============================ */
@@ -295,7 +281,6 @@
   font-weight: 400; line-height: 0.92; text-transform: uppercase;
   font-size: clamp(2.6rem, 5.4vw, 5.2rem);
 }
-.bnm-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 64px); align-items: start; }
 .bnm-text p {
   margin: 0 0 1.1em; max-width: 60ch;
   font-family: var(--font-mono); font-size: clamp(13px, 1vw, 14.5px); line-height: 1.85;
@@ -336,7 +321,17 @@
 .bnm-rows > li { display: grid; grid-template-columns: 21rem minmax(0, 1fr); gap: 8px 32px; align-items: start; padding: 18px 0; border-bottom: 1px solid var(--line); }   /* feste, breite Namensspalte */
 .bnm-rows .bn-value { font-size: clamp(1.15rem, 1.5vw, 1.5rem); line-height: 1.05; text-wrap: balance; }
 .bnm-rows .bn-meta { margin-top: 6px; }
-.bnm-rows .bnm-role .bn-meta { margin-top: -3px; }   /* Datum rückt an den Rollentitel */
+.bnm-role .bnm-role-date { margin-top: -3px; }      /* Datum rückt an den Rollentitel (Modal + Kachel) */
+/* Kachel: Rollenblock unter der Firma; Punkte stehen genau unter der linken Kante des Firmennamens */
+.bn-tl .bnm-roles { --rg: clamp(10px, 1.7vh, 18px); margin-top: clamp(6px, 1vh, 10px); }
+.bn-tl .bnm-roles.is-multi { padding-left: 20px; }
+/* gleicher Aufbau wie im Modal, Größen skalieren mit der Bildschirmhöhe */
+.bn-tl .bnm-role-title { font-size: clamp(0.95rem, 2.1vh, 1.1rem); line-height: 22px; }
+.bn-tl .bnm-roles.is-multi .bnm-role::before { left: -20px; top: 6.5px; }          /* mittig zur 22px-Titelzeile */
+.bn-tl .bnm-roles.is-multi .bnm-role:not(:last-child)::after { left: -16px; top: 11px; }
+.bn-tl .bnm-points { margin: clamp(6px, 1vh, 12px) 0 0; gap: 2px; }
+.bn-tl .bnm-points li { font-size: var(--tx); line-height: 1.55; }
+.bn-tl .bnm-points li::before { top: 0.68em; }
 .bnm-roles { --rg: 18px; display: grid; gap: var(--rg); }
 .bnm-role { position: relative; }
 .bnm-role-title {
@@ -355,7 +350,6 @@
   background: rgba(240,237,232,0.22);
 }
 .bnm-roles.is-multi .bnm-role.is-current::before { background: var(--ink); border-color: var(--ink); }
-.bnm-note { margin: 0 0 4px; }
 .bnm-sub { margin: 4px 0 0; font-size: 1rem; }
 .bnm-points { list-style: none; margin: 12px 0 18px; padding: 0; display: grid; gap: 4px; max-width: 60ch; }   /* mehr Luft zum Datum */
 .bnm-points:last-child { margin-bottom: 0; }
@@ -412,21 +406,23 @@ html.bn-locked, html.bn-locked body { overflow: hidden; }
   }
   .bn-po { min-height: 360px; }
   .bn-pl .bn-display { font-size: clamp(2.8rem, 15vw, 4.5rem); }
-  .bn-icons { --cols: 7; }
   .bn-sk .bn-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); }
   .bn-sq .bn-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .bnm-grid { grid-template-columns: minmax(0, 1fr); }
   .bnm-rows > li { grid-template-columns: minmax(0, 1fr); }
   .bnm-facts > div { grid-template-columns: 7em minmax(0, 1fr); }
   .bnm-facts > div.is-stack { grid-template-columns: minmax(0, 1fr); }
   .bnm-langs { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* Handy: 2 × 2, sonst zu schmal */
 }
 
-/* Sehr niedrige Desktop-Bildschirme: Kurzfassungen ausblenden (stehen im Detail), Titel bleiben */
-@media (max-height: 740px) and (min-width: 1101px) {
-  .bn-ed .bn-xp-sum { display: none; }
+/* Niedrige Desktop-Bildschirme: Kurzbeschreibungen ausblenden (stehen im Detail) → Platz für die Websline-Stichpunkte */
+@media (max-height: 820px) and (min-width: 1101px) {
+  .bn-ql .bn-xp-sum, .bn-ed .bn-xp-sum { display: none; }
+}
+@media (max-height: 740px) and (min-width: 1101px) {          /* sehr niedrig (z. B. 1280 × 720): etwas enger */
+  .bn-tl { padding: 8px 0; }
+  .bn-tl .bnm-points li { line-height: 1.4; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bn-photo, .bn-open svg, .bn-tip, .bnm-backdrop, .bnl-backdrop, .bnm-close, .bnm-close svg { transition: none; }
+  .bn-open svg, .bn-tip, .bnm-backdrop, .bnl-backdrop, .bnm-close, .bnm-close svg { transition: none; }
 }

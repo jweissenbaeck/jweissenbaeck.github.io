@@ -12,7 +12,7 @@
   font-display: swap;
 }
 
-/* Barlow Condensed — weight 700 (.cv-footer-name) */
+/* Barlow Condensed — weight 700 (Nav, Footer-Bar, Titel, Werte) */
 @font-face {
   font-family: 'Barlow Condensed';
   src: url('assets/fonts/barlow-condensed-v13-latin-700.woff2') format('woff2');
@@ -30,14 +30,6 @@
   font-display: swap;
 }
 
-/* DM Mono — weight 300 (.cv-cap-body--left Card-Fließtext) */
-@font-face {
-  font-family: 'DM Mono';
-  src: url('assets/fonts/dm-mono-v16-latin-300.woff2') format('woff2');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
 
 /* DM Mono — weight 400 (body, nav, Labels, --font-mono Elemente) */
 @font-face {
@@ -48,7 +40,7 @@
   font-display: swap;
 }
 
-/* DM Mono — weight 500–700 (.svc-eyebrow-txt, .nav-logo-box) */
+/* DM Mono — weight 500–700 (.svc-eyebrow-txt u. a.) */
 @font-face {
   font-family: 'DM Mono';
   src: url('assets/fonts/dm-mono-v16-latin-500.woff2') format('woff2');
@@ -68,19 +60,16 @@
   --bg-dark:     #0A0A09;
 
   --ink:         #F0EDE8;
-  --ink-mid:     #C8C4BE;
   --ink-muted:   #7A7570;
   --ink-ghost:   #3A3834;
 
 
-  --border:       rgba(240,237,232, 0.08);
 
   --shadow-lg: 0 12px 40px rgba(240,237,232,0.15), 0 2px 8px rgba(240,237,232,0.08);
 
   --font-mono:    'DM Mono', monospace;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ============================
@@ -300,30 +289,29 @@ body::before {
 
 /* ============================
    PLAY CURSOR — nur wenn Hero-Bild Vollbild ist und man drüber hovert
+   Eckiges Label wie eine Nav-Zelle im Hover (Ink-Fläche, dunkle Barlow-Schrift)
 ============================ */
 #playCursor {
-  position: fixed;
-  left: 0; top: 0;
-  width: 84px; height: 84px;
-  margin: -42px 0 0 -42px;           /* zentriert am Cursor */
-  border-radius: 50%;
-  border: 1px solid rgba(240, 237, 232, 0.9);
-  background: rgba(18, 18, 22, 0.18);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  position: fixed; left: 0; top: 0;
   pointer-events: none;
   z-index: 100000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.3s ease, transform 0.4s var(--ease-out-expo);
-  will-change: transform, opacity;
+  will-change: transform;
 }
-#playCursor.is-visible { opacity: 1; transform: scale(1); }
-#playCursor svg { width: 22px; height: 22px; margin-left: 3px; }
-#playCursor svg path { fill: var(--ink); }
+#playCursor .pc-inner {
+  display: flex; align-items: center; gap: 9px;
+  height: 36px; padding: 0 16px 0 13px;
+  transform: translate(-50%, -50%);                /* am Zeiger zentriert */
+  background: var(--ink); color: var(--bg-dark, #0a0a09);
+  font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
+  font-size: 15px; letter-spacing: 0.04em; line-height: 1; text-transform: uppercase;
+  clip-path: inset(100% 0 0 0);                     /* wischt von unten herein */
+  transition: clip-path 0.45s var(--ease-out-expo);
+}
+#playCursor.is-visible .pc-inner { clip-path: inset(0 0 0 0); }
+#playCursor svg { width: 10px; height: 10px; flex: none; }
+#playCursor svg path { fill: currentColor; }
+.play-cursor-on #heroImgCard, .play-cursor-on #heroImgCard * { cursor: none; }   /* nur ein Zeiger sichtbar */
+@media (prefers-reduced-motion: reduce) { #playCursor .pc-inner { transition: none; } }
 
 .hero-img-card {
   position: absolute;
