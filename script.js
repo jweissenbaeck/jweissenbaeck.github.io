@@ -178,6 +178,76 @@ vtStoreDel('jcky:internalNav');
 })();
 
 /* ============================
+   HERO — Pixel-Partikel bei Mausbewegung
+   Quadratische Pixel in Tintenfarbe stieben in Bewegungsrichtung der Maus, bremsen ab,
+   schrumpfen und blenden aus. Nur bei Bewegung, Anzahl begrenzt. mix-blend-mode: difference
+   (wie der Hero-Name) → auf hellen Bildern dunkel, auf dunklem Grund hell. Pausiert, solange
+   der Play-Cursor sichtbar ist. Eigenständig + try/catch → läuft unabhängig vom Rest.
+============================ */
+(function initHeroParticles() {
+  try {
+    var hero = document.getElementById('hero');
+    if (!hero) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia && !window.matchMedia('(any-hover: hover)').matches) return;
+    var MAX = 220, LIFE = 1000, SIZES = [3, 4, 4, 5, 6];
+    var cv = document.createElement('canvas');
+    cv.className = 'hero-dust'; cv.setAttribute('aria-hidden', 'true');
+    hero.appendChild(cv);
+    var ctx = cv.getContext('2d');
+    if (!ctx) return;
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
+    var W = 0, H = 0, dpr = 1, parts = [], raf = 0, last = null, prevT = 0;
+    function size() {
+      W = hero.clientWidth; H = hero.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    }
+    size();
+    function frame(now) {
+      raf = 0;
+      var dt = Math.min(48, now - (prevT || now)); prevT = now;
+      var f = dt / 16.67;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = ink;
+      parts = parts.filter(function (p) {
+        p.age += dt;
+        if (p.age >= p.life) return false;
+        var k = Math.pow(0.93, f);                    // Luftwiderstand
+        p.vx *= k; p.vy *= k;
+        p.x += p.vx * f; p.y += p.vy * f;
+        var life = 1 - p.age / p.life;
+        var s = Math.max(1, Math.round(p.s * (0.4 + 0.6 * life)));   // schrumpft
+        ctx.globalAlpha = 0.8 * life * life;
+        ctx.fillRect(Math.round(p.x) - s / 2, Math.round(p.y) - s / 2, s, s);
+        return true;
+      });
+      ctx.globalAlpha = 1;
+      if (parts.length) raf = requestAnimationFrame(frame); else prevT = 0;
+    }
+    window.addEventListener('mousemove', function (e) {
+      var r = hero.getBoundingClientRect();
+      var x = e.clientX - r.left, y = e.clientY - r.top;
+      if (x < 0 || y < 0 || x > r.width || y > r.height || window.__playCursorActive) { last = null; return; }
+      if (r.width !== W || r.height !== H) size();
+      if (last) {
+        var dx = x - last.x, dy = y - last.y, speed = Math.sqrt(dx * dx + dy * dy);
+        var n = Math.min(5, Math.floor(speed / 7));   // mehr Tempo = mehr Pixel
+        for (var i = 0; i < n && parts.length < MAX; i++) {
+          var t = Math.random(), spread = (Math.random() - 0.5) * 0.9;
+          var ca = Math.cos(spread), sa = Math.sin(spread), m = 0.18 + Math.random() * 0.22;
+          parts.push({ x: last.x + dx * t, y: last.y + dy * t, vx: (dx * ca - dy * sa) * m, vy: (dx * sa + dy * ca) * m,
+                       age: 0, life: LIFE * (0.6 + Math.random() * 0.5), s: SIZES[Math.floor(Math.random() * SIZES.length)] });
+        }
+        if (n && !raf) raf = requestAnimationFrame(frame);
+      }
+      last = { x: x, y: y };
+    }, { passive: true });
+    window.addEventListener('resize', size);
+  } catch (e) {}
+})();
+
+/* ============================
    EASTER EGG — Klick auf JCKY (Logo oben links)
    Klick 1–4: Buchstaben hüpfen + kurzer Hinweis.
    Klick 5:   Scramble + Pixel-Regen über die Seite.

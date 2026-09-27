@@ -73,7 +73,7 @@ window.addEventListener('DOMContentLoaded', function () {
   });
 
   function setFilter(cat) {
-    current.textContent = cat === 'All' ? 'Category' : cat;
+    current.textContent = cat === 'All' ? 'Filter' : cat;          // aktive Kategorie direkt im Button
     menu.querySelectorAll('li').forEach(function (li) {
       li.classList.toggle('is-active', li.getAttribute('data-cat') === cat);
     });

@@ -55,7 +55,7 @@
 }
 .bn-tile:hover { background: var(--lift); }
 .bn-tile:focus-visible { outline: 1px solid var(--ink); outline-offset: -6px; }
-.bn-tile.is-lifted { visibility: hidden; }           /* Kachel „schwebt" gerade als Panel */
+.bn-tile.is-lifted { visibility: hidden; }           /* Portrait „schwebt" gerade als Lightbox */
 
 .bn-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .bn-label {
@@ -106,7 +106,8 @@
   transform: scale(1.001);
   transition: transform 0.9s var(--ease-out-expo);
 }
-.bn-tile.bn-po:hover .bn-photo { transform: scale(1.035); }
+.bn-po-mosaic { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }   /* Pixel-Mosaik über dem Foto, wird beim Hover aufgedeckt */
+.px-pending .bn-photo { opacity: 0; }                /* kein scharfes Aufblitzen, bevor das Mosaik steht */
 .bn-po::after {                                       /* Label bleibt auf hellen Fotos lesbar */
   content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40%; z-index: 1;
   background: linear-gradient(rgba(17,17,16,0.55), rgba(17,17,16,0));
@@ -162,6 +163,7 @@
 }
 .bnm-tool { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .bnm-tool .bn-ico { width: 28px; height: 28px; }
+.bnm-icons { display: flex; gap: 6px; flex: none; }         /* mehrere Icons in einem Eintrag */
 .bnm-group { margin: 34px 0 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; color: var(--muted); }
 .bnm-title + .bnm-group { margin-top: 0; }
 
@@ -206,7 +208,17 @@
 .bn-tl-body { min-width: 0; }
 .bn-tl-body .bn-value { font-size: clamp(1.05rem, min(1.45vw, 2.6vh), 1.65rem); line-height: 1.05; text-wrap: balance; }
 .bn-tl-body > .bn-meta { margin-top: 3px; }
-.bn-tl-sub { margin: 4px 0 0; }                   /* Unterüberschrift (Abschluss) */
+.bn-tl-body .bn-tl-sub { margin-top: 2px; }       /* Unterüberschrift (Abschluss): minimal Luft unter der Einrichtung */
+.bn-xp-org { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0; }
+.bn-type {                                         /* Anstellungsart: Full-time / Internship */
+  flex: none; padding: 2px 8px;
+  border: 1px solid rgba(240,237,232,0.28); border-radius: 999px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; line-height: 1.4; color: var(--ink);
+}
+/* Wo unterstützt: Leerraum über/unter der Schrift abschneiden → Text sitzt optisch exakt mittig */
+@supports (text-box: trim-both cap alphabetic) {
+  .bn-type { text-box: trim-both cap alphabetic; padding: 5px 8px; }
+}
 .bn-xp-sum {
   margin: clamp(6px, 1vh, 10px) 0 0; max-width: 54ch;
   font-family: var(--font-mono); font-size: var(--tx); line-height: 1.55; color: rgba(240,237,232,0.6);
@@ -215,10 +227,10 @@
    die Linie beginnt direkt darunter und endet am letzten Punkt */
 .bn-roles {
   --rg: clamp(3px, 0.6vh, 6px);
-  list-style: none; margin: clamp(5px, 0.9vh, 9px) 0 0; padding: 0;
+  list-style: none; margin: 2px 0 0; padding: 0;     /* gleicher Abstand wie Titel → Abschluss bei Education */
   display: grid; gap: var(--rg);
 }
-.bn-roles li { display: flex; align-items: center; min-height: 18px; }
+.bn-roles li { display: flex; align-items: center; }
 .bn-role { margin: 0; font-family: var(--font-mono); font-size: var(--tx); line-height: 1.35; color: var(--ink); min-width: 0; }
 .bn-roles.is-multi { padding-left: 16px; }
 .bn-roles.is-multi li { position: relative; }
@@ -244,20 +256,18 @@
   background: rgba(10, 10, 9, 0.72);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   opacity: 0;
+  transition: opacity 0.45s ease;
 }
 .bnm-panel {
   position: fixed; top: 0; left: 0;
   background: var(--bg);
   outline: 1px solid rgba(240,237,232,0.2);
   overflow: hidden;
-  will-change: left, top, width, height;
 }
-.bnm-preview { position: absolute; inset: 0; pointer-events: none; }
 .bnm-content {
-  position: absolute; top: 0; left: 0;                /* feste Zielgröße → kein Umbruch während der Animation */
+  position: absolute; top: 0; left: 0;                /* feste Zielgröße */
   display: flex; flex-direction: column;
   overflow-y: auto; overscroll-behavior: contain;
-  opacity: 0;
 }
 .bnm-head {
   position: sticky; top: 0; z-index: 1;
@@ -266,19 +276,17 @@
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
+/* Schließen: X im selben Strichstil wie der Hover-Pfeil; Hover invertiert wie die Nav-Zellen */
 .bnm-close {
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 0; background: none; border: none; cursor: pointer;
-  font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
-  font-size: 15px; letter-spacing: 0.04em; text-transform: uppercase;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; margin: -8px -8px -8px 0; padding: 0;
+  background: none; border: 1px solid var(--line); cursor: pointer;
   color: var(--ink);
+  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
-.bnm-close kbd {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
-  padding: 3px 6px; border: 1px solid var(--faint); border-radius: 4px; color: var(--muted);
-}
-.bnm-close:hover kbd { border-color: var(--ink); color: var(--ink); }
-.bnm-close:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; }
+.bnm-close svg { width: 14px; height: 14px; transition: transform 0.45s var(--ease-out-expo); }
+.bnm-close:hover, .bnm-close:focus-visible { background: var(--ink); border-color: var(--ink); color: var(--bg-dark, #0a0a09); outline: none; }
+.bnm-close:hover svg, .bnm-close:focus-visible svg { transform: rotate(90deg); }
 
 .bnm-inner { padding: clamp(24px, 4vh, 48px) clamp(20px, 3vw, 40px) clamp(32px, 5vh, 56px); }
 .bnm-title {
@@ -294,13 +302,33 @@
   color: rgba(240,237,232,0.72);
 }
 .bnm-text p:last-child { margin-bottom: 0; }
+/* Interests als Fließtext */
+.bnm-prose p { max-width: 62ch; margin-bottom: 1em; }
 
 /* Fakten (dl) */
 .bnm-facts { margin: 0; border-top: 1px solid var(--line); }
 .bnm-facts > div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.bnm-facts > div:last-child { border-bottom: none; padding-bottom: 0; }   /* keine Linie unter dem letzten Eintrag */
+.bnm-facts > div.is-stack { grid-template-columns: minmax(0, 1fr); gap: 12px; }   /* Wert unter der Bezeichnung */
+/* Listen in Modals: keine Linie unter dem letzten Eintrag, wenn danach nichts mehr kommt */
+.bnm-inner > .bnm-rows:last-child > li:last-child { border-bottom: none; padding-bottom: 0; }
 .bnm-facts dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
 .bnm-facts dd { margin: 0; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.55; color: var(--ink); font-variant-numeric: tabular-nums; }
 .bnm-facts a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--faint); }
+/* Sprachen: 2×2 gleich große Boxen */
+.bnm-langs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }   /* alle vier in einer Zeile, gleich groß */
+.bnm-lang {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
+  padding: 12px 14px 13px;
+  border: 1px solid var(--line);
+}
+.bnm-lang-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.bnm-lang-name {
+  font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
+  font-size: 1.05rem; line-height: 1; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink);
+}
+.bnm-lang-level { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink); }
+.bnm-lang-note { font-family: var(--font-mono); font-size: 12px; line-height: 1.45; color: var(--muted); }
 .bnm-facts a:hover { text-decoration-color: var(--ink); }
 
 /* Einträge mit Beschreibung (Tools, Skills, Timeline) */
@@ -308,7 +336,7 @@
 .bnm-rows > li { display: grid; grid-template-columns: 21rem minmax(0, 1fr); gap: 8px 32px; align-items: start; padding: 18px 0; border-bottom: 1px solid var(--line); }   /* feste, breite Namensspalte */
 .bnm-rows .bn-value { font-size: clamp(1.15rem, 1.5vw, 1.5rem); line-height: 1.05; text-wrap: balance; }
 .bnm-rows .bn-meta { margin-top: 6px; }
-.bnm-rows .bnm-role .bn-meta { margin-top: 2px; }
+.bnm-rows .bnm-role .bn-meta { margin-top: -3px; }   /* Datum rückt an den Rollentitel */
 .bnm-roles { --rg: 18px; display: grid; gap: var(--rg); }
 .bnm-role { position: relative; }
 .bnm-role-title {
@@ -327,10 +355,9 @@
   background: rgba(240,237,232,0.22);
 }
 .bnm-roles.is-multi .bnm-role.is-current::before { background: var(--ink); border-color: var(--ink); }
-.bnm-role .bn-meta { margin-top: 2px; }
 .bnm-note { margin: 0 0 4px; }
 .bnm-sub { margin: 4px 0 0; font-size: 1rem; }
-.bnm-points { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 4px; max-width: 60ch; }
+.bnm-points { list-style: none; margin: 12px 0 18px; padding: 0; display: grid; gap: 4px; max-width: 60ch; }   /* mehr Luft zum Datum */
 .bnm-points:last-child { margin-bottom: 0; }
 .bnm-points li { position: relative; padding-left: 16px; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.7; color: rgba(240,237,232,0.72); }
 .bnm-points li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 5px; height: 5px; background: var(--faint); }
@@ -344,11 +371,11 @@
 .bnl { position: fixed; inset: 0; z-index: 1500; cursor: zoom-out; }
 .bnl:focus { outline: none; }
 .bnl-backdrop {
-  position: absolute; inset: 0; opacity: 0;
+  position: absolute; inset: 0; opacity: 0; transition: opacity 0.45s ease;
   background: rgba(10, 10, 9, 0.84);
   -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
-.bnl-img { position: fixed; top: 0; left: 0; display: block; object-fit: cover; object-position: 50% 30%; will-change: left, top, width, height; }
+.bnl-img { position: fixed; top: 0; left: 0; display: block; object-fit: cover; object-position: 50% 30%; }
 .bn-tile.bn-po { cursor: zoom-in; }
 
 html.bn-locked, html.bn-locked body { overflow: hidden; }
@@ -391,7 +418,8 @@ html.bn-locked, html.bn-locked body { overflow: hidden; }
   .bnm-grid { grid-template-columns: minmax(0, 1fr); }
   .bnm-rows > li { grid-template-columns: minmax(0, 1fr); }
   .bnm-facts > div { grid-template-columns: 7em minmax(0, 1fr); }
-  .bnm-close kbd { display: none; }
+  .bnm-facts > div.is-stack { grid-template-columns: minmax(0, 1fr); }
+  .bnm-langs { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* Handy: 2 × 2, sonst zu schmal */
 }
 
 /* Sehr niedrige Desktop-Bildschirme: Kurzfassungen ausblenden (stehen im Detail), Titel bleiben */
@@ -400,5 +428,5 @@ html.bn-locked, html.bn-locked body { overflow: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bn-photo, .bn-open svg, .bn-tip { transition: none; }
+  .bn-photo, .bn-open svg, .bn-tip, .bnm-backdrop, .bnl-backdrop, .bnm-close, .bnm-close svg { transition: none; }
 }

@@ -41,6 +41,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .pj-hero-marquee { animation: none; }
+  .pj-filter-menu, .pj-filter-caret { transition: none; }
 }
 
 
@@ -57,7 +58,7 @@
   border-bottom: 1px solid rgba(240,237,232,0.16);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
 }
-/* "Filter by Category" als eingefasste Zelle mit rechtem Stroke (volle Höhe) */
+/* „Filter“ als eingefasste Zelle mit rechtem Stroke (volle Höhe) */
 .pj-filter-group {
   display: flex; align-items: center; gap: clamp(16px, 2vw, 28px);
   padding-right: clamp(20px, 3vw, 40px);
@@ -66,17 +67,18 @@
 /* Filter-Top-Stroke ist immer sichtbar. Sitzt die Nav direkt auf dem oben
    geklemmten Filter, wird stattdessen die Nav-Unterkante ausgeblendet → nur EINE Linie. */
 .nav-shown.filter-stuck .nav { box-shadow: none; }
-.pj-filter-label { color: rgba(240,237,232,0.5); }
 
 .pj-filter-field { position: relative; align-self: stretch; display: flex; align-items: center; }
 .pj-filter-btn {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; align-items: center; gap: 12px;
   background: none; border: none; cursor: pointer;
   color: var(--ink); font: inherit; letter-spacing: 0.18em; text-transform: uppercase;
   padding: 0;
 }
-.pj-filter-caret { font-size: 17px; line-height: 0; transition: transform 0.3s var(--ease-out-expo); }
+/* Chevron im Strichstil der Seite (wie Hover-Pfeil und Close-X) */
+.pj-filter-caret { width: 12px; height: 12px; flex: none; transition: transform 0.45s var(--ease-out-expo); }
 .pj-filter-field.is-open .pj-filter-caret { transform: rotate(180deg); }
+.pj-filter-btn:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; }
 
 /* Dropdown: bündig unter der Filterzelle, dunkler Panel, gedämpfte Einträge */
 .pj-filter-menu {
@@ -85,19 +87,29 @@
   background: var(--bg);
   border: 1px solid rgba(240,237,232,0.10);
   border-top: 1px solid rgba(240,237,232,0.16);   /* Top-Rand sichtbar (war none) */
-  opacity: 0; visibility: hidden;
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity 0.22s ease, transform 0.4s var(--ease-out-expo), visibility 0s linear 0.22s;
   z-index: 40;
 }
-.pj-filter-field.is-open .pj-filter-menu { opacity: 1; visibility: visible; }
+.pj-filter-field.is-open .pj-filter-menu { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
 .pj-filter-menu li {
+  display: flex; align-items: center; gap: 12px;
   padding: 11px 26px; cursor: pointer;
   font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em;
   text-transform: none;                       /* Einträge in Normalschreibung wie in der Inspo */
   color: rgba(240,237,232,0.45);
   transition: color 0.2s ease;
 }
+/* Pixel-Quadrat wie bei den Listen der CV-Seite: umrandet, aktiv = gefüllt */
+.pj-filter-menu li::before {
+  content: ''; flex: none; width: 6px; height: 6px; box-sizing: border-box;
+  border: 1px solid rgba(240,237,232,0.35);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
 .pj-filter-menu li:hover { color: var(--ink); }
+.pj-filter-menu li:hover::before { border-color: var(--ink); }
 .pj-filter-menu li.is-active { color: var(--ink); }
+.pj-filter-menu li.is-active::before { background: var(--ink); border-color: var(--ink); }
 
 /* ── Projekt-Liste: pro Projekt Kopf oben links + Reihe aus 3 Bildern ── */
 .pj-grid {

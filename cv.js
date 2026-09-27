@@ -6,6 +6,12 @@
 (function () {
   /* ── Einstellungen ── */
   var PORTRAIT    = 'assets/jcky-3.jpg';
+  var BIRTHDATE   = new Date(2003, 0, 17);   // 17. Jänner 2003 → Alter im Profil zählt automatisch weiter
+  function ageNow() {
+    var n = new Date(), a = n.getFullYear() - BIRTHDATE.getFullYear();
+    if (n.getMonth() < BIRTHDATE.getMonth() || (n.getMonth() === BIRTHDATE.getMonth() && n.getDate() < BIRTHDATE.getDate())) a--;
+    return a;
+  }
 
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var hasGsap = typeof gsap !== 'undefined';
@@ -20,71 +26,70 @@
   var TOOLS = [                                     // Reihenfolge innerhalb der Gruppe = Anzeige-Reihenfolge
     { group: 'Design & Creativity', name: 'Figma', icon: 'Figma-logo.svg',
       use:  'High-fidelity prototypes, design systems and general design',
-      more: 'My main design tool. I use it for high-fidelity prototypes, for building and maintaining design systems and for everyday interface design, from first layouts to developer-ready screens.' },
+      more: 'My main design tool, used for high-fidelity prototypes, design systems and everyday interface design.' },
     { group: 'Design & Creativity', name: 'Claude', icon: 'Claude_AI_symbol.svg',
       use:  'AI assistant for prototyping and inspiration',
-      more: 'My AI assistant in the design process. I use it to prototype ideas quickly, explore different directions and find inspiration when I start something new.' },
-    { group: 'Design & Creativity', name: 'Adobe Illustrator', icon: 'Adobe_Illustrator_CC_icon.svg',
+      more: 'An AI assistant that helps me prototype quickly, explore directions and find inspiration.' },
+    { group: 'Design & Creativity', name: 'Illustrator', icon: 'Adobe_Illustrator_CC_icon.svg',
       use:  'Logos and graphics',
-      more: 'For vector work: logos and graphics that need to stay sharp at any size.' },
-    { group: 'Design & Creativity', name: 'Adobe Photoshop', icon: 'Adobe_Photoshop_CC_icon.svg',
+      more: 'Logos and graphics, built as clean vectors.' },
+    { group: 'Design & Creativity', name: 'Photoshop', icon: 'Adobe_Photoshop_CC_icon.svg',
       use:  'Image manipulation',
-      more: 'For image manipulation, from retouching and compositing to preparing images for screens and campaigns.' },
-    { group: 'Design & Creativity', name: 'Adobe Lightroom Classic', icon: 'Adobe_Photoshop_Lightroom_Classic_CC_icon.svg',
-      use:  'Colour grading and colour correction of photos',
-      more: 'My photography workflow: colour correction and colour grading of my photos, from a consistent look across a series to the final export.' },
+      more: 'Used for image manipulation.' },
+    { group: 'Design & Creativity', name: 'Lightroom Classic', icon: 'Adobe_Photoshop_Lightroom_Classic_CC_icon.svg',
+      use:  'Colour correction and grading of photos',
+      more: 'Colour correction and colour grading of my photos.' },
     { group: 'Design & Creativity', name: 'DaVinci Resolve Studio', icon: 'DaVinci_Resolve_Studio.png',
       use:  'Video editing and colour grading',
-      more: 'For video, from the edit to colour grading that gives the footage its final look.' },
-    { group: 'Programming', name: 'HTML5', icon: 'HTML5_logo_and_wordmark.svg',
-      use:  'Prototyping websites',
-      more: 'Together with CSS and JavaScript, I use HTML to prototype websites directly in the browser. HTML defines the structure and content of a page.' },
-    { group: 'Programming', name: 'CSS3', icon: 'CSS3_logo.svg',
-      use:  'Prototyping websites',
-      more: 'Styling, layout and animation for website prototypes, so ideas can be tested as real, responsive pages.' },
-    { group: 'Programming', name: 'JavaScript', icon: 'Unofficial_JavaScript_logo_2.svg',
-      use:  'Prototyping websites',
-      more: 'Interaction and behaviour in website prototypes: how a page responds when people actually use it.' },
+      more: 'Video editing and colour grading for my films.' },
+    { group: 'Programming', name: 'HTML5', icon: 'HTML5_logo_and_wordmark.svg', combo: 'web',
+      use:  'Learned at university, used for personal web projects and quick prototypes',
+      more: 'Learned at university and used for personal web projects and quick prototypes.' },
+    { group: 'Programming', name: 'CSS3', icon: 'CSS3_logo.svg', combo: 'web',
+      use:  'Learned at university, used for personal web projects and quick prototypes',
+      more: 'Learned at university and used for personal web projects and quick prototypes.' },
+    { group: 'Programming', name: 'JS', icon: 'Unofficial_JavaScript_logo_2.svg', combo: 'web',
+      use:  'Learned at university, used for personal web projects and quick prototypes',
+      more: 'Learned at university and used for personal web projects and quick prototypes.' },
     { group: 'Programming', name: 'Python', icon: 'Python-logo-notext.svg',
-      use:  'Scripting and backend',
-      more: 'For scripting and backend work, from small automations to the server side of a project.' },
+      use:  'Learned at university, used for scripting and backend',
+      more: 'Picked up at university, now used for scripting and backend work.' },
     { group: 'Tech', name: 'GitHub', icon: 'github.svg',
-      use:  'Collaboration between designers and developers',
-      more: 'Where design and development meet. I use GitHub to collaborate with developers, share work, follow changes and keep the handoff close to the code.' },
+      use:  'Handover between designers and developers',
+      more: 'Where the handover between designers and developers happens.' },
     { group: 'Tech', name: 'Git', icon: 'Git_icon.svg',
       use:  'Version control',
-      more: 'Version control for my projects, so every change is tracked and easy to roll back.' },
+      more: 'Keeps every project under version control.' },
     { group: 'Tech', name: 'GitLab', icon: 'GitLab.svg',
-      use:  'Occasional collaboration environment',
-      more: 'An environment I sometimes use for collaboration, depending on the team and the project.' }
+      use:  'Sometimes for collaboration',
+      more: 'Occasionally used for collaboration.' }
   ];
   function toolsIn(g) { return TOOLS.filter(function (t) { return t.group === g; }); }
+  var COMBO_NAMES = { web: 'HTML, CSS & JS' };           // im Detail zusammengefasst
   function toolIcon(t) {
     return '<span class="bn-ico" data-letter="' + esc(t.name.charAt(0)) + '">' +
       '<img src="' + ICONS + t.icon + '" alt="" decoding="async"></span>';
   }
   /* Skills: die ersten SKILLS_TILE erscheinen in der Kachel, alle im Detail */
-  var SKILLS_TILE = 9;   // alle Skills passen in die Kachel
+  /* Skills: alle erscheinen in der Kachel (2 Spalten), die Beschreibung im Detail */
   var SKILLS = [
-    { name: 'UI / UX design',                use: 'Interfaces for internal and external products, from first idea to final screen.' },
-    { name: 'High-fidelity prototyping',     use: 'Detailed, interactive prototypes that look and behave like the real product.' },
-    { name: 'Design system architecture',    use: 'Structuring scalable design systems with components and clear rules. I built one from the ground up at Websline.' },
-    { name: 'Prototyping in Figma',          use: 'From quick flows to polished, clickable prototypes.' },
-    { name: 'AI-integrated workflows',       use: 'AI tools like Claude as part of my process, for prototyping, exploration and inspiration.' },
-    { name: 'Design-to-developer handover',  use: 'A smooth handover: clear specs, documented components and close collaboration with developers on GitHub.' },
-    { name: 'Wireframing',                   use: 'Structure and flows before visual design.' },
-    { name: 'Product thinking',              use: 'Product and design thinking across several web projects during my studies.' },
-    { name: 'HCI',                           use: 'Focus of my bachelor studies, together with geoinformatics: how people and interfaces work together.' }
+    { name: 'UI / UX design',                use: 'Software products are my focus: internal tools as well as products sold to clients, designed within large, scalable systems.' },
+    { name: 'High-fidelity prototyping',     use: 'Polished, detailed prototypes that are genuinely usable.' },
+    { name: 'Design system architecture',    use: 'From the ground up, I structured a large, scalable design system used across products, then adapted, organised, fixed and modernised it.' },
+    { name: 'AI-integrated workflows',       use: 'Rather than a threat, AI is a chance to work more efficiently, so I integrate it into my design workflow.' },
+    { name: 'Design-to-developer handover',  use: 'Finished screens are prepared so developers can easily work with them and rebuild them.' },
+    { name: 'Product thinking',              use: 'Designing my current products means thinking across platforms and products.' },
+    { name: 'HCI',                           use: 'Human-computer interaction was the main focus of my studies, and I keep up with the latest trends in how people interact with computers.' }
   ];
+  var SKILLS_TILE = SKILLS.length;
   /* Experience: neueste Station zuerst. Firma = Überschrift, darunter die Rolle(n).
      years = Jahres-Spalte (Kachel) · period = Zeitraum (Detail) · roles: mehrere = Beförderung in derselben Firma
      role.when = Zeitraum der Rolle (nur bei mehreren Rollen in der Kachel) · points = Aufgaben (Detail) */
   var EXPERIENCE = [
-    { org: 'Websline', meta: 'Full-time, Salzburg, Austria', years: '2025 — Now', period: 'Since September 2025',
+    { org: 'Websline', type: 'Full-time', meta: 'Salzburg, Austria', years: '2025 — Now', period: 'September 2025 — Now',
       sum: 'Hi-fi prototypes, design system architecture, close and smooth dev handover.',
       roles: [
         { title: 'Junior UI / UX Designer', when: 'Mar 2026 — Now', period: 'March 2026 — Now', current: true,
-          note: 'Project: Websline Design System',
           points: [
               'High-fidelity prototyping',
               'Building and developing a scalable design system',
@@ -93,29 +98,17 @@
             ] },
         { title: 'UI / UX Design Trainee', when: 'Sep 2025 — Feb 2026', period: 'September 2025 — February 2026, 6 months' }
       ] },
-    { org: 'Austrian Red Cross', meta: 'Internship, Salzburg, Austria, on-site', years: '2023', period: 'August 2023, 1 month',
+    { org: 'Austrian Red Cross', type: 'Internship', meta: 'Salzburg, Austria, on-site', years: '2023', period: 'August 2023, 1 month',
       sum: 'Digital design and databases.',
       roles: [
         { title: 'Information Technology Internship',
-          points: [
-              'Digital design',
-              'Maintaining the vehicle and equipment database',
-              'Supporting the digital transformation and optimising existing processes',
-              'Configuring, installing and integrating hardware components',
-              'Setting up and installing Wi-Fi access points'
-            ] }
+          points: ['Digital design', 'Database maintenance'] }
       ] },
-    { org: 'Austrian Red Cross', meta: 'Internship, Salzburg, Austria, on-site', years: '2019', period: 'August 2019, 1 month',
+    { org: 'Austrian Red Cross', type: 'Internship', meta: 'Salzburg, Austria, on-site', years: '2019', period: 'August 2019, 1 month',
       sum: 'Digital design and databases.',
       roles: [
         { title: 'Information Technology Internship',
-          points: [
-              'Digital design',
-              'Data synchronisation and data entry in the employee database',
-              'Data collection and evaluation for the laryngeal tube study',
-              'Assessing and issuing certificates',
-              'General administrative tasks'
-            ] }
+          points: ['Digital design', 'Database maintenance'] }
       ] }
   ];
   /* Education: neueste zuerst */
@@ -123,25 +116,20 @@
     { title: 'B.Sc. Digitalization & Innovation', org: 'Paris Lodron University of Salzburg',
       years: '2022 — 2025', period: 'October 2022 — September 2025',
       sum: 'HCI and geoinformatics. Graduated with distinction (1.4).',
-      text: 'Focus on human-computer interaction and geoinformatics. Product and design thinking across several web projects, and a bachelor thesis on how apps can be designed to increase user motivation. Graduated with 1.4, passed with distinction, and received a merit scholarship for my grades.' },
-    { title: 'Secondary school diploma', org: 'BRG Seekirchen', orgLong: 'BRG Seekirchen (Matura)',
+      text: 'Graduated with distinction and an overall grade of 1.4. My studies centred on human-computer interaction, design and geoinformatics, and I went on to specialise in UI / UX, gaining first experience in interdisciplinary projects. My bachelor thesis explored a UI / UX topic as well: how apps can be designed to increase user motivation. I also received a merit scholarship for my grades.' },
+    { title: 'Secondary school', org: 'BRG Seekirchen (Diploma)',
       years: '2013 — 2021', period: 'September 2013 — July 2021',
       sum: 'Matura with a focus on languages.',
-      text: 'Graduated with the Matura, the Austrian university entrance qualification. Focus on languages, including several foreign languages. Alongside school, internships and part-time work in IT and digital gave me hands-on experience with databases, digital design and practical projects.' }
+      text: 'Graduated with the Matura, the qualification for studying at Austrian universities. My focus was on languages: I learned French, Latin, English and some Russian.' }
   ];
-  /* Interessen: group ordnet das Detail, note ist optional */
-  var INTEREST_GROUPS = ['Creative', 'Culture', 'Sport & games'];
-  var SIDE = [
-    { group: 'Creative',      name: 'Music',           note: 'I play piano and guitar.' },
-    { group: 'Creative',      name: 'Photography',     note: 'Also part of my work, for hotel campaigns at Websline.' },
-    { group: 'Creative',      name: 'Videography',     note: 'From shooting to the final edit.' },
-    { group: 'Creative',      name: 'Painting' },
-    { group: 'Culture',       name: 'Art' },
-    { group: 'Culture',       name: 'History',         note: 'A subject I love.' },
-    { group: 'Culture',       name: 'Classical music', note: 'A big fan.' },
-    { group: 'Sport & games', name: 'Gym',             note: 'Something I am passionate about.' },
-    { group: 'Sport & games', name: 'Tennis' },
-    { group: 'Sport & games', name: 'Chess' }
+  /* Interessen: Namen für die Kachel-Liste */
+  var SIDE = ['Music', 'Photography', 'Videography', 'Painting', 'Art', 'History', 'Classical music', 'Gym', 'Tennis', 'Chess'];
+  /* Detail als Fließtext: ein Eintrag = ein Absatz */
+  var INTERESTS_TEXT = [
+    'Music has been a big part of my life for as long as I can remember. I taught myself to play the piano and the guitar, and I\'ve been playing both for around nine years now. When I\'m listening rather than playing, it\'s often classical music, especially Claude Debussy and Frédéric Chopin.',
+    'Photography and videography have been with me for just as long. I picked it all up on my own, from shooting photos and videos to editing and colour grading them, and finally cutting everything together into creative films.',
+    'I\'m also fascinated by art. I love looking at paintings and trying to figure out what the artist had in mind while creating them. My favourite period is the Renaissance, and the style I like most is pointillism.',
+    'Away from the creative side, I\'m passionate about the gym and have been training with discipline for two years. I also enjoy playing tennis and chess, and I\'m into computers and video games.'
   ];
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -152,8 +140,22 @@
   function tlItem(years, body) {
     return '<li class="bn-tl"><span class="bn-meta bn-tl-years">' + years + '</span><div class="bn-tl-body">' + body + '</div></li>';
   }
-  function facts(rows) {
-    return '<dl class="bnm-facts">' + rows.map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('') + '</dl>';
+  /* Sprachen: 2×2 gleich große Boxen · Stufe nach GER/CEFR (Muttersprache ohne Stufe) */
+  var LANGUAGES = [
+    { name: 'German',  level: '',   note: 'Native' },
+    { name: 'English', level: 'C1', note: 'Fluent' },
+    { name: 'French',  level: 'B1', note: 'Limited working proficiency' },
+    { name: 'Russian', level: 'A1', note: 'Elementary' }
+  ];
+  function langBoxes() {
+    return '<div class="bnm-langs">' + LANGUAGES.map(function (l) {
+      return '<div class="bnm-lang"><div class="bnm-lang-top"><span class="bnm-lang-name">' + esc(l.name) + '</span>' +
+        (l.level ? '<span class="bnm-lang-level">' + esc(l.level) + '</span>' : '') + '</div>' +
+        '<span class="bnm-lang-note">' + esc(l.note) + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function facts(rows) {                         // [Bezeichnung, Wert, 'stack' = Wert unter die Bezeichnung]
+    return '<dl class="bnm-facts">' + rows.map(function (r) { return '<div' + (r[2] === 'stack' ? ' class="is-stack"' : '') + '><dt>' + r[0] + '</dt><dd>' + r[1] + '</dd></div>'; }).join('') + '</dl>';
   }
   function rows(items, metaFn) {
     return '<ul class="bnm-rows">' + items.map(function (it) {
@@ -169,9 +171,8 @@
       },
       title: 'Jacob Weissenbäck',
       detail: function () {
-        return '<div class="bnm-text">' +
-          '<p>Designer with a focus on design systems, prototyping and clear developer handoff, plus photography and video on the side.</p>' +
-          '<p>I turn ideas into clear, usable and considered interfaces.</p></div>';
+        return facts([['Age', ageNow() + ' years old'], ['Location', 'Living and working in Salzburg'],
+                      ['Languages', langBoxes(), 'stack']]);
       } },
 
     { id: 'po', label: 'Portrait',
@@ -182,7 +183,7 @@
       },
       lightbox: true },                            // öffnet nur das Foto, groß in der Bildmitte
 
-    { id: 'in', label: 'Tools',
+    { id: 'in', label: 'Tools', equalRows: true,
       tile: function () {
         /* drei Gruppen nebeneinander, alle Icons gleich groß; Name + Einsatz im Tooltip */
         return head('Tools') + '<div class="bn-body"><div class="bn-toolgroups">' + TOOL_GROUPS.map(function (g) {
@@ -195,13 +196,20 @@
       title: 'Tools',
       detail: function () {
         return TOOL_GROUPS.map(function (g) {
+          var seen = {};
           return '<h3 class="bnm-group">' + esc(g) + '</h3><ul class="bnm-rows">' + toolsIn(g).map(function (t) {
+            if (t.combo) {                                // HTML, CSS & JavaScript: ein Eintrag, alle Icons
+              if (seen[t.combo]) return '';
+              seen[t.combo] = 1;
+              var set = toolsIn(g).filter(function (x) { return x.combo === t.combo; });
+              return '<li><div class="bnm-tool"><span class="bnm-icons">' + set.map(toolIcon).join('') + '</span><p class="bn-value">' + esc(COMBO_NAMES[t.combo]) + '</p></div><p>' + esc(t.more) + '</p></li>';
+            }
             return '<li><div class="bnm-tool">' + toolIcon(t) + '<p class="bn-value">' + esc(t.name) + '</p></div><p>' + esc(t.more) + '</p></li>';
           }).join('') + '</ul>';
         }).join('');
       } },
 
-    { id: 'sk', label: 'Skills',
+    { id: 'sk', label: 'Skills', equalRows: true,
       tile: function () {
         return head('Skills') + '<div class="bn-body"><ul class="bn-list" style="--rows:' + Math.ceil(SKILLS_TILE / 2) + '">' + SKILLS.slice(0, SKILLS_TILE).map(function (s) {   // 2 Spalten
           return '<li><span class="bn-item">' + esc(s.name) + '</span></li>';
@@ -218,7 +226,7 @@
           var roles = '<ol class="bn-roles' + (multi ? ' is-multi' : '') + '">' + x.roles.map(function (r) {
             return '<li' + (r.current ? ' class="is-current"' : '') + '><span class="bn-role">' + esc(r.title) + '</span></li>';
           }).join('') + '</ol>';
-          return tlItem(x.years, '<p class="bn-value">' + esc(x.org) + '</p>' + roles +
+          return tlItem(x.years, '<p class="bn-xp-org"><span class="bn-value">' + esc(x.org) + '</span><span class="bn-type">' + esc(x.type) + '</span></p>' + roles +
             (x.sum ? '<p class="bn-xp-sum">' + esc(x.sum) + '</p>' : ''));
         }).join('') + '</ol></div>';
       },
@@ -226,7 +234,7 @@
       detail: function () {
         return '<ul class="bnm-rows">' + EXPERIENCE.map(function (x) {
           var multi = x.roles.length > 1;
-          var left = '<div><p class="bn-value">' + esc(x.org) + '</p><p class="bn-meta">' + esc(x.meta) + '<br>' + esc(x.period) + '</p></div>';
+          var left = '<div><p class="bn-xp-org"><span class="bn-value">' + esc(x.org) + '</span><span class="bn-type">' + esc(x.type) + '</span></p><p class="bn-meta">' + esc(x.meta) + '<br>' + esc(x.period) + '</p></div>';
           var right = '<div class="bnm-roles' + (multi ? ' is-multi' : '') + '">' + x.roles.map(function (r) {
             return '<div class="bnm-role' + (r.current ? ' is-current' : '') + '"><p class="bnm-role-title">' + esc(r.title) + '</p>' +
               (r.period ? '<p class="bn-meta">' + esc(r.period) + '</p>' : '') +
@@ -251,19 +259,17 @@
         }).join('') + '</ul>';
       } },
 
-    { id: 'sq', label: 'Interests',
+    { id: 'sq', label: 'Interests', narrow: true,
       tile: function () {
         return head('Interests') + '<div class="bn-body"><ul class="bn-list" style="--rows:' + Math.ceil(SIDE.length / 3) + '">' + SIDE.map(function (s) {   // 3 Spalten
-          return '<li><span class="bn-item">' + esc(s.name) + '</span></li>';
+          return '<li><span class="bn-item">' + esc(s) + '</span></li>';
         }).join('') + '</ul></div>';
       },
       title: 'Interests',
       detail: function () {
-        return INTEREST_GROUPS.map(function (g) {
-          return '<h3 class="bnm-group">' + g + '</h3><ul class="bnm-rows">' + SIDE.filter(function (s) { return s.group === g; }).map(function (s) {
-            return '<li><div><p class="bn-value">' + esc(s.name) + '</p></div><p>' + (s.note ? esc(s.note) : '') + '</p></li>';
-          }).join('') + '</ul>';
-        }).join('');
+        return '<div class="bnm-text bnm-prose">' + INTERESTS_TEXT.map(function (pp) {
+          return '<p>' + esc(pp) + '</p>';
+        }).join('') + '</div>';
       } }
   ];
 
@@ -346,6 +352,95 @@
     if (photo.complete && !photo.naturalWidth) noPhoto();
   }
 
+  /* ── Portrait „Aufdecken“: das Foto ist standardmäßig ein Pixel-Mosaik. Um den Cursor wird es
+     Block für Block scharf (weicher Rand im selben Raster), hinter dem Cursor verpixelt es sich
+     sanft wieder; verlässt die Maus das Foto, ist es nach kurzer Zeit wieder ganz verpixelt.
+     Das Skript liest keine Bildpunkte → funktioniert auch per file://. Ohne Maus (Touch):
+     kein Mosaik, das Foto bleibt normal sichtbar. */
+  (function portraitReveal() {
+    var tile = byId.po && byId.po.el, img = tile && tile.querySelector('.bn-photo');
+    if (!tile || !img) return;
+    if (window.matchMedia && !window.matchMedia('(any-hover: hover)').matches) return;
+    tile.classList.add('px-pending');                // Foto erst zeigen, wenn das Mosaik steht
+    var cv = document.createElement('canvas');
+    cv.className = 'bn-po-mosaic'; cv.setAttribute('aria-hidden', 'true');
+    img.insertAdjacentElement('afterend', cv);
+    var ctx = cv.getContext('2d'), mosaic = document.createElement('canvas'), mctx = mosaic.getContext('2d');
+    var small = document.createElement('canvas'), sctx = small.getContext('2d');
+    if (!ctx || !mctx || !sctx) { tile.classList.remove('px-pending'); return; }
+    var W = 0, H = 0, dpr = 1, B = 24, R = 120, cols = 0, rows = 0, reveal = null;
+    var inside = false, mx = -1e4, my = -1e4, raf = 0, ready = false;
+
+    /* Mosaik einmal vorberechnen (Bild klein zeichnen → ohne Glättung hochskalieren) */
+    function build() {
+      W = tile.clientWidth; H = tile.clientHeight;
+      if (!W || !H || !img.naturalWidth) return;
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      B = Math.max(9, Math.round(W / 26));             // Blockgröße passt sich der Kachel an (≈ 26 Blöcke in der Breite)
+      R = Math.max(90, Math.round(W * 0.3));           // Radius der Aufdeckung
+      cols = Math.ceil(W / B); rows = Math.ceil(H / B);
+      var iw = img.naturalWidth, ih = img.naturalHeight, sc = Math.max(W / iw, H / ih);
+      var ox = (W - iw * sc) * 0.5, oy = (H - ih * sc) * 0.3;          // wie object-fit: cover, 50% 30%
+      small.width = cols; small.height = rows;
+      sctx.drawImage(img, -ox / sc, -oy / sc, cols * B / sc, rows * B / sc, 0, 0, cols, rows);
+      [cv, mosaic].forEach(function (c) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); });
+      mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      mctx.imageSmoothingEnabled = false;
+      mctx.drawImage(small, 0, 0, cols, rows, 0, 0, cols * B, rows * B);
+      reveal = new Float32Array(cols * rows);
+      ready = true;
+      frame();                                         // Ruhezustand: komplett verpixelt
+      tile.classList.remove('px-pending');
+    }
+
+    function frame() {
+      raf = 0;
+      if (!ready) return;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      ctx.drawImage(mosaic, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = 'destination-out';   // aufgedeckte Blöcke aus dem Mosaik „radieren“
+      var busy = false;
+      for (var gy = 0; gy < rows; gy++) {
+        var cy = gy * B + B / 2;
+        for (var gx = 0; gx < cols; gx++) {
+          var i = gy * cols + gx, cx = gx * B + B / 2, target = 0;
+          if (inside) {
+            var dx = cx - mx, dy = cy - my, d = Math.sqrt(dx * dx + dy * dy);
+            if (d < R) target = d < R * 0.55 ? 1 : 1 - (d - R * 0.55) / (R * 0.45);   // innen scharf, Rand weich
+          }
+          var a = reveal[i];
+          a += target > a ? (target - a) * (reduce ? 1 : 0.35) : (target - a) * (reduce ? 1 : 0.07);
+          if (Math.abs(a - target) < 0.004) a = target;   // einrasten → Animation endet, wenn nichts mehr passiert
+          if (a < 0.01) a = 0; else if (a > 0.99) a = 1;
+          reveal[i] = a;
+          if (a !== target) busy = true;
+          if (!a) continue;
+          ctx.globalAlpha = a;
+          ctx.fillRect(gx * B, gy * B, B, B);
+        }
+      }
+      ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
+      if (busy) raf = requestAnimationFrame(frame);
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+
+    tile.addEventListener('mousemove', function (e) {
+      if (!ready) return;
+      var r = tile.getBoundingClientRect();
+      mx = e.clientX - r.left; my = e.clientY - r.top; inside = true; kick();
+    });
+    tile.addEventListener('mouseleave', function () { inside = false; kick(); });
+    if (img.complete && img.naturalWidth) build();
+    else {
+      img.addEventListener('load', build);
+      img.addEventListener('error', function () { tile.classList.remove('px-pending'); cv.remove(); });
+    }
+    window.addEventListener('resize', function () { ready = false; build(); });
+  })();
+
   /* Name passt immer in die Kachel (egal welche Schrift gerade geladen ist) */
   function fitName() {
     var h = board.querySelector('.bn-pl .bn-display');
@@ -378,7 +473,6 @@
   var modal = document.getElementById('bnModal');
   var panel = modal.querySelector('.bnm-panel');
   var backdrop = modal.querySelector('.bnm-backdrop');
-  var preview = modal.querySelector('.bnm-preview');
   var content = modal.querySelector('.bnm-content');
   var label = document.getElementById('bnmLabel');
   var inner = document.getElementById('bnmInner');
@@ -391,14 +485,74 @@
     var maxH = mobile ? vh - 20 : Math.min(760, vh - 64);
     /* Höhe = natürliche Höhe des Inhalts bei Zielbreite, gedeckelt auf den Bildschirm */
     content.style.width = w + 'px'; content.style.height = 'auto';
+    if (entry && entry.def.equalRows) equalRows(inner);   // erst bei Zielbreite messen
     var h = Math.min(maxH, Math.ceil(content.scrollHeight));
     return { left: Math.round((vw - w) / 2), top: Math.round((vh - h) / 2), width: Math.round(w), height: h };
   }
-  function rectOf(el) { var r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; }
+  /* Alle Einträge einer Detail-Liste auf die Höhe des höchsten bringen (Beschreibung bleibt oben) */
+  function equalRows(root) {
+    var lis = root.querySelectorAll('.bnm-rows > li'), max = 0, i;
+    for (i = 0; i < lis.length; i++) lis[i].style.minHeight = '';
+    /* Höhe ohne unteres Padding/Linie vergleichen – der letzte Eintrag hat beides nicht */
+    function tail(li) { var cs = getComputedStyle(li); return parseFloat(cs.paddingBottom) + parseFloat(cs.borderBottomWidth); }
+    for (i = 0; i < lis.length; i++) max = Math.max(max, lis[i].offsetHeight - tail(lis[i]));
+    for (i = 0; i < lis.length; i++) lis[i].style.minHeight = (max + tail(lis[i])) + 'px';
+  }
   function place(el, r) { el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; el.style.width = r.width + 'px'; el.style.height = r.height + 'px'; }
   function lock(on) {
     document.documentElement.classList.toggle('bn-locked', on);
     try { if (typeof lenis !== 'undefined' && lenis) { if (on && lenis.stop) lenis.stop(); if (!on && lenis.start) lenis.start(); } } catch (e) {}
+  }
+  function fade(el, on) { el.style.opacity = on ? '1' : '0'; }       // Übergang über CSS-transition
+
+  /* ── Pixel-Aufbau im Stil der Seitenwechsel (script.js → initEditorialTransition) ──
+     Das Modal selbst erscheint in 72px-Blöcken: von unten nach oben, zufällig gestaffelt,
+     gleiche Blockgröße, Verteilung und Kurve wie der Seitenwechsel. Umgesetzt als clip-path,
+     der pro Frame genau die bereits sichtbaren Blöcke freigibt; Schließen = Zerfall nach oben. */
+  var PX_BLOCK = 72, PX_BIAS = 0.62, PX_DUR = 560;
+  var CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "path('M0 0H1V1Z')"));
+  function pxRnd(gx, gy) {
+    var x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
+    x = (x ^ (x >>> 13)) * 1274126177 >>> 0;       // identisch zu script.js → gleiches Blockmuster
+    return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+  }
+  /* Pfad aus allen Blöcken, die bei 'cover' sichtbar sind. build = von unten auf · dissolve = nach oben weg */
+  function blockPath(W, H, cover, mode) {
+    var cols = Math.ceil(W / PX_BLOCK), rows = Math.ceil(H / PX_BLOCK), d = '';
+    for (var gy = 0; gy < rows; gy++) {
+      var rowBias = rows > 1 ? gy / (rows - 1) : 0;   // 0 = oben, 1 = unten
+      for (var gx = 0; gx < cols; gx++) {
+        var rn = pxRnd(gx, gy);
+        var thr = mode === 'dissolve' ? rowBias * PX_BIAS + rn * (1 - PX_BIAS)
+                                      : (1 - rowBias) * PX_BIAS + rn * (1 - PX_BIAS);
+        if (cover >= thr) d += 'M' + gx * PX_BLOCK + ' ' + gy * PX_BLOCK + 'h' + (PX_BLOCK + 1) + 'v' + (PX_BLOCK + 1) + 'h-' + (PX_BLOCK + 1) + 'Z';
+      }
+    }
+    return d;
+  }
+  function setClip(el, W, H, cover, mode) {
+    if (cover >= 1) { el.style.clipPath = 'none'; return; }
+    var d = cover > 0 ? blockPath(W, H, cover, mode) : '';
+    el.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';   // inset(50%) = nichts sichtbar
+  }
+  /* cover von 'from' nach 'to' animieren. Öffnen: easeOutCubic (reagiert sofort auf den Klick),
+     Schließen: easeInOutCubic wie der Seitenwechsel */
+  function pixelClip(el, from, to, mode, dur) {
+    var W = el.offsetWidth, H = el.offsetHeight;
+    return new Promise(function (resolve) {
+      if (!CLIP_OK) {                                 // sehr alte Browser: einfach einblenden
+        el.animate([{ opacity: from }, { opacity: to }], { duration: dur, easing: 'ease' }).onfinish = resolve;
+        return;
+      }
+      setClip(el, W, H, from, mode);
+      var t0 = performance.now();
+      (function frame(now) {
+        var k = Math.max(0, Math.min(1, (now - t0) / dur));
+        var ez = mode === 'build' ? 1 - Math.pow(1 - k, 3) : (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+        setClip(el, W, H, from + (to - from) * ez, mode);
+        if (k < 1) requestAnimationFrame(frame); else resolve();
+      })(t0);
+    });
   }
 
   function open(id) {
@@ -407,57 +561,43 @@
     if (entry.def.lightbox) { openPhoto(entry); return; }
     busy = true; current = entry; lastFocus = document.activeElement;
     hideTip();
-    var tile = entry.el, from = rectOf(tile), to;
-
-    preview.className = 'bnm-preview bn-card bn-' + id + (tile.classList.contains('no-photo') ? ' no-photo' : '');
-    preview.innerHTML = tile.innerHTML;
     label.textContent = entry.def.label;
-    inner.innerHTML = (entry.def.title ? '<h2 class="bnm-title" id="bnmTitle">' + entry.def.title + '</h2>' : '') + entry.def.detail(tile);
+    inner.innerHTML = (entry.def.title ? '<h2 class="bnm-title" id="bnmTitle">' + entry.def.title + '</h2>' : '') + entry.def.detail(entry.el);
     panel.setAttribute('aria-labelledby', entry.def.title ? 'bnmTitle' : 'bnmLabel');
     iconFallback(inner);
     modal.hidden = false;
-    place(panel, from);
-    to = target(entry);
+    if (!reduce) panel.style.clipPath = 'inset(50%)'; // startet unsichtbar, baut sich blockweise auf
+    var to = target(entry);
+    place(panel, to);
     place(content, { left: 0, top: 0, width: to.width, height: to.height });
     content.scrollTop = 0;
-    tile.classList.add('is-lifted');
     lock(true);
-
-    var done = function () { busy = false; closeBtn.focus({ preventScroll: true }); };
-    if (!hasGsap || reduce) {
-      place(panel, to); backdrop.style.opacity = 1; preview.style.opacity = 0; content.style.opacity = 1; done(); return;
-    }
-    gsap.killTweensOf([panel, backdrop, preview, content]);
-    gsap.set(preview, { opacity: 1 }); gsap.set(content, { opacity: 0, y: 14 });
-    gsap.to(backdrop, { opacity: 1, duration: 0.5, ease: 'power2.out' });
-    gsap.to(panel, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.8, ease: 'expo.out' });
-    gsap.to(preview, { opacity: 0, duration: 0.28, ease: 'power1.out', delay: 0.06 });
-    gsap.to(content, { opacity: 1, y: 0, duration: 0.55, ease: 'power3.out', delay: 0.26, onComplete: done });
+    void backdrop.offsetWidth; fade(backdrop, true);
+    var done = function () { panel.style.clipPath = ''; busy = false; closeBtn.focus({ preventScroll: true }); };
+    if (reduce) { done(); return; }
+    pixelClip(panel, 0, 1, 'build', PX_DUR).then(done);
   }
 
   function close() {
     if (!current || busy) return;
     if (current.photo) { closePhoto(); return; }
     busy = true;
-    var tile = current.el, to = rectOf(tile);
     var finish = function () {
       modal.hidden = true;
-      tile.classList.remove('is-lifted');
-      inner.innerHTML = ''; preview.innerHTML = '';
+      panel.style.clipPath = '';
+      inner.innerHTML = '';
       lock(false);
       current = null; busy = false;
       if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
     };
-    if (!hasGsap || reduce) { finish(); return; }
-    gsap.killTweensOf([panel, backdrop, preview, content]);
-    gsap.to(content, { opacity: 0, duration: 0.18, ease: 'power1.in' });
-    gsap.to(preview, { opacity: 1, duration: 0.3, ease: 'power1.out', delay: 0.08 });
-    gsap.to(backdrop, { opacity: 0, duration: 0.5, ease: 'power2.inOut', delay: 0.05 });
-    gsap.to(panel, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.62, ease: 'expo.inOut', onComplete: finish });
+    if (reduce) { fade(backdrop, false); finish(); return; }
+    fade(backdrop, false);
+    pixelClip(panel, 1, 0, 'dissolve', PX_DUR * 0.8).then(finish);   // zerfällt blockweise nach oben
   }
 
-  /* ── Portrait-Lightbox: das Foto wächst aus der Kachel in die Bildmitte ── */
+  /* ── Portrait-Lightbox: das Foto gleitet aus der Kachel groß in die Bildmitte ── */
   var lb = null;
+  function rectOf(el) { var r = el.getBoundingClientRect(); return { left: r.left, top: r.top, width: r.width, height: r.height }; }
   function photoTarget(img) {
     var vw = window.innerWidth, vh = window.innerHeight;
     var ar = img.naturalWidth / img.naturalHeight;
@@ -483,9 +623,9 @@
     lock(true);
     current = { photo: true, el: tile, img: img, big: big, bd: bd };
     lb.addEventListener('click', close);
+    void bd.offsetWidth; fade(bd, true);
     var done = function () { busy = false; lb.focus({ preventScroll: true }); };
-    if (!hasGsap || reduce) { place(big, to); bd.style.opacity = 1; done(); return; }
-    gsap.to(bd, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+    if (!hasGsap || reduce) { place(big, to); done(); return; }
     gsap.to(big, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.8, ease: 'expo.out', onComplete: done });
   }
   function closePhoto() {
@@ -497,8 +637,8 @@
       lock(false); current = null; busy = false;
       if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
     };
+    fade(c.bd, false);
     if (!hasGsap || reduce) { finish(); return; }
-    gsap.to(c.bd, { opacity: 0, duration: 0.45, ease: 'power2.inOut' });
     gsap.to(c.big, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.6, ease: 'expo.inOut', onComplete: finish });
   }
 
