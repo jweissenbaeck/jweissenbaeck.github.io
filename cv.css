@@ -1,428 +1,200 @@
-/* ============================
-   CV PAGE — Bento-Board
-   Ein Board füllt den Screen unter der Nav (Desktop: kein Scrollen).
-   1px-Fugen wie die Nav-Zellen → das Board ist die Fortsetzung der Nav.
-   Klick auf eine Kachel → sie wächst zur Detail-Ansicht über der Seite.
-============================ */
+/* ============================================================
+   CV — Hero (Name + abgerissenes Portrait) und Scroll-Story
+   · Hero: riesiger Name hinten, Portrait als gerissenes Foto vorne,
+     Tools kommen als Sticker aus dem Kopf; rechts „View my projects“,
+     unten rechts Social-Bubbles
+   · Story: fixiert (GSAP ScrollTrigger, pin); Szenen bauen sich aus
+     Pixelblöcken auf und zerfallen wieder (cv.js)
+   Schrift der großen Zeilen wie auf My Work: Anton, horizontal gestreckt
+   ============================================================ */
+
 .cv-page { background: var(--bg); color: var(--ink); }   /* auch von projects.html genutzt */
-:root:has(body.cv-page:not(.projects-page)) { scrollbar-gutter: auto; }   /* kein leerer Scrollbar-Streifen rechts */
 
-/* ── Tokens ── */
-.bn, .bnm {
-  --line:   rgba(240, 237, 232, 0.12);
-  --muted:  rgba(240, 237, 232, 0.5);
-  --faint:  rgba(240, 237, 232, 0.32);
-  --lift:   #171715;                     /* Kachel-Hover */
-  --pad:    clamp(16px, min(1.6vw, 2.6vh), 28px);
-  /* Typo: Display (nur Name) · Einträge · Text · Meta */
-  --tx:     clamp(12px, min(0.85vw, 1.7vh), 13.5px);
-  --lg:     clamp(14px, 2.2vh, 22px);          /* fester Abstand Label → Inhalt */
+.cv {
+  --pad:   clamp(20px, 2.2vw, 40px);
+  --line:  rgba(240, 237, 232, 0.14);
+  --muted: rgba(240, 237, 232, 0.55);
+  --paper: #F3F0EA;                                       /* Papierrand + Sticker */
+  --nav:   52px;
+  --wide:  1.18;                                          /* Streckung wie das My-Work-Laufband */
 }
 
-/* ── Board ── */
-.bn {
-  margin-top: 52px;                                   /* unter der fixen Nav */
-  height: calc(100vh - 52px);
-  height: calc(100dvh - 52px);
-  min-height: 600px;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr) auto auto auto;   /* Name flexibel; Tools, Skills, Interests = Inhaltshöhe */
-  /* links: Person · Mitte: Portrait · rechts (rc): Experience füllt, Education sitzt ganz unten */
-  grid-template-areas:
-    "pl pl pl pl pl po po po rc rc rc rc"
-    "in in in in in po po po rc rc rc rc"
-    "sk sk sk sk sk po po po rc rc rc rc"
-    "sq sq sq sq sq po po po rc rc rc rc";
-  gap: 1px;
-  background: var(--line);                            /* Fugen */
+/* Große Zeilen: Anton, gestreckt, mit Luft zwischen den Zeilen (wie My Work) */
+.cvs-wide, .cvh-name-inner {
+  font-family: 'Anton', Impact, sans-serif; font-weight: 400;
+  letter-spacing: -0.02em; line-height: 1.12;
+  text-transform: uppercase;
+  display: inline-block;
+  transform: scaleX(var(--wide)); transform-origin: center;
 }
+.cvs-wide { max-width: calc(100% / var(--wide)); text-wrap: balance; }   /* gestreckt nie breiter als der Platz → bricht sauber um */
 
-/* ── Kachel (gemeinsamer Aufbau für Kachel + Vorschau im Panel) ── */
-.bn-card {
-  position: relative;
-  min-width: 0; min-height: 0;
-  display: flex; flex-direction: column; justify-content: space-between; gap: 12px;
-  padding: var(--pad);
-  background: var(--bg);
-  color: var(--ink);
-  overflow: hidden;
-}
-.bn-tile {
-  cursor: pointer;
-  text-decoration: none;
-  transition: background-color 0.35s ease;
-}
-.bn-tile:hover { background: var(--lift); }
-.bn-tile:focus-visible { outline: 1px solid var(--ink); outline-offset: -6px; }
-.bn-tile.is-lifted { visibility: hidden; }           /* Portrait „schwebt" gerade als Lightbox */
-
-.bn-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-.bn-label {
-  font-family: var(--font-mono);
-  font-size: 11px; line-height: 1.3; letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--muted);
-}
-/* Öffnen-Hinweis: im Ruhezustand unsichtbar, beim Hover gleitet ein Pfeil nach rechts oben herein */
-.bn-open { position: relative; flex: none; width: 13px; height: 13px; overflow: hidden; color: var(--ink); }
-.bn-open svg {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  opacity: 0; transform: translate(-6px, 6px);
-  transition: opacity 0.25s ease, transform 0.45s var(--ease-out-expo);
-}
-.bn-tile:hover .bn-open svg, .bn-tile:focus-visible .bn-open svg { opacity: 1; transform: none; }
-
-.bn-body { min-height: 0; }
-
-/* Typo-Rollen */
-.bn-display {                                         /* große Werte */
-  margin: 0;
-  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
-  font-weight: 400; line-height: 0.9; letter-spacing: 0.005em; text-transform: uppercase;
-}
-.bn-value {                                           /* mittlere Werte */
-  margin: 0;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 700; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;
-  font-size: clamp(1.15rem, min(1.7vw, 3vh), 2rem);
-}
-.bn-meta {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 12px; line-height: 1.5; letter-spacing: 0.04em;
-  color: var(--muted);
-}
-
-/* ── Profile ── */
-.bn-pl .bn-display { font-size: clamp(3rem, min(6.1vw, 11.2vh), 8rem); }
-
-/* ── Portrait ── */
-.bn-po { padding: 0; }
-.bn-po .bn-head { position: absolute; top: 0; left: 0; right: 0; z-index: 2; padding: var(--pad); }
-.bn-photo {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%; object-fit: cover;
-  object-position: 50% 30%;                          /* Kachel: Gesicht bleibt im Ausschnitt */
-  transform: scale(1.001);
-  will-change: transform;                             /* Parallax (cv.js) setzt die Verschiebung pro Frame */
-}
-.bn-po-mosaic { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; will-change: transform; }   /* Pixel-Mosaik über dem Foto, wird beim Hover aufgedeckt */
-.px-pending .bn-photo { opacity: 0; }                /* kein scharfes Aufblitzen, bevor das Mosaik steht */
-.bn-po::after {                                       /* Label bleibt auf hellen Fotos lesbar */
-  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 40%; z-index: 1;
-  background: linear-gradient(rgba(17,17,16,0.55), rgba(17,17,16,0));
-  pointer-events: none;
-}
-/* ohne Foto: Monogramm aus dem Pixelraster */
-.bn-mono {
-  position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif; font-size: clamp(4rem, 9vw, 10rem);
-  color: rgba(240,237,232,0.1);
-  background-image: radial-gradient(rgba(240,237,232,0.1) 1px, transparent 1px);
-  background-size: 8px 8px;
-}
-.no-photo .bn-photo { display: none; }
-.no-photo .bn-mono { display: flex; }
-
-/* ── Tools: kompakter Streifen, alle Icons in einer Reihe ── */
-/* Listen-Kacheln: Inhalt direkt unter dem Label → alle Inhalte einer Reihe starten auf derselben Linie.
-   Der Name (Profile) bleibt unten verankert. */
-.bn-in, .bn-ql, .bn-ed, .bn-sk, .bn-sq { justify-content: flex-start; gap: var(--lg); }
-.bn-toolgroups {
-  --ig: 6px;                                    /* Abstand zwischen Icons */
-  --gg: clamp(14px, 1.6vw, 26px);               /* Abstand zwischen Gruppen */
-  display: flex; gap: var(--gg);
-  max-width: calc(13 * 48px + 10 * var(--ig) + 2 * var(--gg));   /* Felder max. 48px */
-}
-/* flex-grow = Anzahl Icons, flex-basis = Summe der Lücken → jedes Feld exakt gleich breit */
-.bn-tg { flex: var(--n) 1 calc((var(--n) - 1) * var(--ig)); min-width: 0; }
-.bn-tg-label { display: block; margin-bottom: 8px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; color: var(--muted); white-space: nowrap; }
-.bn-icons {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: var(--ig);
-}
-.bn-icons li {
-  aspect-ratio: 1;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--line); border-radius: 8px;
-  transition: border-color 0.25s ease, background-color 0.25s ease;
-}
-.bn-icons li:hover { border-color: rgba(240,237,232,0.4); background: rgba(240,237,232,0.04); }
-.bn-icons .bn-ico { width: 56%; height: 56%; }
-/* Icon-Feld: festes Quadrat → alle Logos sitzen auf derselben Achse */
-.bn-ico { position: relative; flex: none; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
-.bn-ico img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.bn-ico.is-empty img { display: none; }
-.bn-ico.is-light img { filter: invert(1); }            /* fast schwarzes Mark (z. B. GitHub) → helle Variante */
-.bn-ico.is-empty::after {                          /* Platzhalter, bis die offizielle Datei da ist */
-  content: attr(data-letter);
-  display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 100%;
-  border: 1px solid var(--faint); border-radius: 4px;
-  font-family: var(--font-mono); font-size: 11px; color: var(--muted);
-}
-.bnm-tool { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.bnm-tool .bn-ico { width: 28px; height: 28px; }
-.bnm-icons { display: flex; gap: 6px; flex: none; }         /* mehrere Icons in einem Eintrag */
-.bnm-group { margin: 34px 0 12px; font-family: var(--font-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.04em; color: var(--muted); }
-.bnm-title + .bnm-group { margin-top: 0; }
-
-/* Tooltip (fix über allem, damit keine Kachel ihn abschneidet) */
-.bn-tip {
-  position: fixed; top: 0; left: 0; z-index: 1400;
-  max-width: 260px; padding: 7px 10px;
-  background: var(--ink); color: var(--bg-dark, #0a0a09);
-  border-radius: 4px;
-  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.45; letter-spacing: 0.01em;
-  pointer-events: none;
-  opacity: 0; transform: translateY(3px);
-  transition: opacity 0.18s ease, transform 0.25s var(--ease-out-expo);
-}
-.bn-tip strong { display: block; margin-bottom: 2px; font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 0.03em; text-transform: uppercase; }
-.bn-tip.is-on { opacity: 1; transform: none; }
-
-/* ── Listen (Skills, Interests) ── */
-.bn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(2px, 0.45vh, 5px); }
-.bn-list li { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.bn-list li::before { content: ''; flex: none; width: 5px; height: 5px; background: var(--faint); }  /* Pixel statt Bullet */
-.bn-item { font-family: var(--font-mono); font-size: var(--tx); line-height: 1.4; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Einträge laufen spaltenweise; Reihenzahl setzt cv.js */
-.bn-sk .bn-list, .bn-sq .bn-list { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); column-gap: 24px; row-gap: clamp(4px, 0.7vh, 8px); }
-.bn-sk .bn-list, .bn-sq .bn-list { grid-template-rows: repeat(var(--rows, 3), auto); }   /* Skills 2 Spalten, Interests 3 Spalten */
-
-/* ── Rechte Spalte: Experience + Education gestapelt, Education nur so hoch wie ihr Inhalt ── */
-.bn-stack { grid-area: rc; display: flex; flex-direction: column; gap: 1px; background: var(--line); min-width: 0; min-height: 0; }
-.bn-stack > .bn-ql { flex: 1 1 auto; }
-.bn-stack > .bn-ed { flex: 0 0 auto; }
-
-/* ── Experience + Education: Jahres-Spalte links, Einrichtung/Firma als Überschrift ── */
-.bn-tls { list-style: none; margin: 0; padding: 0; }
-.bn-tl {
-  display: grid; grid-template-columns: 5rem minmax(0, 1fr); column-gap: clamp(24px, 2.2vw, 48px);   /* viel Luft zwischen Zeit und Eintrag */
-  padding: clamp(9px, 1.5vh, 18px) 0;
-  border-top: 1px solid var(--line);
-}
-.bn-tl:first-child { border-top: none; padding-top: 0; }
-.bn-tl:last-child { padding-bottom: 0; }           /* unten nur das Kachel-Padding → gleicher Abstand wie Interests */
-.bn-tl-years { align-self: start; padding-top: 0.35em; font-size: 11.5px; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; }   /* auf Höhe der Überschrift */
-.bn-tl-body { min-width: 0; }
-.bn-tl-body .bn-value { font-size: clamp(1.05rem, min(1.45vw, 2.6vh), 1.65rem); line-height: 1.05; text-wrap: balance; }
-.bn-tl-body > .bn-meta { margin-top: 3px; }
-.bn-tl-body .bn-tl-sub { margin-top: 2px; }       /* Unterüberschrift (Abschluss): minimal Luft unter der Einrichtung */
-.bn-xp-org { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0; }
-.bn-type {                                         /* Anstellungsart: Full-time / Internship */
-  flex: none; padding: 2px 8px;
-  border: 1px solid rgba(240,237,232,0.28); border-radius: 999px;
-  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.04em; line-height: 1.4; color: var(--ink);
-}
-/* Wo unterstützt: Leerraum über/unter der Schrift abschneiden → Text sitzt optisch exakt mittig */
-@supports (text-box: trim-both cap alphabetic) {
-  .bn-type { text-box: trim-both cap alphabetic; padding: 5px 8px; }
-}
-.bn-xp-sum {
-  margin: clamp(6px, 1vh, 10px) 0 0; max-width: 54ch;
-  font-family: var(--font-mono); font-size: var(--tx); line-height: 1.55; color: rgba(240,237,232,0.6);
-}
-/* Rollen unter der Firma. Mehrere Rollen = Beförderung: Punkte stehen genau unter dem Firmennamen,
-   die Linie beginnt direkt darunter und endet am letzten Punkt */
-.bn-roles {
-  --rg: clamp(3px, 0.6vh, 6px);
-  list-style: none; margin: 2px 0 0; padding: 0;     /* gleicher Abstand wie Titel → Abschluss bei Education */
-  display: grid; gap: var(--rg);
-}
-.bn-roles li { display: flex; align-items: center; }
-.bn-role { margin: 0; font-family: var(--font-mono); font-size: var(--tx); line-height: 1.35; color: var(--ink); min-width: 0; }
 /* ============================
-   DETAIL-PANEL
-============================ */
-.bnm[hidden] { display: none; }
-.bnm { position: fixed; inset: 0; z-index: 1500; }
-.bnm-backdrop {
-  position: absolute; inset: 0;
-  background: rgba(10, 10, 9, 0.72);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  opacity: 0;
-  transition: opacity 0.45s ease;
-}
-.bnm-panel {
-  position: fixed; top: 0; left: 0;
-  background: var(--bg);
-  outline: 1px solid rgba(240,237,232,0.2);
+   HERO
+   ============================ */
+.cvh {
+  position: relative;
+  height: 100vh; height: 100svh; min-height: 600px;
   overflow: hidden;
 }
-.bnm-content {
-  position: absolute; top: 0; left: 0;                /* feste Zielgröße */
-  display: flex; flex-direction: column;
-  overflow-y: auto; overscroll-behavior: contain;
+.cvh-name {
+  position: absolute; left: 0; right: 0; top: calc(var(--nav) + 2vh);
+  margin: 0; z-index: 1;
+  text-align: center; white-space: nowrap;
+  font-size: 10.6vw;                                       /* cv.js passt es exakt an die Breite an */
+  line-height: 1;
 }
-.bnm-head {
-  position: sticky; top: 0; z-index: 1;
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
-  padding: 22px clamp(20px, 3vw, 40px);
-  background: var(--bg);
-  border-bottom: 1px solid var(--line);
+.cvh-name-inner { line-height: 1; color: var(--ink); }
+
+.cvh-figure {
+  --s: clamp(60px, 7.4vw, 132px);                          /* Stickergröße */
+  --h: min(76vh, calc(100vh - var(--nav) - var(--s) * 1.7 - 2vh));   /* ragt bis in den Namen, Sticker bleiben unter der Nav */
+  position: absolute; left: 50%; bottom: 0; z-index: 2;
+  margin: 0;
+  height: var(--h); width: min(54vw, calc(var(--h) * 0.82));
+  transform: translateX(-50%);
 }
-/* Schließen: X im selben Strichstil wie der Hover-Pfeil; Hover invertiert wie die Nav-Zellen */
-.bnm-close {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; margin: -8px -8px -8px 0; padding: 0;
-  background: none; border: 1px solid var(--line); cursor: pointer;
-  color: var(--ink);
+/* Sticker: kommen hinter der Risskante aus dem Kopf */
+.cvh-stickers { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 1; }
+.cvh-sticker {
+  position: absolute; left: calc(50% + var(--x)); bottom: calc(var(--s) * (var(--y) - 0.5));   /* --y: wie weit er aus der Risskante ragt */
+  width: var(--s); height: var(--s);
+  margin-left: calc(var(--s) / -2);
+  display: grid; place-items: center;
+  background: var(--paper); border-radius: 22%;
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.45);
+  transform: translate(var(--px, 0px), var(--py, 0px)) rotate(var(--r));
+}
+.cvh-sticker img { width: 56%; height: 56%; object-fit: contain; }
+.cvh-sticker.is-empty img { display: none; }
+.cvh-sticker.is-empty::after { content: attr(data-letter); font-family: var(--font-mono); font-size: 18px; color: #333; }
+
+.cvh-cut { position: absolute; inset: 0; z-index: 2; transform: translate(var(--px, 0px), var(--py, 0px)); }
+.cvh-paper {                                               /* weißer Papierrand mit eigener Risskante */
+  position: absolute; inset: -1.6% -12px 0 -12px;
+  background: var(--paper);
+  clip-path: polygon(0.0% 2.58%, 2.4% 1.00%, 4.8% 0.06%, 7.1% 0.44%, 9.5% 0.15%, 11.9% 0.72%, 14.3% 1.02%, 16.7% 0.21%, 19.0% 1.43%, 21.4% 2.13%, 23.8% 1.37%, 26.2% 0.93%, 28.6% 2.49%, 31.0% 0.46%, 33.3% 0.61%, 35.7% 1.94%, 38.1% 0.01%, 40.5% 0.96%, 42.9% 2.48%, 45.2% 1.34%, 47.6% 1.84%, 50.0% 2.34%, 52.4% 2.27%, 54.8% 1.02%, 57.1% 0.27%, 59.5% 0.27%, 61.9% 0.54%, 64.3% 0.88%, 66.7% 0.00%, 69.0% 0.26%, 71.4% 1.43%, 73.8% 1.60%, 76.2% 0.66%, 78.6% 0.95%, 81.0% 2.21%, 83.3% 1.97%, 85.7% 0.22%, 88.1% 0.89%, 90.5% 2.16%, 92.9% 0.06%, 95.2% 1.60%, 97.6% 1.41%, 100.0% 1.37%, 100% 100%, 0% 100%);
+}
+.cvh-photo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 18%;
+  background: #1a1a18;
+  clip-path: polygon(0.0% 1.89%, 2.8% 2.74%, 5.6% 2.33%, 8.3% 0.61%, 11.1% 0.53%, 13.9% 0.85%, 16.7% 1.93%, 19.4% 0.85%, 22.2% 2.66%, 25.0% 2.48%, 27.8% 4.02%, 30.6% 3.49%, 33.3% 0.92%, 36.1% 1.51%, 38.9% 1.05%, 41.7% 3.50%, 44.4% 2.37%, 47.2% 0.61%, 50.0% 2.85%, 52.8% 1.53%, 55.6% 2.68%, 58.3% 3.26%, 61.1% 1.28%, 63.9% 2.29%, 66.7% 3.03%, 69.4% 4.18%, 72.2% 1.91%, 75.0% 0.95%, 77.8% 0.54%, 80.6% 3.15%, 83.3% 4.23%, 86.1% 2.90%, 88.9% 2.49%, 91.7% 3.42%, 94.4% 2.11%, 97.2% 2.13%, 100.0% 2.73%, 100% 100%, 0% 100%);
+}
+
+.cvh-cta { position: absolute; z-index: 3; right: var(--pad); top: 41vh; background: var(--bg); white-space: nowrap; }
+.cvh-social { position: absolute; z-index: 3; right: var(--pad); bottom: var(--pad); display: flex; gap: 10px; }
+.cvh-bubble {
+  display: grid; place-items: center;
+  width: 52px; height: 52px; border-radius: 50%; box-sizing: border-box;
+  border: 1px solid rgba(240, 237, 232, 0.35);
+  background: var(--bg); color: var(--ink);
   transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
-.bnm-close svg { width: 14px; height: 14px; transition: transform 0.45s var(--ease-out-expo); }
-.bnm-close:hover, .bnm-close:focus-visible { background: var(--ink); border-color: var(--ink); color: var(--bg-dark, #0a0a09); outline: none; }
-.bnm-close:hover svg, .bnm-close:focus-visible svg { transform: rotate(90deg); }
+.cvh-bubble svg { width: 20px; height: 20px; }
+.cvh-bubble:hover, .cvh-bubble:focus-visible { background: var(--ink); color: var(--bg-dark, #0a0a09); border-color: var(--ink); outline: none; }
 
-.bnm-inner { padding: clamp(24px, 4vh, 48px) clamp(20px, 3vw, 40px) clamp(32px, 5vh, 56px); }
-.bnm-title {
-  margin: 0 0 clamp(24px, 4vh, 44px);
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 400; line-height: 0.92; text-transform: uppercase;
-  font-size: clamp(2.6rem, 5.4vw, 5.2rem);
-}
-.bnm-text p {
-  margin: 0 0 1.1em; max-width: 60ch;
-  font-family: var(--font-mono); font-size: clamp(13px, 1vw, 14.5px); line-height: 1.85;
-  color: rgba(240,237,232,0.72);
-}
-.bnm-text p:last-child { margin-bottom: 0; }
-/* Interests als Fließtext */
-.bnm-prose p { max-width: 62ch; margin-bottom: 1em; }
+/* Laden: Name baut sich aus Pixeln auf (cv.js), Foto gleitet hoch, Sticker poppen aus dem Kopf */
+.cvh.is-intro .cvh-name-inner { clip-path: inset(50%); }
+.cvh.is-intro .cvh-figure { animation: cvh-rise 1s 0.35s var(--ease-out-expo) both; }
+.cvh.is-intro .cvh-sticker { animation: cvh-pop 0.9s calc(0.9s + var(--i) * 0.09s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.cvh.is-intro .cvh-cta, .cvh.is-intro .cvh-social { animation: cvh-fade 0.8s 1.5s ease both; }
+@keyframes cvh-rise { from { transform: translateX(-50%) translateY(12%); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
+@keyframes cvh-pop  { from { transform: translateY(140%) rotate(0deg) scale(0.6); } to { transform: translate(var(--px, 0px), var(--py, 0px)) rotate(var(--r)); } }
+@keyframes cvh-fade { from { opacity: 0; } to { opacity: 1; } }
 
-/* Fakten (dl) */
-.bnm-facts { margin: 0; border-top: 1px solid var(--line); }
-.bnm-facts > div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.bnm-facts > div:last-child { border-bottom: none; padding-bottom: 0; }   /* keine Linie unter dem letzten Eintrag */
-.bnm-facts > div.is-stack { grid-template-columns: minmax(0, 1fr); gap: 12px; }   /* Wert unter der Bezeichnung */
-/* Listen in Modals: keine Linie unter dem letzten Eintrag, wenn danach nichts mehr kommt */
-.bnm-inner > .bnm-rows:last-child > li:last-child { border-bottom: none; padding-bottom: 0; }
-.bnm-facts dt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
-.bnm-facts dd { margin: 0; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.55; color: var(--ink); font-variant-numeric: tabular-nums; }
-.bnm-facts a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--faint); }
-/* Sprachen: 2×2 gleich große Boxen */
-.bnm-langs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }   /* alle vier in einer Zeile, gleich groß */
-.bnm-lang {
-  display: flex; flex-direction: column; justify-content: space-between; gap: 14px;
-  padding: 12px 14px 13px;
-  border: 1px solid var(--line);
+/* ============================
+   STORY
+   ============================ */
+.cvs { position: relative; }
+.cvs-stage { position: relative; height: 100vh; height: 100svh; min-height: 560px; }
+.cvs-scene {
+  position: absolute; inset: var(--nav) var(--pad) var(--pad);
+  display: grid; place-items: center; text-align: center;
+  pointer-events: none;                                    /* nur die gerade sichtbare Szene ist bedienbar */
 }
-.bnm-lang-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.bnm-lang-name {
+.cvs-scene.is-active { pointer-events: auto; }
+.cvs-inner { display: flex; flex-direction: column; align-items: center; max-width: 100%; }
+.cvs.is-live .cvs-clip { clip-path: inset(50%); }        /* cv.js gibt Blöcke frei */
+
+/* 1 — Einstieg */
+.cvs-big { margin: 0; max-width: min(13ch, calc(100% / var(--wide))); font-size: clamp(2.6rem, 6.2vw, 7.4rem); text-wrap: balance; }
+
+/* Überschrift der Szenen 3 + 4 (fett wie der Einstieg) */
+.cvs-title { margin: 0 0 clamp(26px, 5vh, 56px); font-size: clamp(2.4rem, 5.4vw, 6.2rem); }
+
+/* 3 — Tools: alle Karten schräg auf einen Haufen geworfen (wie Inspo) */
+.cvs-tools { will-change: transform, opacity; }               /* fährt beim Weiterscrollen leicht hoch und blendet aus */
+.cvs-pile {
+  position: relative; list-style: none; margin: 0; padding: 0;
+  width: min(1080px, 88vw); height: min(50vh, 500px);
+}
+.cvs-card {
+  --w: calc(var(--k) * clamp(76px, 8.4vw, 148px));
+  position: absolute; left: var(--x); top: var(--y);
+  width: var(--w); aspect-ratio: 1; margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8%;
+  background: var(--paper); border-radius: 14%;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
+  transform: rotate(var(--r));
+}
+.cvs-card-ico { display: grid; place-items: center; width: 46%; aspect-ratio: 1; }
+.cvs-card-ico img { width: 100%; height: 100%; object-fit: contain; }
+.cvs-card-ico.is-empty img { display: none; }
+.cvs-card-ico.is-empty::after { content: attr(data-letter); font-family: var(--font-mono); font-size: 18px; color: #333; }
+.cvs-card-name {
+  max-width: 86%; text-align: center;
+  font-family: var(--font-mono); font-size: clamp(9px, calc(var(--w) * 0.085), 13px); line-height: 1.2; color: rgba(20, 20, 19, 0.7);
+}
+/* 4 — Interessen als Sticker-Collage */
+.cvs-stickers {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: clamp(10px, 1.6vw, 22px) clamp(10px, 1.4vw, 20px);
+  max-width: min(1180px, 92vw);
+}
+.cvs-sticker {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0.42em 0.9em 0.36em;
+  background: var(--paper); color: #141413; border-radius: 999px;
   font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
-  font-size: 1.05rem; line-height: 1; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink);
+  font-size: clamp(1.05rem, 1.9vw, 2.15rem); line-height: 1; letter-spacing: 0.02em;
+  text-transform: uppercase;
+  transform: rotate(var(--r));
+  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.4);
 }
-.bnm-lang-level { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--ink); }
-.bnm-lang-note { font-family: var(--font-mono); font-size: 12px; line-height: 1.45; color: var(--muted); }
-.bnm-facts a:hover { text-decoration-color: var(--ink); }
 
-/* Einträge mit Beschreibung (Tools, Skills, Timeline) */
-.bnm-rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
-.bnm-rows > li { display: grid; grid-template-columns: 21rem minmax(0, 1fr); gap: 8px 32px; align-items: start; padding: 18px 0; border-bottom: 1px solid var(--line); }   /* feste, breite Namensspalte */
-.bnm-rows .bn-value { font-size: clamp(1.15rem, 1.5vw, 1.5rem); line-height: 1.05; text-wrap: balance; }
-.bnm-rows .bn-meta { margin-top: 6px; }
-.bnm-role .bnm-role-date { margin-top: -3px; }      /* Datum rückt an den Rollentitel (Modal + Kachel) */
-/* Kachel: Rollenblock unter der Firma; Punkte stehen genau unter der linken Kante des Firmennamens */
-.bn-tl .bnm-roles { --rg: clamp(10px, 1.7vh, 18px); margin-top: clamp(6px, 1vh, 10px); }
-.bn-tl .bnm-roles.is-multi { padding-left: 20px; }
-/* gleicher Aufbau wie im Modal, Größen skalieren mit der Bildschirmhöhe */
-.bn-tl .bnm-role-title { font-size: clamp(0.95rem, 2.1vh, 1.1rem); line-height: 22px; }
-.bn-tl .bnm-roles.is-multi .bnm-role::before { left: -20px; top: 6.5px; }          /* mittig zur 22px-Titelzeile */
-.bn-tl .bnm-roles.is-multi .bnm-role:not(:last-child)::after { left: -16px; top: 11px; }
-.bn-tl .bnm-points { margin: clamp(6px, 1vh, 12px) 0 0; gap: 2px; }
-.bn-tl .bnm-points li { font-size: var(--tx); line-height: 1.55; }
-.bn-tl .bnm-points li::before { top: 0.68em; }
-.bnm-roles { --rg: 18px; display: grid; gap: var(--rg); }
-.bnm-role { position: relative; }
-.bnm-role-title {
-  margin: 0; font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
-  font-size: 1.1rem; line-height: 26px; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink);
+/* Spielfläche über dem Footer: Pillen fallen hinein, stapeln sich, lassen sich ziehen (cv.js) */
+.cvp { position: relative; z-index: 5; height: 72vh; min-height: 420px; }
+.cvp-pill {
+  position: absolute; left: 0; top: 0; margin: 0;
+  cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
+  transform-origin: 50% 50%; will-change: transform;
 }
-.bnm-roles.is-multi .bnm-role:not(.is-current) .bnm-role-title { color: rgba(240,237,232,0.55); }
-.bnm-roles.is-multi .bnm-role::before {          /* Punkt mittig zur Titelzeile (26px) */
-  content: ''; position: absolute; left: -18px; top: 8.5px;               /* hängt im Spaltenabstand */
-  width: 9px; height: 9px; border-radius: 50%; box-sizing: border-box;
-  background: var(--bg); border: 1px solid rgba(240,237,232,0.5);
-}
-.bnm-roles.is-multi .bnm-role:not(:last-child)::after {
-  content: ''; position: absolute; left: -14px; top: 13px;
-  width: 1px; height: calc(100% + var(--rg));
-  background: rgba(240,237,232,0.22);
-}
-.bnm-roles.is-multi .bnm-role.is-current::before { background: var(--ink); border-color: var(--ink); }
-.bnm-sub { margin: 4px 0 0; font-size: 1rem; }
-.bnm-points { list-style: none; margin: 12px 0 18px; padding: 0; display: grid; gap: 4px; max-width: 60ch; }   /* mehr Luft zum Datum */
-.bnm-points:last-child { margin-bottom: 0; }
-.bnm-points li { position: relative; padding-left: 16px; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.7; color: rgba(240,237,232,0.72); }
-.bnm-points li::before { content: ''; position: absolute; left: 0; top: 0.72em; width: 5px; height: 5px; background: var(--faint); }
-.bnm-rows > li > p { margin: 0; max-width: 60ch; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.8; color: rgba(240,237,232,0.72); }
+.cvp-pill.is-held { cursor: grabbing; box-shadow: 0 22px 36px rgba(0, 0, 0, 0.5); }
+.cvs-sticker.is-dropped { visibility: hidden; }        /* Original ausgeblendet, solange die Physik-Kopie lebt */
 
-/* großer Live-Zähler */
-
-
-
-/* Portrait-Lightbox: nur das Foto, groß in der Mitte */
-.bnl { position: fixed; inset: 0; z-index: 1500; cursor: zoom-out; }
-.bnl:focus { outline: none; }
-.bnl-backdrop {
-  position: absolute; inset: 0; opacity: 0; transition: opacity 0.45s ease;
-  background: rgba(10, 10, 9, 0.84);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-}
-.bnl-img { position: fixed; top: 0; left: 0; display: block; object-fit: cover; object-position: 50% 30%; }
-.bn-tile.bn-po { cursor: zoom-in; }
-
-html.bn-locked, html.bn-locked body { overflow: hidden; }
+/* Ohne Animation (Reduced Motion / ohne ScrollTrigger): alles sichtbar, Szenen untereinander */
+.cvs.is-static .cvs-stage { height: auto; min-height: 0; }
+.cvs.is-static .cvs-scene { position: static; min-height: 80vh; padding: clamp(56px, 8vh, 96px) var(--pad); pointer-events: auto; }
+.cvs.is-static ~ .cvp { display: none; }                /* ohne Animation keine Physik */
 
 /* ============================
    RESPONSIVE
-============================ */
-/* Tablet: 6 Spalten, Board darf scrollen */
-@media (max-width: 1100px), (max-height: 600px) {
-  .bn {
-    height: auto; min-height: 0;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    grid-template-rows: none;
-    grid-auto-rows: minmax(110px, auto);
-    grid-template-areas:
-      "pl pl pl pl po po"
-      "pl pl pl pl po po"
-      "in in in in in in"
-      "sk sk sk sk sk sk"
-      "sq sq sq sq sq sq"
-      "rc rc rc rc rc rc";
-  }
-  .bn-pl .bn-display { font-size: clamp(3rem, 9vw, 6rem); }
+   ============================ */
+@media (max-width: 760px) {
+  .cvh-figure { --s: clamp(42px, 13vw, 64px); --h: 54vh; width: min(82vw, calc(54vh * 0.8)); }
+  .cvh-cta { top: calc(var(--nav) + 2vh + 13vw + 14px); right: 50%; transform: translateX(50%); }   /* direkt unter dem Namen */
+  .cvh-social { right: 50%; transform: translateX(50%); }
+  .cvh-bubble { width: 44px; height: 44px; }
+  .cvs-big { font-size: clamp(2rem, 9vw, 3.4rem); }
+  .cvs-title { font-size: clamp(2rem, 9vw, 3.2rem); }
+  .cvs-pile { height: min(56vh, 440px); width: 92vw; }
+  .cvs-card { --w: calc(var(--k) * 64px); }
+  .cvs-sticker { font-size: clamp(0.95rem, 4.6vw, 1.35rem); }
 }
-/* Mobile: 2 Spalten */
-@media (max-width: 640px) {
-  .bn-toolgroups { flex-direction: column; gap: 14px; }
-  .bn-tg { flex: none; max-width: calc(var(--n) * 48px + (var(--n) - 1) * var(--ig)); width: 100%; }
-  .bn {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-auto-rows: minmax(100px, auto);
-    grid-template-areas:
-      "pl pl" "po po" "in in" "sk sk" "sq sq" "rc rc";
-  }
-  .bn-po { min-height: 360px; }
-  .bn-pl .bn-display { font-size: clamp(2.8rem, 15vw, 4.5rem); }
-  .bn-sk .bn-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: minmax(0, 1fr); }
-  .bn-sq .bn-list { grid-auto-flow: row; grid-template-rows: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .bnm-rows > li { grid-template-columns: minmax(0, 1fr); }
-  .bnm-facts > div { grid-template-columns: 7em minmax(0, 1fr); }
-  .bnm-facts > div.is-stack { grid-template-columns: minmax(0, 1fr); }
-  .bnm-langs { grid-template-columns: repeat(2, minmax(0, 1fr)); }   /* Handy: 2 × 2, sonst zu schmal */
-}
-
-/* Niedrige Desktop-Bildschirme: Kurzbeschreibungen ausblenden (stehen im Detail) → Platz für die Websline-Stichpunkte */
-@media (max-height: 820px) and (min-width: 1101px) {
-  .bn-ql .bn-xp-sum, .bn-ed .bn-xp-sum { display: none; }
-}
-@media (max-height: 740px) and (min-width: 1101px) {          /* sehr niedrig (z. B. 1280 × 720): etwas enger */
-  .bn-tl { padding: 8px 0; }
-  .bn-tl .bnm-points li { line-height: 1.4; }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .bn-open svg, .bn-tip, .bnm-backdrop, .bnl-backdrop, .bnm-close, .bnm-close svg { transition: none; }
+  .cvh.is-intro .cvh-figure, .cvh.is-intro .cvh-sticker, .cvh.is-intro .cvh-cta, .cvh.is-intro .cvh-social { animation: none; }
+  .cvh-bubble { transition: none; }
 }

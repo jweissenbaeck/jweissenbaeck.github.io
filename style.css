@@ -77,7 +77,8 @@
 ============================ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 ::selection { background: var(--ink); color: var(--bg); }
-html { scroll-behavior: auto; scrollbar-gutter: stable; }
+html { scroll-behavior: auto; scrollbar-width: none; }   /* Scrollbar unsichtbar (Firefox); gescrollt wird weiter normal, Lenis glättet */
+html::-webkit-scrollbar { display: none; }                /* Scrollbar unsichtbar (Chrome, Safari, Edge) */
 
 body {
   font-family: var(--font-mono);

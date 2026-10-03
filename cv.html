@@ -31,22 +31,110 @@
   </div>
 </nav>
 
-<!-- CV — Charakterbogen als Bento-Board (Inhalt rendert cv.js) -->
-<main class="bn" id="bento" aria-label="Curriculum vitae of Jacob Weissenbäck"></main>
+<!-- CV: Hero, danach Scroll-Story in vier Szenen (fixiert; jede Szene baut sich aus Pixeln auf und zerfällt wieder) -->
+<main class="cv" id="cv">
+  <!-- HERO: riesiger Name hinten, abgerissenes Portrait vorne, Tools kommen aus dem Kopf -->
+  <section class="cvh" id="cvHero" aria-label="Jacob Weissenbäck">
+    <h1 class="cvh-name" id="cvhName"><span class="cvh-name-inner">Jacob Weissenbäck</span></h1>
+    <figure class="cvh-figure" id="cvhFigure">
+      <div class="cvh-stickers" aria-hidden="true">
+          <span class="cvh-sticker" style="--x:-40%; --y:0.55; --r:-16deg; --d:0.9; --i:0" data-letter="F"><img src="assets/Figma-logo.svg" alt="" decoding="async"></span>
+          <span class="cvh-sticker" style="--x:-22%; --y:0.95; --r:-6deg; --d:1.4; --i:1" data-letter="P"><img src="assets/Adobe_Photoshop_CC_icon.svg" alt="" decoding="async"></span>
+          <span class="cvh-sticker" style="--x:-5%; --y:0.70; --r:9deg; --d:0.7; --i:2" data-letter="I"><img src="assets/Adobe_Illustrator_CC_icon.svg" alt="" decoding="async"></span>
+          <span class="cvh-sticker" style="--x:13%; --y:1.05; --r:-10deg; --d:1.2; --i:3" data-letter="L"><img src="assets/Adobe_Photoshop_Lightroom_Classic_CC_icon.svg" alt="" decoding="async"></span>
+          <span class="cvh-sticker" style="--x:30%; --y:0.62; --r:14deg; --d:1.0; --i:4" data-letter="D"><img src="assets/DaVinci_Resolve_Studio.png" alt="" decoding="async"></span>
+          <span class="cvh-sticker" style="--x:44%; --y:0.22; --r:20deg; --d:0.6; --i:5" data-letter="C"><img src="assets/Claude_AI_symbol.svg" alt="" decoding="async"></span>
+      </div>
+      <div class="cvh-cut">
+        <div class="cvh-paper" aria-hidden="true"></div>
+        <img class="cvh-photo" src="assets/jcky-3.jpg" alt="Portrait of Jacob Weissenbäck">
+      </div>
+    </figure>
+    <a href="projects.html" class="projects-cta cvh-cta" aria-label="View my projects">
+      <span class="projects-cta-fill" aria-hidden="true"></span>
+      <span class="projects-cta-label">View my projects</span>
+    </a>
+    <nav class="cvh-social" aria-label="Social media">
+      <a class="cvh-bubble" href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3.6" stroke="currentColor" stroke-width="1.6"/><circle cx="16.9" cy="7.1" r="1.1" fill="currentColor"/></svg></a>
+      <a class="cvh-bubble" href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="9.5" width="3" height="9.5"/><circle cx="6.5" cy="6.2" r="1.75"/><path d="M10.5 9.5h2.9v1.4c.5-.9 1.6-1.7 3.2-1.7 2.6 0 3.4 1.7 3.4 4.2V19h-3v-5c0-1.3-.3-2.3-1.6-2.3-1.4 0-1.9 1-1.9 2.4V19h-3z"/></svg></a>
+      <a class="cvh-bubble" href="mailto:j.weissenbaeck@gmx.at" aria-label="Email"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3.5" y="6" width="17" height="12" stroke="currentColor" stroke-width="1.6"/><path d="M4 6.8l8 6 8-6" stroke="currentColor" stroke-width="1.6"/></svg></a>
+    </nav>
+  </section>
 
-<!-- Detail-Ansicht: wächst aus der geklickten Kachel -->
-<div class="bnm" id="bnModal" hidden>
-  <div class="bnm-backdrop" data-close></div>
-  <div class="bnm-panel" role="dialog" aria-modal="true" aria-labelledby="bnmTitle" data-lenis-prevent>
-    <div class="bnm-content">
-      <header class="bnm-head">
-        <span class="bn-label" id="bnmLabel"></span>
-        <button class="bnm-close" type="button" data-close aria-label="Close"><svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.3" stroke-linecap="square"/></svg></button>
-      </header>
-      <div class="bnm-inner" id="bnmInner"></div>
+  <section class="cvs" id="cvStory" aria-label="About Jacob Weissenbäck">
+    <div class="cvs-stage">
+
+      <div class="cvs-scene">
+        <div class="cvs-inner">
+          <h2 class="cvs-big cvs-wide">Designing, creating and turning ideas into interfaces.</h2>
+        </div>
+      </div>
+
+      <div class="cvs-scene">
+        <div class="cvs-inner cvs-tools">
+          <h2 class="cvs-title cvs-wide">Tools I work with</h2>
+          <ul class="cvs-pile">
+            <li class="cvs-card" style="--x:12%; --y:30%; --r:9deg; --k:0.85"><span class="cvs-card-ico" data-letter="H"><img src="assets/HTML5_logo_and_wordmark.svg" alt="" decoding="async"></span><span class="cvs-card-name">HTML5</span></li>
+            <li class="cvs-card" style="--x:10%; --y:78%; --r:-5deg; --k:0.80"><span class="cvs-card-ico" data-letter="G"><img src="assets/github.svg" alt="" decoding="async"></span><span class="cvs-card-name">GitHub</span></li>
+            <li class="cvs-card" style="--x:33%; --y:20%; --r:8deg; --k:1.00"><span class="cvs-card-ico" data-letter="C"><img src="assets/Claude_AI_symbol.svg" alt="" decoding="async"></span><span class="cvs-card-name">Claude</span></li>
+            <li class="cvs-card" style="--x:23%; --y:58%; --r:-11deg; --k:1.00"><span class="cvs-card-ico" data-letter="I"><img src="assets/Adobe_Illustrator_CC_icon.svg" alt="" decoding="async"></span><span class="cvs-card-name">Illustrator</span></li>
+            <li class="cvs-card" style="--x:37%; --y:84%; --r:-7deg; --k:0.88"><span class="cvs-card-ico" data-letter="C"><img src="assets/CSS3_logo.svg" alt="" decoding="async"></span><span class="cvs-card-name">CSS3</span></li>
+            <li class="cvs-card" style="--x:50%; --y:8%; --r:-13deg; --k:0.72"><span class="cvs-card-ico" data-letter="G"><img src="assets/Git_icon.svg" alt="" decoding="async"></span><span class="cvs-card-name">Git</span></li>
+            <li class="cvs-card" style="--x:66%; --y:22%; --r:-9deg; --k:1.10"><span class="cvs-card-ico" data-letter="P"><img src="assets/Adobe_Photoshop_CC_icon.svg" alt="" decoding="async"></span><span class="cvs-card-name">Photoshop</span></li>
+            <li class="cvs-card" style="--x:88%; --y:30%; --r:-6deg; --k:0.95"><span class="cvs-card-ico" data-letter="D"><img src="assets/DaVinci_Resolve_Studio.png" alt="" decoding="async"></span><span class="cvs-card-name">DaVinci Resolve Studio</span></li>
+            <li class="cvs-card" style="--x:62%; --y:86%; --r:6deg; --k:0.85"><span class="cvs-card-ico" data-letter="J"><img src="assets/Unofficial_JavaScript_logo_2.svg" alt="" decoding="async"></span><span class="cvs-card-name">JS</span></li>
+            <li class="cvs-card" style="--x:77%; --y:62%; --r:10deg; --k:1.05"><span class="cvs-card-ico" data-letter="L"><img src="assets/Adobe_Photoshop_Lightroom_Classic_CC_icon.svg" alt="" decoding="async"></span><span class="cvs-card-name">Lightroom Classic</span></li>
+            <li class="cvs-card" style="--x:89%; --y:84%; --r:-12deg; --k:0.88"><span class="cvs-card-ico" data-letter="P"><img src="assets/Python-logo-notext.svg" alt="" decoding="async"></span><span class="cvs-card-name">Python</span></li>
+            <li class="cvs-card" style="--x:4%; --y:52%; --r:12deg; --k:0.72"><span class="cvs-card-ico" data-letter="G"><img src="assets/GitLab.svg" alt="" decoding="async"></span><span class="cvs-card-name">GitLab</span></li>
+            <li class="cvs-card" style="--x:50%; --y:48%; --r:-4deg; --k:1.50"><span class="cvs-card-ico" data-letter="F"><img src="assets/Figma-logo.svg" alt="" decoding="async"></span><span class="cvs-card-name">Figma</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="cvs-scene">
+        <div class="cvs-inner cvs-love">
+          <h2 class="cvs-title cvs-wide">I love</h2>
+          <ul class="cvs-stickers">
+            <li class="cvs-sticker" style="--r:-6deg">Playing music</li>
+            <li class="cvs-sticker" style="--r:5deg">Piano</li>
+            <li class="cvs-sticker" style="--r:-4deg">Guitar</li>
+            <li class="cvs-sticker" style="--r:4deg">Photography</li>
+            <li class="cvs-sticker" style="--r:-7deg">Videography</li>
+            <li class="cvs-sticker" style="--r:6deg">Art</li>
+            <li class="cvs-sticker" style="--r:-3deg">Painting</li>
+            <li class="cvs-sticker" style="--r:5deg">History</li>
+            <li class="cvs-sticker" style="--r:-5deg">Classical music</li>
+            <li class="cvs-sticker" style="--r:3deg">Sport &amp; the gym</li>
+            <li class="cvs-sticker" style="--r:-8deg">Tennis</li>
+            <li class="cvs-sticker" style="--r:6deg">Chess</li>
+            <li class="cvs-sticker" style="--r:-4deg">Computers</li>
+            <li class="cvs-sticker" style="--r:5deg">Video games</li>
+          </ul>
+        </div>
+      </div>
+
     </div>
+  </section>
+
+  <!-- SPIELFLÄCHE: hier landen die I-love-Pillen mit Physik (cv.js), lassen sich ziehen und werfen -->
+  <section class="cvp" id="cvPlay" aria-label="Interests, drag them around"></section>
+</main>
+
+<!-- FOOTER (wie auf der Startseite) -->
+<footer class="site-footer" id="siteFooter">
+  <div class="site-footer-text" id="footerText">
+    <span class="ftp-note">Thank you for visiting my Website!</span>
+    <div class="ftp-word" id="footerWord" role="img" aria-label="JCKY"><span class="ftp-word-inner">JCKY</span></div>
   </div>
-</div>
+  <div class="site-footer-bar">
+    <nav class="sf-links" aria-label="Footer">
+      <a href="#" class="sf-link"><span class="sf-txt">Instagram</span></a>
+      <a href="#" class="sf-link"><span class="sf-txt">LinkedIn</span></a>
+      <a href="mailto:j.weissenbaeck@gmx.at" class="sf-link"><span class="sf-txt">Email</span></a>
+    </nav>
+    <span class="sf-right"><span class="sf-txt">My Portfolio — made with love</span></span>
+  </div>
+</footer>
 
 <script src="script.js"></script>
 <script src="cv.js"></script>
