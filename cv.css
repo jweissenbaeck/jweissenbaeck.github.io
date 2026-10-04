@@ -1,8 +1,7 @@
 /* ============================================================
    CV — Hero (Name + abgerissenes Portrait) und Scroll-Story
-   · Hero: riesiger Name hinten, Portrait als gerissenes Foto vorne,
-     Tools kommen als Sticker aus dem Kopf; rechts „View my projects“,
-     unten rechts Social-Bubbles
+   · Hero: Name oben, Portrait mit Schnittmarken + Bildunterschrift (Hover zoomt ins Bild);
+     untere Zeile: Position links, „View my work“ + CV mittig, Social-Bubbles rechts (Pixel-Hover)
    · Story: fixiert (GSAP ScrollTrigger, pin); Szenen bauen sich aus
      Pixelblöcken auf und zerfallen wieder (cv.js)
    Schrift der großen Zeilen wie auf My Work: Anton, horizontal gestreckt
@@ -29,6 +28,10 @@
 }
 .cvs-wide { max-width: calc(100% / var(--wide)); text-wrap: balance; }   /* gestreckt nie breiter als der Platz → bricht sauber um */
 
+/* Hintergrund-Animation hinter Hero + Story: Universum → Funke → Spiralgalaxie → Wellen (cv.js, scrollgesteuert) */
+.cv-bgfx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.cvh, .cvs { z-index: 1; }                               /* Inhalte liegen über der Animation */
+
 /* ============================
    HERO
    ============================ */
@@ -46,63 +49,88 @@
 }
 .cvh-name-inner { line-height: 1; color: var(--ink); }
 
-.cvh-figure {
-  --s: clamp(60px, 7.4vw, 132px);                          /* Stickergröße */
-  --h: min(76vh, calc(100vh - var(--nav) - var(--s) * 1.7 - 2vh));   /* ragt bis in den Namen, Sticker bleiben unter der Nav */
-  position: absolute; left: 50%; bottom: 0; z-index: 2;
-  margin: 0;
-  height: var(--h); width: min(54vw, calc(var(--h) * 0.82));
-  transform: translateX(-50%);
+/* Portrait: harte Kanten, feine Schnittmarken in den Ecken, Bildunterschrift in Mono;
+   beim Hover zoomt das Bild sanft hinein, der Rahmen bleibt gleich groß */
+.cvh {
+  --d:  min(48vh, 36vw);                                     /* Höhe des Fotos */
+  --cy: max(56vh, calc(var(--nav) + 6vh + 10.6vw + var(--d) / 2));   /* Mitte: immer unter dem Namen */
 }
-/* Sticker: kommen hinter der Risskante aus dem Kopf */
-.cvh-stickers { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 1; }
-.cvh-sticker {
-  position: absolute; left: calc(50% + var(--x)); bottom: calc(var(--s) * (var(--y) - 0.5));   /* --y: wie weit er aus der Risskante ragt */
-  width: var(--s); height: var(--s);
-  margin-left: calc(var(--s) / -2);
-  display: grid; place-items: center;
-  background: var(--paper); border-radius: 22%;
-  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.45);
-  transform: translate(var(--px, 0px), var(--py, 0px)) rotate(var(--r));
+.cvh-portrait {
+  position: absolute; left: 50%; top: var(--cy); z-index: 3;
+  width: calc(var(--d) * 0.76); height: var(--d); margin: 0;
+  transform: translate(-50%, -50%);
 }
-.cvh-sticker img { width: 56%; height: 56%; object-fit: contain; }
-.cvh-sticker.is-empty img { display: none; }
-.cvh-sticker.is-empty::after { content: attr(data-letter); font-family: var(--font-mono); font-size: 18px; color: #333; }
-
-.cvh-cut { position: absolute; inset: 0; z-index: 2; transform: translate(var(--px, 0px), var(--py, 0px)); }
-.cvh-paper {                                               /* weißer Papierrand mit eigener Risskante */
-  position: absolute; inset: -1.6% -12px 0 -12px;
-  background: var(--paper);
-  clip-path: polygon(0.0% 2.58%, 2.4% 1.00%, 4.8% 0.06%, 7.1% 0.44%, 9.5% 0.15%, 11.9% 0.72%, 14.3% 1.02%, 16.7% 0.21%, 19.0% 1.43%, 21.4% 2.13%, 23.8% 1.37%, 26.2% 0.93%, 28.6% 2.49%, 31.0% 0.46%, 33.3% 0.61%, 35.7% 1.94%, 38.1% 0.01%, 40.5% 0.96%, 42.9% 2.48%, 45.2% 1.34%, 47.6% 1.84%, 50.0% 2.34%, 52.4% 2.27%, 54.8% 1.02%, 57.1% 0.27%, 59.5% 0.27%, 61.9% 0.54%, 64.3% 0.88%, 66.7% 0.00%, 69.0% 0.26%, 71.4% 1.43%, 73.8% 1.60%, 76.2% 0.66%, 78.6% 0.95%, 81.0% 2.21%, 83.3% 1.97%, 85.7% 0.22%, 88.1% 0.89%, 90.5% 2.16%, 92.9% 0.06%, 95.2% 1.60%, 97.6% 1.41%, 100.0% 1.37%, 100% 100%, 0% 100%);
+.cvh-frame { position: absolute; inset: 0; overflow: hidden; background: #1a1a18; }
+.cvh-portrait-img {
+  display: block; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 22%;
+  transform: scale(1.001); transition: transform 1.1s var(--ease-out-expo);
 }
-.cvh-photo {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: 50% 18%;
-  background: #1a1a18;
-  clip-path: polygon(0.0% 1.89%, 2.8% 2.74%, 5.6% 2.33%, 8.3% 0.61%, 11.1% 0.53%, 13.9% 0.85%, 16.7% 1.93%, 19.4% 0.85%, 22.2% 2.66%, 25.0% 2.48%, 27.8% 4.02%, 30.6% 3.49%, 33.3% 0.92%, 36.1% 1.51%, 38.9% 1.05%, 41.7% 3.50%, 44.4% 2.37%, 47.2% 0.61%, 50.0% 2.85%, 52.8% 1.53%, 55.6% 2.68%, 58.3% 3.26%, 61.1% 1.28%, 63.9% 2.29%, 66.7% 3.03%, 69.4% 4.18%, 72.2% 1.91%, 75.0% 0.95%, 77.8% 0.54%, 80.6% 3.15%, 83.3% 4.23%, 86.1% 2.90%, 88.9% 2.49%, 91.7% 3.42%, 94.4% 2.11%, 97.2% 2.13%, 100.0% 2.73%, 100% 100%, 0% 100%);
+.cvh-portrait:hover .cvh-portrait-img { transform: scale(1.09); }   /* sanft hineinzoomen */
+.cvh-crop::before, .cvh-crop::after {                       /* Schnittmarken: kleine Winkel außerhalb der Ecken */
+  content: ''; position: absolute; width: 14px; height: 14px;
+  border: 0 solid rgba(240, 237, 232, 0.55);
+}
+.cvh-crop-t::before { left: -10px; top: -10px; border-left-width: 1px; border-top-width: 1px; }
+.cvh-crop-t::after  { right: -10px; top: -10px; border-right-width: 1px; border-top-width: 1px; }
+.cvh-crop-b::before { left: -10px; bottom: -10px; border-left-width: 1px; border-bottom-width: 1px; }
+.cvh-crop-b::after  { right: -10px; bottom: -10px; border-right-width: 1px; border-bottom-width: 1px; }
+.cvh-cap {
+  position: absolute; left: 0; right: 0; top: calc(100% + 16px);
+  display: flex; justify-content: space-between; gap: 12px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted);
 }
 
-.cvh-cta { position: absolute; z-index: 3; right: var(--pad); top: 41vh; background: var(--bg); white-space: nowrap; }
-.cvh-social { position: absolute; z-index: 3; right: var(--pad); bottom: var(--pad); display: flex; gap: 10px; }
+/* Aktuelle Position unten links */
+.cvh-now { position: absolute; z-index: 5; left: var(--pad); bottom: var(--pad); will-change: opacity, transform; }
+.cvh-now p { margin: 0; }
+.cvh-now-role {
+  font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
+  font-size: clamp(1.25rem, 1.8vw, 1.8rem); line-height: 1.05; letter-spacing: 0.02em; text-transform: uppercase;
+}
+.cvh-now-org { margin-top: 8px !important; display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; font-family: var(--font-mono); font-size: 13px; color: var(--ink); }
+.cvh-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 4px 10px; border: 1px solid rgba(240, 237, 232, 0.3); border-radius: 999px;
+  font-size: 11px; letter-spacing: 0.03em; color: var(--ink);
+}
+.cvh-chip i { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+.cvh-chip i::after {                                         /* leiser Puls = „aktuell“ */
+  content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--ink);
+  animation: cvh-live 2.2s ease-out infinite;
+}
+@keyframes cvh-live { from { transform: scale(0.6); opacity: 0.8; } to { transform: scale(2); opacity: 0; } }
+@supports (text-box: trim-both cap alphabetic) { .cvh-chip { text-box: trim-both cap alphabetic; padding: 7px 10px; } }
+
+.cvh-cta-wrap {                                              /* mittig, auf Höhe von Position + Links; so breit wie das Foto */
+  position: absolute; z-index: 5; left: 50%; bottom: var(--pad); transform: translateX(-50%);
+  display: flex; gap: 10px; width: calc(var(--d) * 0.76);
+}
+.cvh-cta, .cvh-cv { background: var(--bg); white-space: nowrap; padding: 14px clamp(12px, 1.1vw, 18px); }
+.cvh-cta { flex: 1 1 auto; justify-content: center; min-width: 0; }
+.cvh-cv { flex: none; gap: 8px; }                            /* Mini-Button: CV + Download-Icon */
+.cvh-cta-push { display: flex; flex: 1 1 auto; min-width: 0; will-change: transform; }   /* Hüllen: schieben sich gegenseitig weg, */
+.cvh-cta-push > .cvh-cta { flex: 1 1 auto; }
+.cvh-cv-push { display: flex; flex: none; will-change: transform; }                          /* wenn ein Button magnetisch zieht (cv.js) */
+.cvh-cta .projects-cta-label, .cvh-cv .projects-cta-label { font-size: clamp(0.82rem, 1.12vw, 1.2rem); }
+.cvh-cv svg { position: relative; z-index: 1; width: 17px; height: 17px; flex: none; }   /* über den Hover-Pixeln, wird beim Hover dunkel */
+.cvh-social { position: absolute; z-index: 5; right: var(--pad); bottom: var(--pad); display: flex; gap: 10px; }
 .cvh-bubble {
+  position: relative; overflow: hidden;
   display: grid; place-items: center;
   width: 52px; height: 52px; border-radius: 50%; box-sizing: border-box;
   border: 1px solid rgba(240, 237, 232, 0.35);
   background: var(--bg); color: var(--ink);
-  transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  transition: color 0.35s ease, border-color 0.5s var(--ease-out-expo);
 }
-.cvh-bubble svg { width: 20px; height: 20px; }
-.cvh-bubble:hover, .cvh-bubble:focus-visible { background: var(--ink); color: var(--bg-dark, #0a0a09); border-color: var(--ink); outline: none; }
+.cvh-bubble svg { position: relative; z-index: 1; width: 20px; height: 20px; }   /* über den Hover-Pixeln */
+.cvh-bubble:hover, .cvh-bubble:focus-visible { color: var(--bg-dark, #0a0a09); border-color: transparent; outline: none; }   /* Pixel füllen den Kreis (script.js) */
 
 /* Laden: Name baut sich aus Pixeln auf (cv.js), Foto gleitet hoch, Sticker poppen aus dem Kopf */
 .cvh.is-intro .cvh-name-inner { clip-path: inset(50%); }
-.cvh.is-intro .cvh-figure { animation: cvh-rise 1s 0.35s var(--ease-out-expo) both; }
-.cvh.is-intro .cvh-sticker { animation: cvh-pop 0.9s calc(0.9s + var(--i) * 0.09s) cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-.cvh.is-intro .cvh-cta, .cvh.is-intro .cvh-social { animation: cvh-fade 0.8s 1.5s ease both; }
-@keyframes cvh-rise { from { transform: translateX(-50%) translateY(12%); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
-@keyframes cvh-pop  { from { transform: translateY(140%) rotate(0deg) scale(0.6); } to { transform: translate(var(--px, 0px), var(--py, 0px)) rotate(var(--r)); } }
-@keyframes cvh-fade { from { opacity: 0; } to { opacity: 1; } }
+.cvh.is-intro .cvh-portrait { animation: cvh-rise 1.1s 0.35s var(--ease-out-expo) both; }
+/* Position, Buttons und Links sind sofort da (gleichzeitig mit dem CV-Button) – keine verzögerte Einblendung */
+@keyframes cvh-rise { from { transform: translate(-50%, -38%) scale(0.82); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 
 /* ============================
    STORY
@@ -110,7 +138,7 @@
 .cvs { position: relative; }
 .cvs-stage { position: relative; height: 100vh; height: 100svh; min-height: 560px; }
 .cvs-scene {
-  position: absolute; inset: var(--nav) var(--pad) var(--pad);
+  position: absolute; inset: var(--nav) var(--pad) var(--pad); z-index: 1;
   display: grid; place-items: center; text-align: center;
   pointer-events: none;                                    /* nur die gerade sichtbare Szene ist bedienbar */
 }
@@ -118,35 +146,46 @@
 .cvs-inner { display: flex; flex-direction: column; align-items: center; max-width: 100%; }
 .cvs.is-live .cvs-clip { clip-path: inset(50%); }        /* cv.js gibt Blöcke frei */
 
-/* 1 — Einstieg */
-.cvs-big { margin: 0; max-width: min(13ch, calc(100% / var(--wide))); font-size: clamp(2.6rem, 6.2vw, 7.4rem); text-wrap: balance; }
+/* 1 — Einstieg: erscheint beim Scrollen Wort für Wort */
+.cvs-word { display: inline-block; will-change: transform, opacity; }
+.cvs-big { margin: 0; max-width: min(16ch, calc(100% / var(--wide))); font-size: clamp(2.4rem, 5.4vw, 6.6rem); text-wrap: balance; }
+.cvs-intro .cvs-big { font-size: clamp(2.2rem, 4.6vw, 5.6rem); max-width: min(20ch, calc(100% / var(--wide))); }
 
 /* Überschrift der Szenen 3 + 4 (fett wie der Einstieg) */
 .cvs-title { margin: 0 0 clamp(26px, 5vh, 56px); font-size: clamp(2.4rem, 5.4vw, 6.2rem); }
 
-/* 3 — Tools: alle Karten schräg auf einen Haufen geworfen (wie Inspo) */
+/* 3 — Tools: 3D-Icons ploppen verstreut auf (ohne Hintergrund). Tiefe entsteht durch gestapelte Ebenen
+   desselben Logos (cv.js). Beim Erscheinen flippen sie herein wie eine geworfene Münze; beim Hover
+   drehen sie sich einmal um die eigene Achse (Münzwurf); sonst schweben sie leise */
 .cvs-tools { will-change: transform, opacity; }               /* fährt beim Weiterscrollen leicht hoch und blendet aus */
-.cvs-pile {
+.cvs-cloud {
   position: relative; list-style: none; margin: 0; padding: 0;
-  width: min(1080px, 88vw); height: min(50vh, 500px);
+  width: min(1240px, 92vw); height: min(56vh, 560px);          /* mehr Fläche → mehr Abstand zwischen den Icons */
 }
-.cvs-card {
-  --w: calc(var(--k) * clamp(76px, 8.4vw, 148px));
+.cvs-i3d {
+  --w: calc(var(--k) * clamp(44px, 4.3vw, 82px));
   position: absolute; left: var(--x); top: var(--y);
-  width: var(--w); aspect-ratio: 1; margin: calc(var(--w) / -2) 0 0 calc(var(--w) / -2);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8%;
-  background: var(--paper); border-radius: 14%;
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.45);
-  transform: rotate(var(--r));
+  width: calc(var(--w) * 2); margin: calc(var(--w) / -2) 0 0 calc(var(--w) * -1);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  perspective: 700px;
+  opacity: var(--pop, 0);
+  transform: scale(calc(0.35 + 0.65 * var(--popS, 0)));
+  animation: cvs-float 6s ease-in-out infinite; animation-delay: calc(var(--k) * -4s);   /* Schweben auf der äußeren Ebene */
 }
-.cvs-card-ico { display: grid; place-items: center; width: 46%; aspect-ratio: 1; }
-.cvs-card-ico img { width: 100%; height: 100%; object-fit: contain; }
-.cvs-card-ico.is-empty img { display: none; }
-.cvs-card-ico.is-empty::after { content: attr(data-letter); font-family: var(--font-mono); font-size: 18px; color: #333; }
-.cvs-card-name {
-  max-width: 86%; text-align: center;
-  font-family: var(--font-mono); font-size: clamp(9px, calc(var(--w) * 0.085), 13px); line-height: 1.2; color: rgba(20, 20, 19, 0.7);
+.cvs-i3d-body {
+  position: relative; width: var(--w); height: var(--w);
+  transform-style: preserve-3d;
+  transform: rotateX(8deg) rotateY(var(--flip, 0deg));      /* leicht von oben gesehen → Tiefe sichtbar */
+  will-change: transform;
 }
+.cvs-i3d.is-spin .cvs-i3d-body { animation: cvs-spin 0.95s cubic-bezier(0.45, 0, 0.2, 1); }   /* Drehen auf der inneren Ebene → kein Springen */
+.cvs-i3d-body img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+@keyframes cvs-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+@keyframes cvs-spin { from { rotate: y 0deg; } to { rotate: y 360deg; } }       /* Münzwurf */
+.cvs-i3d.is-mono .cvs-i3d-body img { filter: invert(1); }    /* schwarzes Logo auf dunklem Grund */
+.cvs-i3d-name { font-family: var(--font-mono); font-size: 11px; line-height: 1.25; color: var(--muted); text-align: center; transition: color 0.3s ease; }
+.cvs-i3d:hover .cvs-i3d-name { color: var(--ink); }
+
 /* 4 — Interessen als Sticker-Collage */
 .cvs-stickers {
   list-style: none; margin: 0; padding: 0;
@@ -184,17 +223,23 @@
    RESPONSIVE
    ============================ */
 @media (max-width: 760px) {
-  .cvh-figure { --s: clamp(42px, 13vw, 64px); --h: 54vh; width: min(82vw, calc(54vh * 0.8)); }
-  .cvh-cta { top: calc(var(--nav) + 2vh + 13vw + 14px); right: 50%; transform: translateX(50%); }   /* direkt unter dem Namen */
+  .cvh { --d: min(82vw, 40vh); --cy: max(44vh, calc(var(--nav) + 13vw + 110px + var(--d) / 2)); }
+  .cvh-now { left: 50%; right: auto; bottom: calc(var(--pad) + 68px); transform: translateX(-50%); text-align: center; width: max-content; max-width: 90vw; }
+  .cvh-now-org { justify-content: center; }
+  .cvh-cta-wrap { bottom: auto; top: calc(var(--nav) + 2vh + 13vw + 14px); }   /* Handy: direkt unter dem Namen */
   .cvh-social { right: 50%; transform: translateX(50%); }
   .cvh-bubble { width: 44px; height: 44px; }
   .cvs-big { font-size: clamp(2rem, 9vw, 3.4rem); }
   .cvs-title { font-size: clamp(2rem, 9vw, 3.2rem); }
-  .cvs-pile { height: min(56vh, 440px); width: 92vw; }
-  .cvs-card { --w: calc(var(--k) * 64px); }
+  .cvs-cloud { width: 94vw; height: min(56vh, 460px); }
+  .cvs-i3d { --w: calc(var(--k) * 40px); }
+  .cvs-i3d-name { font-size: 9.5px; }
   .cvs-sticker { font-size: clamp(0.95rem, 4.6vw, 1.35rem); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cvh.is-intro .cvh-figure, .cvh.is-intro .cvh-sticker, .cvh.is-intro .cvh-cta, .cvh.is-intro .cvh-social { animation: none; }
+  .cvs-i3d, .cvs-i3d.is-spin .cvs-i3d-body { animation: none; }
+  .cvh-portrait-img { transition: none; }
+  .cvh.is-intro .cvh-portrait { animation: none; }
+  .cvh-chip i::after { animation: none; }
   .cvh-bubble { transition: none; }
 }

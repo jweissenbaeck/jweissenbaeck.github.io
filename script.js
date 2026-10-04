@@ -638,7 +638,7 @@ vtStoreDel('jcky:internalNav');
   const PAGE = {
     'index.html':    { name: 'Start',    code: 'A—01', order: 0 },
     'projects.html': { name: 'My Work', code: 'A—02', order: 1 },
-    'cv.html':       { name: 'CV',       code: 'A—03', order: 2 },
+    'cv.html':       { name: 'Me',       code: 'A—03', order: 2 },
   };
   const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -946,7 +946,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
    (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
 ============================ */
 (function initContactPixels() {
-  const items = document.querySelectorAll('.projects-cta, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
+  const items = document.querySelectorAll('.projects-cta, .cvh-bubble, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const ROWS = 6;            // feste Zeilenzahl → Blockgröße skaliert mit dem Feld (zoom-stabil)
@@ -1577,494 +1577,337 @@ ScrollTrigger.create({
 })();
 
 /* ============================
-   GLOBE — Three.js
+   GLOBE — Canvas 2D (ohne Three.js)
+   Die Erde als Kugel aus Licht: Landmassen aus feinen Punkten, beleuchtet von oben links
+   (Tag/Nacht mit weicher Schattengrenze, vereinzelte Stadtlichter auf der Nachtseite),
+   gedämpfte Ozean-Punkte zeigen die Kugelform, ein weicher Atmosphären-Schein am Rand.
+   Maus: Land leuchtet unter dem Cursor auf, die Kugel neigt sich leicht; Klick: Welle über die
+   Oberfläche. Salzburg-Pin mit rotem Puls + Label beim Hover. Kamera wie zuvor (Abstand 4.8, 38°).
 ============================ */
 (function initGlobeSection() {
   const container = document.getElementById('globeSectionCanvas');
-  if (!container || typeof THREE === 'undefined') return;
+  if (!container) return;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const INK = '240,237,232', ACCENT = '#ff4040';
+  const PAD = 1.3;                                   // Canvas größer als der Container → Platz für den Atmosphären-Schein
 
-  const scene  = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-  camera.position.set(0, 0, 4.8);
-
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setClearColor(0x000000, 0);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  container.appendChild(renderer.domElement);
-  renderer.domElement.style.cssText = 'display:block;width:100%;height:100%;border-radius:50%;';
-
+  const cv = document.createElement('canvas');
+  cv.className = 'globe-canvas';
+  cv.setAttribute('role', 'img');
+  cv.setAttribute('aria-label', 'Globe with a pin on Salzburg, Austria');
+  container.style.position = 'relative';
+  container.appendChild(cv);
+  const ctx = cv.getContext('2d');
+  let S = 520, dpr = 1;
   function resize() {
-    const s = container.offsetWidth || 520;
-    renderer.setSize(s, s);
-    camera.aspect = 1;
-    camera.updateProjectionMatrix();
+    S = container.offsetWidth || 520;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(S * PAD * dpr); cv.height = Math.round(S * PAD * dpr);
   }
   resize();
   new ResizeObserver(resize).observe(container);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.08));
-
-  const R     = 1.5;
-  const globe = new THREE.Group();
-  scene.add(globe);
-
-  globe.add(new THREE.Mesh(
-    new THREE.SphereGeometry(R, 64, 64),
-    new THREE.MeshBasicMaterial({ color: 0x1a1714 })
-  ));
-
-  globe.add(new THREE.Mesh(
-    new THREE.SphereGeometry(R * 1.04, 32, 32),
-    new THREE.MeshBasicMaterial({ color: 0x3a3028, transparent: true, opacity: 0.22, side: THREE.BackSide, depthWrite: false })
-  ));
-
-  const RC = R + 0.008;
-  const DOT_ROWS = 120;
-
-  const asciiCanvas = document.createElement('canvas');
-  asciiCanvas.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:50%;z-index:2;';
-  container.style.position = 'relative';
-  container.appendChild(asciiCanvas);
-  const asciiCtx = asciiCanvas.getContext('2d');
-
-  const landPoints = [];
-  const asciiWaves = [];
-  const numBgWaves = 4;
-  for (let i = 0; i < numBgWaves; i++) {
-    asciiWaves.push({
-      x: 0.25 + Math.random() * 0.5,
-      y: 0.25 + Math.random() * 0.5,
-      frequency: 0.18 + Math.random() * 0.22,
-      amplitude: 0.5 + Math.random() * 0.5,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.4 + Math.random() * 0.4,
-    });
+  /* ── Geometrie ── */
+  const R = 1.5, D = 4.8, TANF = Math.tan(19 * Math.PI / 180), VIS = R * R / D;   // sichtbar, wenn z > R²/D
+  const DISC = (R / Math.sqrt(D * D - R * R)) / TANF * 0.5;                       // Kugel-Radius in Anteilen von S
+  const off = () => S * (PAD - 1) / 2;                                             // Versatz Container → Canvas
+  function proj(X, Y, Z, o) {
+    const d = D - Z;
+    o.x = off() + (0.5 + X / (d * TANF) * 0.5) * S;
+    o.y = off() + (0.5 - Y / (d * TANF) * 0.5) * S;
+    return o;
   }
-  let asciiTime = 0;
-  const asciiClickWaves = [];
-  const asciiMouse = { x: 0.5, y: 0.5 };
-
-  renderer.domElement.style.pointerEvents = 'auto';
-  let globeHovered = false;
-  renderer.domElement.addEventListener('mouseenter', () => { globeHovered = true; });
-  renderer.domElement.addEventListener('mouseleave', () => { globeHovered = false; });
-  renderer.domElement.addEventListener('mousemove', (e) => {
-    const rect = renderer.domElement.getBoundingClientRect();
-    asciiMouse.x = (e.clientX - rect.left) / rect.width;
-    asciiMouse.y = (e.clientY - rect.top) / rect.height;
-  });
-  renderer.domElement.addEventListener('click', (e) => {
-    const rect = renderer.domElement.getBoundingClientRect();
-    asciiClickWaves.push({
-      x: (e.clientX - rect.left) / rect.width,
-      y: (e.clientY - rect.top) / rect.height,
-      time: Date.now(),
-      intensity: 2.2,
-    });
-    const now = Date.now();
-    while (asciiClickWaves.length > 0 && now - asciiClickWaves[0].time > 4500) asciiClickWaves.shift();
-  });
-
-  function getClickInfluence(nx, ny, now) {
-    let total = 0;
-    for (const cw of asciiClickWaves) {
-      const age = now - cw.time;
-      if (age > 4200) continue;
-      const dx = nx - cw.x, dy = ny - cw.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const waveRadius = (age / 4200) * 0.8;
-      const waveWidth = 0.10;
-      if (Math.abs(dist - waveRadius) < waveWidth) {
-        const strength = (1 - age / 4200) * cw.intensity;
-        const prox = 1 - Math.abs(dist - waveRadius) / waveWidth;
-        total += strength * prox * Math.sin((dist - waveRadius) * 20);
-      }
-    }
-    return total;
+  function ll(lat, lon, r) {
+    const a = lat * Math.PI / 180, b = lon * Math.PI / 180;
+    return [r * Math.cos(a) * Math.cos(b), r * Math.sin(a), -r * Math.cos(a) * Math.sin(b)];
   }
+  function mul(A, B) {                               // 3×3-Matrizen, zeilenweise
+    const o = new Array(9);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) o[i * 3 + j] = A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j];
+    return o;
+  }
+  const rotY = t => { const c = Math.cos(t), s = Math.sin(t); return [c, 0, s, 0, 1, 0, -s, 0, c]; };
+  const rotX = t => { const c = Math.cos(t), s = Math.sin(t); return [1, 0, 0, 0, c, -s, 0, s, c]; };
+  /* Grundstellung: Salzburg schaut zum Betrachter, Norden oben */
+  const LAT0 = 47.8, LON0 = 13.05;
+  const BASE = mul(rotX(LAT0 * Math.PI / 180), rotY(-Math.PI / 2 - LON0 * Math.PI / 180));
+  const LIGHT = (function () { const v = [-0.86, 0.34, 0.42], l = Math.hypot(v[0], v[1], v[2]); return v.map(x => x / l); })();   // seitlich → sichtbare Tag/Nacht-Grenze
 
+  /* ── Punkte: Ozean (gleichmäßig auf der Kugel), Land (aus den Länderumrissen) ── */
+  const ocean = [];
+  const NO = 2300, GA = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < NO; i++) {
+    const y = 1 - (i + 0.5) / NO * 2, r = Math.sqrt(1 - y * y), t = GA * i;
+    ocean.push([Math.cos(t) * r * R, y * R, Math.sin(t) * r * R]);
+  }
+  const land = [];
   function pointInPolygon(lat, lon, rings) {
     for (const ring of rings) {
       let inside = false;
       for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const [xi, yi] = ring[i];
-        const [xj, yj] = ring[j];
-        if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) {
-          inside = !inside;
-        }
+        const [xi, yi] = ring[i], [xj, yj] = ring[j];
+        if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
       }
       if (inside) return true;
     }
     return false;
   }
-
   function isLand(lat, lon, features) {
     for (const f of features) {
-      const geom = f.geometry;
-      if (!geom) continue;
-      const polys = geom.type === 'Polygon' ? [geom.coordinates]
-                  : geom.type === 'MultiPolygon' ? geom.coordinates : [];
-      for (const poly of polys) {
-        if (pointInPolygon(lat, lon, poly)) return true;
-      }
+      const g = f.geometry; if (!g) continue;
+      const polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+      for (const p of polys) if (pointInPolygon(lat, lon, p)) return true;
     }
     return false;
   }
-
-  function buildDots(features) {
-    for (let row = 0; row < DOT_ROWS; row++) {
-      const lat    = -90 + (180 / DOT_ROWS) * (row + 0.5);
-      const latRad = lat * Math.PI / 180;
-      const dotsInRow = Math.max(1, Math.round(DOT_ROWS * 2 * Math.cos(latRad)));
-      for (let col = 0; col < dotsInRow; col++) {
-        const lon    = -180 + (360 / dotsInRow) * (col + 0.5);
-        const lonRad = lon * Math.PI / 180;
-        if (isLand(lat, lon, features)) {
-          landPoints.push({
-            localPos: new THREE.Vector3(
-              RC * Math.cos(latRad) * Math.cos(lonRad),
-              RC * Math.sin(latRad),
-             -RC * Math.cos(latRad) * Math.sin(lonRad)
-            )
-          });
-        }
+  function buildLand(features) {
+    const ROWS = 150;
+    for (let row = 0; row < ROWS; row++) {
+      const lat = -90 + (180 / ROWS) * (row + 0.5), n = Math.max(1, Math.round(ROWS * 2 * Math.cos(lat * Math.PI / 180)));
+      for (let col = 0; col < n; col++) {
+        const lon = -180 + (360 / n) * (col + 0.5);
+        if (!isLand(lat, lon, features)) continue;
+        const cell = 180 / ROWS, jl = lat + (Math.random() - 0.5) * cell * 0.9, jo = lon + (Math.random() - 0.5) * (360 / n) * 0.9;   // organisch statt Raster
+        land.push({ p: ll(jl, jo, R * 1.004), ph: Math.random() * 6.283, city: Math.random() < 0.08, big: Math.random() < 0.22 });
       }
     }
   }
-
-  const _projVec = new THREE.Vector3();
-  const _projOut = { nx: 0, ny: 0, facing: false, depth: 0 };
-  function projectPoint(localPos) {
-    _projVec.copy(localPos).applyQuaternion(globe.quaternion);
-    _projOut.facing = _projVec.z > 0;   // Sichtbarkeit im Weltraum, VOR der Projektion
-    _projVec.project(camera);            // in-place, keine Allokation
-    _projOut.nx    =  _projVec.x * 0.5 + 0.5;
-    _projOut.ny    = -_projVec.y * 0.5 + 0.5;
-    _projOut.depth =  _projVec.z;
-    return _projOut;                     // dasselbe Objekt wird wiederverwendet
-  }
-
-  function drawAsciiOverlay() {
-    const W = asciiCanvas.width, H = asciiCanvas.height;
-    if (W === 0 || H === 0) return;
-    asciiCtx.clearRect(0, 0, W, H);
-    asciiTime += 0.75 * 0.016;
-    const now = Date.now();
-    for (let i = asciiClickWaves.length - 1; i >= 0; i--) {
-      if (now - asciiClickWaves[i].time > 4500) asciiClickWaves.splice(i, 1);
-    }
-    const S = Math.max(2, Math.min(W, H) / DOT_ROWS * 1.25);   // Pixel-Blockgröße
-    for (const pt of landPoints) {
-      const { nx, ny, facing, depth } = projectPoint(pt.localPos);
-      if (!facing || depth > 1) continue;
-      const limbDist = Math.sqrt((nx - 0.5) ** 2 + (ny - 0.5) ** 2) * 2;
-      if (limbDist > 0.98) continue;
-      const limbFade = Math.max(0, 1 - Math.pow(Math.max(0, limbDist - 0.72) / 0.26, 2));
-      if (limbFade <= 0) continue;
-      let totalWave = 0;
-      for (const wave of asciiWaves) {
-        const dx = nx - wave.x, dy = ny - wave.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const falloff = 1 / (1 + dist * 4);
-        totalWave += Math.sin(dist * wave.frequency * 60 - asciiTime * wave.speed + wave.phase) * wave.amplitude * falloff;
-      }
-      const mdx = nx - asciiMouse.x, mdy = ny - asciiMouse.y;
-      const mouseDist = Math.sqrt(mdx * mdx + mdy * mdy);
-      if (mouseDist < 0.3) {
-        totalWave += (1 - mouseDist / 0.3) * 0.9 * Math.sin(asciiTime * 3);
-      }
-      totalWave += getClickInfluence(nx, ny, now);
-      const clamped = Math.max(0, Math.min(1, (totalWave + 2) / 4));
-      const opacity = Math.min(0.92, 0.34 + clamped * 0.5) * limbFade;
-      asciiCtx.fillStyle = 'rgba(240,237,232,' + opacity.toFixed(3) + ')';
-      asciiCtx.fillRect(nx * W - S / 2, ny * H - S / 2, S, S);
-    }
-  }
-
   fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
     .then(r => r.json())
-    .then(world => {
-      if (typeof topojson === 'undefined') return;
-      buildDots(topojson.feature(world, world.objects.countries).features);
-    }).catch(() => {});
+    .then(world => { if (typeof topojson !== 'undefined') buildLand(topojson.feature(world, world.objects.countries).features); })
+    .catch(() => {});
 
-  const gridMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.06 });
-  [-60, -30, 0, 30, 60].forEach(latDeg => {
-    const lr = latDeg * Math.PI / 180, pts = [];
-    for (let i = 0; i <= 72; i++) {
-      const ln = (i / 72) * Math.PI * 2;
-      pts.push(new THREE.Vector3(R * Math.cos(lr) * Math.sin(ln), R * Math.sin(lr), R * Math.cos(lr) * Math.cos(ln)));
-    }
-    globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  /* ── Gradnetz + Pin ── */
+  const grid = [];
+  [-60, -30, 0, 30, 60].forEach(lat => { const l = []; for (let i = 0; i <= 96; i++) l.push(ll(lat, -180 + i * 3.75, R)); grid.push(l); });
+  for (let lon = 0; lon < 360; lon += 30) { const l = []; for (let i = 0; i <= 48; i++) l.push(ll(-90 + i * 3.75, lon, R)); grid.push(l); }
+  const PIN_BASE = ll(LAT0, LON0, R + 0.002), PIN_TIP = ll(LAT0, LON0, R + 0.22);
+
+  /* ── Interaktion ── */
+  const mouse = { x: -1e4, y: -1e4, on: false };
+  const ripples = [];
+  let hovered = false;
+  cv.addEventListener('mouseenter', () => { hovered = true; });
+  cv.addEventListener('mouseleave', () => { hovered = false; mouse.on = false; });
+  cv.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width * S * PAD; mouse.y = (e.clientY - r.top) / r.height * S * PAD; mouse.on = true; });
+  cv.addEventListener('click', e => {
+    const r = cv.getBoundingClientRect();
+    ripples.push({ x: (e.clientX - r.left) / r.width * S * PAD, y: (e.clientY - r.top) / r.height * S * PAD, t: performance.now() });
   });
-  [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].forEach(lonDeg => {
-    const ln = lonDeg * Math.PI / 180, pts = [];
-    for (let i = 0; i <= 36; i++) {
-      const lr = -Math.PI / 2 + (i / 36) * Math.PI;
-      pts.push(new THREE.Vector3(R * Math.cos(lr) * Math.sin(ln), R * Math.sin(lr), R * Math.cos(lr) * Math.cos(ln)));
-    }
-    globe.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
-  });
+  let tRotY = 0, tRotX = 0, cRotY = 0, cRotX = 0;
+  window.addEventListener('mousemove', e => {
+    const b = container.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
+    tRotY = Math.max(-0.20, Math.min(0.20, ((e.clientX - cx) / (b.width / 2)) * 0.18));
+    tRotX = Math.max(-0.12, Math.min(0.12, ((e.clientY - cy) / (b.height / 2)) * 0.10));
+  }, { passive: true });
 
-  const SALZ_LAT_RAD = 47.8  * Math.PI / 180;
-  const SALZ_LON_RAD = 13.05 * Math.PI / 180;
-
-  function ll3(latRad, lonRad, r) {
-    return new THREE.Vector3(
-       r * Math.cos(latRad) * Math.cos(lonRad),
-       r * Math.sin(latRad),
-      -r * Math.cos(latRad) * Math.sin(lonRad)
-    );
-  }
-
-  const pinBase = ll3(SALZ_LAT_RAD, SALZ_LON_RAD, R + 0.002);
-  const pinTip  = ll3(SALZ_LAT_RAD, SALZ_LON_RAD, R + 0.22);
-  const outward = pinBase.clone().normalize();
-
-  globe.add(new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([pinBase.clone(), pinTip.clone()]),
-    new THREE.LineBasicMaterial({ color: 0xF0EDE8, transparent: true, opacity: 0.9 })
-  ));
-
-  const pinCoreDot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.022, 12, 12),
-    new THREE.MeshBasicMaterial({ color: 0xffffff })
-  );
-  pinCoreDot.position.copy(pinTip);
-  globe.add(pinCoreDot);
-
-  const ring1 = new THREE.Mesh(
-    new THREE.RingGeometry(0.030, 0.042, 32),
-    new THREE.MeshBasicMaterial({ color: 0xff4040, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false })
-  );
-  ring1.position.copy(pinTip);
-  ring1.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), outward);
-  globe.add(ring1);
-
-  const ring2 = new THREE.Mesh(
-    new THREE.RingGeometry(0.042, 0.075, 32),
-    new THREE.MeshBasicMaterial({ color: 0xff4040, transparent: true, opacity: 0.28, side: THREE.DoubleSide, depthWrite: false })
-  );
-  ring2.position.copy(pinTip);
-  ring2.quaternion.copy(ring1.quaternion);
-  globe.add(ring2);
-
-  const pinBaseDot = new THREE.Mesh(
-    new THREE.SphereGeometry(0.014, 10, 10),
-    new THREE.MeshBasicMaterial({ color: 0xff4040 })
-  );
-  pinBaseDot.position.copy(pinBase);
-  globe.add(pinBaseDot);
-
-  const salzDir = ll3(SALZ_LAT_RAD, SALZ_LON_RAD, 1).normalize();
-  const q1 = new THREE.Quaternion().setFromUnitVectors(salzDir, new THREE.Vector3(0, 0, 1));
-  const northAfterQ1 = new THREE.Vector3(0, 1, 0).applyQuaternion(q1);
-  const q2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.atan2(northAfterQ1.x, northAfterQ1.y));
-  const baseQuat = q2.multiply(q1);
-  globe.quaternion.copy(baseQuat);
-
+  /* ── Label (SVG) wie bisher ── */
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5;';
   container.appendChild(svg);
+  function el(tag, attrs) { const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) n.setAttribute(k, attrs[k]); n.style.opacity = '0'; svg.appendChild(n); return n; }
+  const sLine = el('line', { stroke: 'rgba(240,237,232,0.55)', 'stroke-width': '1', 'stroke-dasharray': '3 3' });
+  const sBadge = el('rect', { rx: '3', fill: '#0a0a09', stroke: 'rgba(240,237,232,0.24)', 'stroke-width': '1' });
+  const sDot = el('circle', { r: '2.5', fill: ACCENT });
+  const sText = el('text', { fill: '#F0EDE8', 'font-family': 'DM Mono, monospace', 'font-size': '9', 'letter-spacing': '0.2em', 'text-anchor': 'start', 'dominant-baseline': 'middle' });
+  sText.textContent = 'SALZBURG, AT';
 
-  const svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-  svgLine.setAttribute('stroke', 'rgba(240,237,232,0.55)');
-  svgLine.setAttribute('stroke-width', '1');
-  svgLine.setAttribute('stroke-dasharray', '3 3');
-  svgLine.style.opacity = '0';                 /* startet unsichtbar → kein Aufblitzen */
-  svg.appendChild(svgLine);
+  /* ── Zeichnen ── */
+  const v = [0, 0, 0], o = { x: 0, y: 0 }, o2 = { x: 0, y: 0 };
+  function rot(M, p, fy) { v[0] = M[0] * p[0] + M[1] * p[1] + M[2] * p[2]; v[1] = M[3] * p[0] + M[4] * p[1] + M[5] * p[2] + fy; v[2] = M[6] * p[0] + M[7] * p[1] + M[8] * p[2]; return v; }
+  const BUCKETS = 24;
+  const bucket = Array.from({ length: BUCKETS }, () => []), bucketBig = Array.from({ length: BUCKETS }, () => []);
+  let clock = 0, last = performance.now(), visible = false;
 
-  const svgBadge = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-  svgBadge.setAttribute('rx', '3');
-  svgBadge.setAttribute('fill', '#0a0a09');
-  svgBadge.setAttribute('stroke', 'rgba(240,237,232,0.24)');
-  svgBadge.setAttribute('stroke-width', '1');
-  svgBadge.style.opacity = '0';
-  svg.appendChild(svgBadge);
+  function draw(now) {
+    const W = S * PAD, cx = W / 2;
+    const fy = reduce ? 0 : Math.sin(clock * 0.6) * 0.028;                        // leichtes Schweben
+    const M = mul(mul(rotY(cRotY), rotX(cRotX)), BASE);
+    const cy = cx - fy / (D * TANF) * 0.5 * S, rr = DISC * S;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, W);
 
-  const svgAccentDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-  svgAccentDot.setAttribute('r', '2.5');
-  svgAccentDot.setAttribute('fill', '#ff4040');
-  svgAccentDot.style.opacity = '0';
-  svg.appendChild(svgAccentDot);
+    /* Atmosphäre: weicher Schein am Rand */
+    let g = ctx.createRadialGradient(cx, cy, rr * 0.94, cx, cy, rr * 1.18);
+    g.addColorStop(0, 'rgba(' + INK + ',0.13)'); g.addColorStop(0.35, 'rgba(' + INK + ',0.05)'); g.addColorStop(1, 'rgba(' + INK + ',0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr * 1.18, 0, 6.2832); ctx.fill();
+    /* Kugelkörper: dunkel, zur Lichtseite minimal heller */
+    g = ctx.createRadialGradient(cx - rr * 0.38, cy - rr * 0.34, rr * 0.05, cx, cy, rr);
+    g.addColorStop(0, '#24211c'); g.addColorStop(0.7, '#151412'); g.addColorStop(1, '#0d0c0b');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 6.2832); ctx.fill();
 
-  const svgText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  svgText.setAttribute('fill', '#F0EDE8');
-  svgText.setAttribute('font-family', 'DM Mono, monospace');
-  svgText.setAttribute('font-size', '9');
-  svgText.setAttribute('letter-spacing', '0.2em');
-  svgText.setAttribute('text-anchor', 'start');
-  svgText.setAttribute('dominant-baseline', 'middle');
-  svgText.textContent = 'SALZBURG, AT';
-  svgText.style.opacity = '0';
-  svg.appendChild(svgText);
+    const limb = (x, y) => { const d = Math.hypot(x - cx, y - cy) / rr; return d >= 1 ? 0 : Math.min(1, (1 - d) / 0.16); };
 
-  function resizeAsciiCanvas() {
-    const s = container.offsetWidth || 520;
-    asciiCanvas.width  = s;
-    asciiCanvas.height = s;
+    /* Gradnetz */
+    ctx.strokeStyle = 'rgba(' + INK + ',0.05)'; ctx.lineWidth = 1; ctx.beginPath();
+    for (const line of grid) {
+      let pen = false;
+      for (const p of line) {
+        rot(M, p, fy);
+        if (v[2] <= VIS) { pen = false; continue; }
+        proj(v[0], v[1], v[2], o);
+        if (pen) ctx.lineTo(o.x, o.y); else { ctx.moveTo(o.x, o.y); pen = true; }
+      }
+    }
+    ctx.stroke();
+
+    /* Ozean: feine, gedämpfte Punkte */
+    ctx.fillStyle = 'rgba(' + INK + ',1)';
+    for (let i = 0; i < BUCKETS; i++) bucket[i].length = 0;
+    const so = Math.max(1, S / 420);
+    for (const p of ocean) {
+      rot(M, p, fy);
+      if (v[2] <= VIS) continue;
+      const lit = (v[0] * LIGHT[0] + v[1] * LIGHT[1] + (v[2]) * LIGHT[2]) / R;
+      proj(v[0], v[1], v[2], o);
+      let a = (0.04 + 0.09 * Math.max(0, lit)) * limb(o.x, o.y);
+      for (const rp of ripples) { const age = (now - rp.t) / 2600, w = Math.abs(Math.hypot(o.x - rp.x, o.y - rp.y) - age * S * 0.75); if (w < S * 0.05) a += (1 - age) * 0.35 * (1 - w / (S * 0.05)); }
+      if (a > 0.004) bucket[Math.min(BUCKETS - 1, Math.floor(a * BUCKETS))].push(o.x, o.y);
+    }
+    flush(so);
+
+    /* Land: hell auf der Tagseite, weicher Übergang zur Nacht, Stadtlichter; Maus + Klick-Wellen */
+    const sl = Math.max(1.3, S / 300), t = now / 1000;
+    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 2600) ripples.splice(i, 1);
+    for (const pt of land) {
+      rot(M, pt.p, fy);
+      if (v[2] <= VIS) continue;
+      const lit = (v[0] * LIGHT[0] + v[1] * LIGHT[1] + v[2] * LIGHT[2]) / R;
+      proj(v[0], v[1], v[2], o);
+      const day = Math.max(0, Math.min(1, (lit + 0.12) / 0.5));
+      let a = 0.16 + 0.74 * day * day * (3 - 2 * day);
+      if (pt.city && lit < 0.05 && !reduce) a += 0.55 * (0.5 + 0.5 * Math.sin(t * 2.2 + pt.ph));
+      if (mouse.on) { const md = Math.hypot(o.x - mouse.x, o.y - mouse.y), mr = S * 0.2; if (md < mr) a += 0.45 * (1 - md / mr); }
+      for (const rp of ripples) {
+        const age = (now - rp.t) / 2600, rad = age * S * 0.75, d = Math.hypot(o.x - rp.x, o.y - rp.y);
+        const w = Math.abs(d - rad); if (w < S * 0.05) a += (1 - age) * 1.1 * (1 - w / (S * 0.05));   // deutliche Welle
+      }
+      a = Math.min(1, a) * limb(o.x, o.y);
+      if (a > 0.01) (pt.big ? bucketBig : bucket)[Math.min(BUCKETS - 1, Math.floor(a * BUCKETS))].push(o.x, o.y);
+    }
+    flush(sl * 0.8);                                   // zwei Punktgrößen → Sternenstaub statt Gitter
+    flush(sl * 1.35, bucketBig);
+
+    /* Salzburg-Pin */
+    rot(M, PIN_TIP, fy); const tipVis = v[2] > VIS; proj(v[0], v[1], v[2], o);
+    rot(M, PIN_BASE, fy); proj(v[0], v[1], v[2], o2);
+    if (tipVis) {
+      const pulse = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(clock * 2.6), pulse2 = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(clock * 2.6 + Math.PI), u = S / 520;
+      ctx.strokeStyle = 'rgba(' + INK + ',0.9)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(o2.x, o2.y); ctx.lineTo(o.x, o.y); ctx.stroke();
+      ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(o2.x, o2.y, 2.2 * u, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha = 0.08 + 0.2 * pulse2; ctx.beginPath(); ctx.arc(o.x, o.y, (7 + 6 * pulse2) * u, 0, 6.2832); ctx.fill();
+      ctx.globalAlpha = 0.45 + 0.45 * pulse; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.6 * u; ctx.beginPath(); ctx.arc(o.x, o.y, (4.6 + 1.2 * pulse) * u, 0, 6.2832); ctx.stroke();
+      ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(o.x, o.y, 2.6 * u, 0, 6.2832); ctx.fill();
+    }
+    /* Label beim Hover (Container-Koordinaten) */
+    const px = o.x - off(), py = o.y - off(), H = 17, P = 6, TW = 84, DR = 5, DG = 5, bw = DR * 2 + DG + TW + P * 2, bx = px + 14, by = py - 28;
+    sLine.setAttribute('x1', px); sLine.setAttribute('y1', py); sLine.setAttribute('x2', bx); sLine.setAttribute('y2', by + H / 2);
+    sBadge.setAttribute('x', bx); sBadge.setAttribute('y', by); sBadge.setAttribute('width', bw); sBadge.setAttribute('height', H);
+    sDot.setAttribute('cx', bx + P + DR); sDot.setAttribute('cy', by + H / 2);
+    sText.setAttribute('x', bx + P + DR * 2 + DG); sText.setAttribute('y', by + H / 2);
+    const lv = tipVis && hovered ? 1 : 0;
+    [sLine, sBadge, sDot, sText].forEach(n => { n.style.opacity = String(lv); n.style.transition = hovered ? 'opacity 0.3s ease' : 'opacity 0.15s ease'; });
   }
-  resizeAsciiCanvas();
-  new ResizeObserver(resizeAsciiCanvas).observe(container);
-
-  let tRotY = 0, tRotX = 0, cRotY = 0, cRotX = 0;
-
-  window.addEventListener('mousemove', (e) => {
-    const containerRect = container.getBoundingClientRect();
-    const cx = containerRect.left + containerRect.width  / 2;
-    const cy = containerRect.top  + containerRect.height / 2;
-    tRotY = Math.max(-0.20, Math.min(0.20, ((e.clientX - cx) / (containerRect.width  / 2)) * 0.18));
-    tRotX = Math.max(-0.12, Math.min(0.12, ((e.clientY - cy) / (containerRect.height / 2)) * 0.10));
-  }, { passive: true });
-
-  const _euler = new THREE.Euler(0, 0, 0, 'YXZ');
-  const _q     = new THREE.Quaternion();
-  let clockS = 0;
-
-  function projectPin() {
-    const v    = pinTip.clone().applyQuaternion(globe.quaternion).add(globe.position).project(camera);
-    const dpr  = Math.min(window.devicePixelRatio, 2);
-    const rW   = renderer.domElement.width  / dpr;
-    const rH   = renderer.domElement.height / dpr;
-    const px   = (v.x *  0.5 + 0.5) * rW;
-    const py   = (v.y * -0.5 + 0.5) * rH;
-    const vis  = v.z < 1 ? 1 : 0;
-    const PAD = 6, H = 17;
-    const textW = 84;
-    const DOT_R = 5, DOT_GAP = 5;
-    const badgeW = DOT_R * 2 + DOT_GAP + textW + PAD * 2;
-    const bx = px + 14, by = py - 28;
-    svgLine.setAttribute('x1', px);  svgLine.setAttribute('y1', py);
-    svgLine.setAttribute('x2', bx);  svgLine.setAttribute('y2', by + H / 2);
-    svgBadge.setAttribute('x', bx);  svgBadge.setAttribute('y', by);
-    svgBadge.setAttribute('width', badgeW); svgBadge.setAttribute('height', H);
-    svgAccentDot.setAttribute('cx', bx + PAD + DOT_R);
-    svgAccentDot.setAttribute('cy', by + H / 2);
-    svgText.setAttribute('x', bx + PAD + DOT_R * 2 + DOT_GAP);
-    svgText.setAttribute('y', by + H / 2);
-    const labelVis = vis * (globeHovered ? 1 : 0);
-    [svgLine, svgBadge, svgText, svgAccentDot].forEach(el => {
-      el.style.opacity = String(labelVis);
-      el.style.transition = globeHovered ? 'opacity 0.3s ease' : 'opacity 0.15s ease';
-    });
+  function flush(size, set) {                         // Punkte gebündelt nach Helligkeit zeichnen (schnell)
+    set = set || bucket;
+    for (let i = 0; i < BUCKETS; i++) {
+      const b = set[i]; if (!b.length) continue;
+      ctx.globalAlpha = (i + 0.5) / BUCKETS;
+      for (let k = 0; k < b.length; k += 2) ctx.fillRect(b[k] - size / 2, b[k + 1] - size / 2, size, size);
+      b.length = 0;
+    }
+    ctx.globalAlpha = 1;
   }
 
-  let globeVisible = false;
-  new IntersectionObserver(
-    ([entry]) => { globeVisible = entry.isIntersecting; },
-    { threshold: 0.01 }
-  ).observe(container);
-
-  let _lastT = performance.now();
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.01 }).observe(container);
   (function tick(now) {
     requestAnimationFrame(tick);
     now = now || performance.now();
-    const dt = Math.min((now - _lastT) || 16.7, 50) / 1000;   // s, gedeckelt
-    _lastT = now;
-    if (!globeVisible) return;
-    const noMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    if (!noMotion) {
-      clockS += 0.72 * dt;                                       // vorher 0.012/Frame ≈ 0.72/s @60Hz
-      const kRot = 1 - Math.exp(-dt / 0.55);                     // vorher 0.028/Frame, jetzt framerate-unabhängig
-      cRotY += (tRotY - cRotY) * kRot;
-      cRotX += (tRotX - cRotX) * kRot;
-      _euler.set(cRotX, cRotY, 0, 'YXZ');
-      _q.setFromEuler(_euler);
-      globe.quaternion.copy(_q).multiply(baseQuat);
-      globe.position.y = Math.sin(clockS * 0.6) * 0.028;
-      const p1 = 0.5 + 0.5 * Math.sin(clockS * 2.6);
-      const p2 = 0.5 + 0.5 * Math.sin(clockS * 2.6 + Math.PI);
-      ring1.material.opacity = 0.45 + 0.45 * p1;
-      ring1.scale.setScalar(1 + 0.22 * p1);
-      ring2.material.opacity = 0.08 + 0.20 * p2;
-      ring2.scale.setScalar(1 + 0.45 * p2);
+    const dt = Math.min(now - last || 16.7, 50) / 1000; last = now;
+    if (!visible) return;
+    if (!reduce) {
+      clock += 0.72 * dt;
+      const k = 1 - Math.exp(-dt / 0.55);
+      cRotY += (tRotY - cRotY) * k; cRotX += (tRotX - cRotX) * k;
     }
-    drawAsciiOverlay();
-    projectPin();
-    renderer.render(scene, camera);
+    draw(now);
   })();
+})();
 
-  /* ASCII Background */
-  (function initGlobeSectionAsciBg() {
-    const section = document.getElementById('globeSection');
-    if (!section) return;
-    const canvas = document.createElement('canvas');
-    canvas.className = 'globe-section-ascii-bg';
-    section.insertBefore(canvas, section.firstChild);
-    const ctx = canvas.getContext('2d');
-    const BLOCK = 26;                     // Pixel-Blockgröße (Stil der übrigen Pixel-Effekte)
-    const waves = [];
-    for (let i = 0; i < 5; i++) {
-      waves.push({
-        x: 0.15 + Math.random() * 0.7, y: 0.15 + Math.random() * 0.7,
-        frequency: 0.14 + Math.random() * 0.18, amplitude: 0.45 + Math.random() * 0.45,
-        phase: Math.random() * Math.PI * 2, speed: 0.3 + Math.random() * 0.35,
-      });
+/* ============================
+   GLOBE SECTION — Sternenhimmel im Hintergrund (wie auf der Me-Seite)
+   Pixel-Sterne in Tiefenebenen: funkeln leise, treiben langsam, folgen minimal der Maus.
+   Alle paar Sekunden zieht eine Sternschnuppe vorbei; ein Klick schickt eine Lichtwelle durch die Sterne.
+============================ */
+(function initGlobeStars() {
+  const section = document.getElementById('globeSection');
+  if (!section) return;
+  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const canvas = document.createElement('canvas');
+  canvas.className = 'globe-section-stars';
+  canvas.setAttribute('aria-hidden', 'true');
+  section.insertBefore(canvas, section.firstChild);
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = 1, stars = [], visible = false, last = performance.now();
+  const mouse = { x: 0, y: 0, tx: 0, ty: 0 }, ripples = [];
+  let shoot = null, nextShoot = performance.now() + 2500;
+  function rnd(i, k) { let h = ((i + 1) * 374761393 + (k + 1) * 668265263) >>> 0; h = (h ^ (h >>> 13)) * 1274126177 >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+  function build() {
+    W = section.offsetWidth; H = section.offsetHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    const n = Math.round(W * H / 2400);
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      const z = 0.18 + Math.pow(rnd(i, 4), 2.2) * 0.82;                       // meist fern, wenige nah
+      stars.push({ x: rnd(i, 1) * W, y: rnd(i, 2) * H, z: z, s: z > 0.82 ? 3 : z > 0.5 ? 2 : 1, a: 0.1 + z * 0.55, ph: rnd(i, 9) * 6.283, sp: 0.5 + rnd(i, 17), px: 0, py: 0 });
     }
-    let time = 0;
-    const mouse = { x: 0.5, y: 0.5 };
-    const clickWaves = [];
-    section.addEventListener('mousemove', (e) => {
-      const rect = section.getBoundingClientRect();
-      mouse.x = (e.clientX - rect.left) / rect.width;
-      mouse.y = (e.clientY - rect.top)  / rect.height;
-    }, { passive: true });
-    section.addEventListener('click', (e) => {
-      const rect = section.getBoundingClientRect();
-      clickWaves.push({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height, time: Date.now(), intensity: 2.0 });
-    });
-    function bgClickInfluence(nx, ny, now) {
-      let total = 0;
-      for (const cw of clickWaves) {
-        const age = now - cw.time;
-        if (age > 4500) continue;
-        const dx = nx - cw.x, dy = ny - cw.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        const radius = (age / 4500) * 1.2, width = 0.12;
-        if (Math.abs(dist - radius) < width) {
-          total += (1 - age / 4500) * cw.intensity * (1 - Math.abs(dist - radius) / width) * Math.sin((dist - radius) * 18);
-        }
+  }
+  section.addEventListener('mousemove', e => { const r = section.getBoundingClientRect(); mouse.tx = (e.clientX - r.left) / r.width - 0.5; mouse.ty = (e.clientY - r.top) / r.height - 0.5; }, { passive: true });
+  section.addEventListener('click', e => { const r = section.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }); });
+  function draw(now, dt) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgb(240,237,232)';
+    mouse.x += (mouse.tx - mouse.x) * 0.05; mouse.y += (mouse.ty - mouse.y) * 0.05;
+    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 2200) ripples.splice(i, 1);
+    for (const s of stars) {
+      if (!reduce) s.x -= s.z * 4 * dt;                                         // langsames Treiben
+      if (s.x < -4) s.x += W + 8;
+      let x = s.x + mouse.x * s.z * 26, y = s.y + mouse.y * s.z * 16;
+      let a = s.a * (reduce ? 1 : 0.72 + 0.28 * Math.sin(now * 0.0016 * s.sp + s.ph));
+      for (const rp of ripples) {                                               // Lichtwelle: hellt auf + schiebt sanft weg
+        const age = (now - rp.t) / 2200, rad = age * Math.max(W, H) * 0.7, dx = x - rp.x, dy = y - rp.y, d = Math.hypot(dx, dy) || 1, w = Math.abs(d - rad);
+        if (w < 60) { const k = (1 - age) * (1 - w / 60); a += k * 0.6; x += dx / d * k * 10 * s.z; y += dy / d * k * 10 * s.z; }
       }
-      return total;
+      ctx.globalAlpha = Math.min(1, a);
+      ctx.fillRect(Math.round(x), Math.round(y), s.s, s.s);
     }
-    function resize() { canvas.width = section.offsetWidth; canvas.height = section.offsetHeight; }
-    function draw() {
-      const W = canvas.width, H = canvas.height;
-      if (W === 0 || H === 0) return;
-      time += 0.75 * 0.016 * 0.4;      // langsamer (ruhigere Bewegung)
-      const now = Date.now();
-      for (let i = clickWaves.length - 1; i >= 0; i--) { if (now - clickWaves[i].time > 4500) clickWaves.splice(i, 1); }
-      ctx.clearRect(0, 0, W, H);
-      const cols = Math.ceil(W / BLOCK), rows = Math.ceil(H / BLOCK);
-      for (let gy = 0; gy < rows; gy++) {
-        const ny = (gy * BLOCK + BLOCK * 0.5) / H;
-        const rise = 0.7 + 0.3 * ny;                 // untere Blöcke minimal präsenter (Pixel-Signatur)
-        for (let gx = 0; gx < cols; gx++) {
-          const nx = (gx * BLOCK + BLOCK * 0.5) / W;
-          let totalWave = 0;
-          for (const wave of waves) {
-            const dx = nx - wave.x, dy = ny - wave.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            totalWave += Math.sin(dist * wave.frequency * 55 - time * wave.speed + wave.phase) * wave.amplitude / (1 + dist * 3.5);
-          }
-          const mdx = nx - mouse.x, mdy = ny - mouse.y;
-          const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
-          if (mDist < 0.35) totalWave += (1 - mDist / 0.35) * 0.5 * Math.sin(time * 3.2);
-          totalWave += bgClickInfluence(nx, ny, now);
-          if (Math.abs(totalWave) < 0.18) continue;
-          const norm = Math.max(0, Math.min(1, (totalWave + 2) / 4));
-          const opacity = (0.03 + norm * 0.075) * rise;    // dezenter
-          ctx.fillStyle = 'rgba(240,237,232,' + opacity.toFixed(4) + ')';
-          ctx.fillRect(gx * BLOCK, gy * BLOCK, BLOCK - 3, BLOCK - 3);   // kleine Lücke → Pixel-Raster
-        }
+    /* Sternschnuppe */
+    if (!reduce) {
+      if (!shoot && now > nextShoot) {
+        const ang = Math.PI * (0.78 + Math.random() * 0.1);                      // schräg nach links unten
+        shoot = { x: W * (0.35 + Math.random() * 0.6), y: H * (0.05 + Math.random() * 0.3), vx: Math.cos(ang) * 900, vy: Math.sin(ang) * 900, life: 0, len: 140 + Math.random() * 110 };
+      }
+      if (shoot) {
+        shoot.life += dt; shoot.x += shoot.vx * dt; shoot.y += shoot.vy * dt;
+        const k = Math.min(1, shoot.life / 0.15) * Math.max(0, 1 - shoot.life / 0.95), l = shoot.len / 900;
+        const g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x - shoot.vx * l, shoot.y - shoot.vy * l);
+        g.addColorStop(0, 'rgba(240,237,232,' + (0.85 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(240,237,232,0)');
+        ctx.globalAlpha = 1; ctx.strokeStyle = g; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(shoot.x - shoot.vx * l, shoot.y - shoot.vy * l); ctx.stroke();
+        if (shoot.life > 0.95) { shoot = null; nextShoot = now + 5000 + Math.random() * 6000; }
       }
     }
-    let asciiBgVisible = false;
-    new IntersectionObserver(([entry]) => { asciiBgVisible = entry.isIntersecting; }, { threshold: 0.01 }).observe(section);
-    function animate() { if (asciiBgVisible) draw(); requestAnimationFrame(animate); }
-    window.addEventListener('resize', resize);
-    resize();
-    animate();
+    ctx.globalAlpha = 1;
+  }
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.01 }).observe(section);
+  window.addEventListener('resize', build);
+  build();
+  (function tick(now) {
+    requestAnimationFrame(tick);
+    now = now || performance.now();
+    const dt = Math.min(now - last || 16.7, 50) / 1000; last = now;
+    if (visible) draw(now, dt);
   })();
 })();
 
@@ -2123,7 +1966,7 @@ ScrollTrigger.create({
 })();
 
 /* ============================
-   NAV — Hide on scroll down, show on scroll up
+   NAV — Hide on scroll down, show on scroll up (ganz oben + ganz unten immer sichtbar)
 ============================ */
 (function initNavScrollHide() {
   const nav = document.getElementById('mainNav');
@@ -2153,6 +1996,8 @@ ScrollTrigger.create({
 
   function handle(y, dir) {
     if (y < 48) { show(); return; }   // ganz oben immer sichtbar
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    if (y >= max - 24) { show(); return; }   // ganz unten angekommen → ebenfalls einblenden
     if (dir > 0) hide();              // runter → smooth nach oben
     else if (dir < 0) show();         // hoch → einblenden
   }

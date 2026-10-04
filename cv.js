@@ -1,13 +1,17 @@
 /* ============================================================
    CV PAGE — Hero + Scroll-Story
-   · Hero: Name wird exakt an die Breite angepasst und baut sich beim Laden
-     aus Pixeln auf; Foto + Tool-Sticker bewegen sich leicht mit der Maus.
+   · Hero: Name wird exakt an die Breite angepasst und baut sich beim Laden aus Pixeln auf;
+     Portrait mit Schnittmarken (Hover-Zoom per CSS); Bildunterschrift mit automatisch berechnetem Alter.
    · Story (GSAP ScrollTrigger, pin): Szenen bauen sich aus Pixelblöcken auf
      und zerfallen nach oben – gleiche Blockverteilung wie der Seitenwechsel.
-     Tools: Karten fliegen nacheinander auf einen Haufen; danach fährt die Szene leicht hoch und blendet aus.
+     Einstieg: Überschrift erscheint beim Scrollen Wort für Wort.
+     Tools: 3D-Icons ploppen nacheinander auf und flippen dabei herein; beim Hover Münzwurf (eine Drehung);
+     danach fährt die Szene leicht hoch und blendet aus.
+     Hintergrund (ab dem Hero): Universum → Funke → Spiralgalaxie → schwingende Linien (scrollgesteuert).
      Interessen: Sticker kleben sich nacheinander dazu.
-   · Physik: Scrollt man über die Story hinaus, fallen die Pillen in die Spielfläche über dem
-     Footer, stapeln sich und lassen sich mit Maus/Finger ziehen und werfen (kleine eigene Engine).
+   · Physik: Scrollt man ein Stück über die Story hinaus, fallen die Pillen in die Spielfläche über dem
+     Footer, stapeln sich und lassen sich mit Maus/Finger ziehen und werfen (kleine eigene Engine);
+     scrollt man zurück, fliegen sie in einem Bogen an ihren Platz zurück.
    Inhalte stehen in cv.html; hier nur Ablauf + Darstellung.
 ============================================================ */
 (function () {
@@ -48,9 +52,9 @@
   function ease(v) { return 1 - Math.pow(1 - v, 3); }
   var CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "path('M0 0H1V1Z')"));
 
-  /* ── Logos: fehlende Datei → Anfangsbuchstabe (Karten + Sticker sind hell, Logos bleiben wie sie sind) ── */
-  document.querySelectorAll('.cvs-card-ico img, .cvh-sticker img').forEach(function (img) {
-    var miss = function () { img.parentNode.classList.add('is-empty'); };
+  /* ── Logos: fehlende Datei → Bild ausblenden, der Name bleibt ── */
+  document.querySelectorAll('.cvs-i3d img').forEach(function (img) {
+    var miss = function () { img.style.display = 'none'; };
     img.addEventListener('error', miss);
     if (img.complete && !img.naturalWidth) miss();
   });
@@ -60,6 +64,11 @@
      ============================ */
   var hero = document.getElementById('cvHero');
   if (hero) (function initHero() {
+    /* Alter aus dem Geburtsdatum (17. Jänner 2003) – zählt jedes Jahr automatisch weiter */
+    var born = new Date(2003, 0, 17), today = new Date();
+    var age = today.getFullYear() - born.getFullYear() - ((today.getMonth() < born.getMonth() || (today.getMonth() === born.getMonth() && today.getDate() < born.getDate())) ? 1 : 0);
+    hero.querySelectorAll('[data-age]').forEach(function (el) { el.textContent = age; });
+
     var name = document.getElementById('cvhName'), inner = name && name.querySelector('.cvh-name-inner');
     var wide = parseFloat(getComputedStyle(hero).getPropertyValue('--wide')) || 1.18;
 
@@ -74,7 +83,39 @@
     window.addEventListener('resize', fitName);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitName);
 
-    /* Laden: Name baut sich aus Pixeln auf, danach Foto + Sticker (CSS-Animationen) */
+    /* Beide Buttons ziehen magnetisch zur Maus (script.js). Kommt dabei einer dem anderen zu nahe,
+       schiebt er ihn weg: „View my work“ nach rechts → CV weicht aus; CV nach links → „View my work“ weicht aus.
+       Es bleiben immer 10 px Abstand, danach gleiten beide zurück. Verschoben werden die Hüllen,
+       nicht die Buttons selbst → der magnetische Effekt jedes Buttons bleibt unberührt. */
+    var ctaBtn = hero.querySelector('.cvh-cta'), cvBtn = hero.querySelector('.cvh-cv');
+    var ctaPush = hero.querySelector('.cvh-cta-push'), cvPush = hero.querySelector('.cvh-cv-push');
+    if (ctaBtn && cvBtn && ctaPush && cvPush && fine && !reduce) {
+      var tV = 0, tC = 0, pushRaf = 0, active = null, near = false, GAP = 10;
+      var pushStep = function () {
+        pushRaf = 0;
+        var vw = ctaPush.getBoundingClientRect(), cw = cvPush.getBoundingClientRect();
+        var magV = ctaBtn.getBoundingClientRect().right - vw.right;          // magnetischer Versatz von „View my work“
+        var magC = cvBtn.getBoundingClientRect().left - cw.left;             // magnetischer Versatz von CV
+        var restV = vw.right - tV, restC = cw.left - tC;                     // Ruhepositionen der Hüllen
+        var overlap = (restV + magV) + GAP - (restC + magC);                 // > 0 → zu nah
+        var goV = 0, goC = 0;
+        if (overlap > 0.5) { if (active === 'cv') goV = -overlap; else goC = overlap; }   // Rundungsreste ignorieren
+        tV += (goV - tV) * (Math.abs(goV) > Math.abs(tV) ? 0.7 : 0.18);       // sofort ausweichen, sanft zurück
+        tC += (goC - tC) * (Math.abs(goC) > Math.abs(tC) ? 0.7 : 0.18);
+        if (Math.abs(goV - tV) < 0.5) tV = goV;
+        if (Math.abs(goC - tC) < 0.5) tC = goC;
+        ctaPush.style.transform = tV ? 'translateX(' + tV.toFixed(1) + 'px)' : '';
+        cvPush.style.transform = tC ? 'translateX(' + tC.toFixed(1) + 'px)' : '';
+        if (near || tV || tC) pushRaf = requestAnimationFrame(pushStep);
+      };
+      var kickPush = function () { if (!pushRaf) pushRaf = requestAnimationFrame(pushStep); };
+      [[ctaBtn, 'view'], [cvBtn, 'cv']].forEach(function (p) {
+        p[0].addEventListener('mouseenter', function () { active = p[1]; near = true; kickPush(); });
+        p[0].addEventListener('mouseleave', function () { setTimeout(function () { near = false; }, 400); kickPush(); });
+      });
+    }
+
+    /* Laden: Name baut sich aus Pixeln auf, danach taucht der Planet auf (CSS) */
     if (!reduce && CLIP_OK && inner) {
       hero.classList.add('is-intro');
       var t0 = 0, DUR = 900;
@@ -92,29 +133,6 @@
       setTimeout(function () { hero.classList.remove('is-intro'); inner.style.clipPath = ''; }, 3200);   // alle Intro-Animationen fertig
     }
 
-    /* Maus-Parallax: Sticker (je nach Tiefe) und Foto wandern leicht gegenläufig */
-    if (!reduce && fine) {
-      var parts = Array.prototype.slice.call(hero.querySelectorAll('.cvh-sticker')).map(function (el) {
-        return { el: el, d: parseFloat(el.style.getPropertyValue('--d')) || 1 };
-      });
-      var cut = hero.querySelector('.cvh-cut');
-      if (cut) parts.push({ el: cut, d: 0.35 });
-      var tx = 0, ty = 0, gx = 0, gy = 0, raf = 0, MAX = 14;
-      function frame() {
-        raf = 0;
-        tx += (gx - tx) * 0.08; ty += (gy - ty) * 0.08;
-        parts.forEach(function (p) {
-          p.el.style.setProperty('--px', (tx * p.d).toFixed(2) + 'px');
-          p.el.style.setProperty('--py', (ty * p.d).toFixed(2) + 'px');
-        });
-        if (Math.abs(gx - tx) > 0.05 || Math.abs(gy - ty) > 0.05) raf = requestAnimationFrame(frame);
-      }
-      window.addEventListener('mousemove', function (e) {
-        gx = -((e.clientX / window.innerWidth) - 0.5) * 2 * MAX;
-        gy = -((e.clientY / window.innerHeight) - 0.5) * 2 * MAX;
-        if (!raf) raf = requestAnimationFrame(frame);
-      }, { passive: true });
-    }
   })();
 
   /* ============================
@@ -130,24 +148,27 @@
   var scenes = Array.prototype.slice.call(story.querySelectorAll('.cvs-scene'));
   var inners = scenes.map(function (s) { return s.querySelector('.cvs-inner'); });
   var tools = inners[1], toolTitle = tools.querySelector('.cvs-title');
-  var cards = Array.prototype.slice.call(tools.querySelectorAll('.cvs-card'));
+  var icons = Array.prototype.slice.call(tools.querySelectorAll('.cvs-i3d'));   // 3D-Icons
   var loveTitle = inners[2].querySelector('.cvs-title');
   var stickers = Array.prototype.slice.call(inners[2].querySelectorAll('.cvs-sticker'));
+  var intro = inners[0].querySelector('.cvs-big');
+  intro.setAttribute('aria-label', intro.textContent);           // Screenreader lesen den ganzen Satz
+  intro.innerHTML = intro.textContent.split(' ').map(function (w) { return '<span class="cvs-word" aria-hidden="true">' + w + '</span>'; }).join(' ');
+  var words = Array.prototype.slice.call(intro.querySelectorAll('.cvs-word'));
 
   /* Ablauf in „Schritten“ q. Jedes Element: Aufbau-Fenster (in) und optional Zerfall-Fenster (out). */
-  var C0 = 0.95, CS = 0.16;                         // Tool-Karten: Start + Abstand (fliegen nacheinander auf den Haufen)
-  var CEND = C0 + cards.length * CS + 0.3;
+  var W0 = 0.06, WS = 0.09, WD = 0.32;              // Einstieg: Wörter erscheinen nacheinander (Start, Abstand, Dauer)
+  var WEND = W0 + (words.length - 1) * WS + WD;
+  var IOUT = [WEND + 1.3, WEND + 1.6];               // Einstieg bleibt länger stehen, dann zerfällt er in Pixel
+  var C0 = IOUT[1] + 1.8, CS = 0.14;                // 3D-Icons: Start (davor langer, ruhiger Übergang Sterne → Kugel) + Abstand
+  var CEND = C0 + icons.length * CS + 0.35;
   var TOUT = [CEND + 0.35, CEND + 0.75];             // Tools: leicht hochfahren + ausblenden (wie der Name auf der Startseite)
   var L0 = TOUT[1] + 0.4, LS = 0.2;                 // Interessen: Start + Abstand
   var timeline = [
-    { el: inners[0].querySelector('.cvs-big'), scene: scenes[0], inn: null, out: [0.25, 0.55] }, // Einstieg zerfällt in Pixel
-    { el: toolTitle, scene: scenes[1], inn: [0.60, 0.90], out: null },                           // Tools-Titel
-    { el: loveTitle, scene: scenes[2], inn: [L0 - 0.35, L0 - 0.05], out: null }                  // I love
+    { el: inners[0], scene: scenes[0], inn: null, out: IOUT },                                    // Einstieg zerfällt in Pixel
+    { el: toolTitle, scene: scenes[1], inn: [C0 - 0.4, C0 - 0.1], out: null },                    // Tools-Titel
+    { el: loveTitle, scene: scenes[2], inn: [L0 - 0.35, L0 - 0.05], out: null }                  // My passions
   ];
-  cards.forEach(function (c, i) {
-    var a = C0 + i * CS;
-    timeline.push({ el: c, inn: [a, a + 0.22], out: null });
-  });
   stickers.forEach(function (s, i) {
     var a = L0 + i * LS;
     timeline.push({ el: s, inn: [a, a + 0.2], out: null });
@@ -156,20 +177,146 @@
   timeline.forEach(function (t) { t.el.classList.add('cvs-clip'); });
   story.classList.add('is-live');
 
+  /* ============================
+     HINTERGRUND — läuft hinter Hero + Story und erzählt den ersten Satz:
+     · Universum: Pixel-Sterne in Tiefenebenen, ziehen beim Scrollen unterschiedlich schnell vorbei,
+       funkeln leise, reagieren minimal auf die Maus
+     · Funke: die Sterne ziehen sich spiralförmig zu einem hellen Punkt zusammen
+     · Tools: der Funke öffnet sich zu einer Spiralgalaxie – zwei Arme, schräg im Raum, mit Tiefe;
+       sie dreht sich langsam (beim Scrollen etwas schneller), die 3D-Icons schweben davor
+     · My passions: die Galaxie löst sich von links nach rechts in schwingende Linien auf (Saiten, Rhythmus)
+     Phasen hängen am Scroll (rückwärts genauso); Funkeln + Schwingen laufen in der Zeit.
+     ============================ */
+  var stInst = null;                                // ScrollTrigger der Story (liefert die exakte Startposition)
+  var bg = (function () {
+    var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    if (!ctx) return null;
+    cv.className = 'cv-bgfx'; cv.setAttribute('aria-hidden', 'true');
+    document.body.insertBefore(cv, document.body.firstChild);
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
+    var N = 1000, W = 0, H = 0, dpr = 1, P = null, raf = 0, storyTop = 0;
+    var mouse = { x: 0, y: 0, tx: 0, ty: 0 }, GR = 1;               // GR: Radius der Galaxie
+    function build() {
+      W = window.innerWidth; H = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      storyTop = (stInst && typeof stInst.start === 'number') ? stInst.start : story.getBoundingClientRect().top + window.scrollY;
+      var cx = W / 2, cy = H / 2 + 10, i;
+      /* Galaxie: Radius bis knapp über die Bildbreite; Kern dichter */
+      GR = Math.min(W * 0.44, H * 0.6);                                      // ganze Spirale im Bild
+      /* Linien für „My passions“: sieben Saiten über die ganze Breite */
+      var LINES = 7, per = Math.ceil(N / LINES);
+      P = [];
+      for (i = 0; i < N; i++) {
+        var z = 0.18 + Math.pow(pxRnd(i, 4), 2.2) * 0.82;                     // Tiefe: meist fern, wenige nah
+        var line = i % LINES, k = Math.floor(i / LINES);
+        var ang = pxRnd(i, 5) * 6.283, rad = Math.pow(pxRnd(i, 6), 2) * 22;
+        P.push({
+          x: pxRnd(i, 1) * W, y: pxRnd(i, 2) * H, z: z,
+          s: z > 0.82 ? 3 : z > 0.5 ? 2 : 1, a: 0.1 + z * 0.55,
+          ph: pxRnd(i, 9) * 6.283, sp: 0.5 + pxRnd(i, 17),
+          sx: cx + Math.cos(ang) * rad, sy: cy + Math.sin(ang) * rad,          // Platz im Funken
+          gr: GR * (0.03 + Math.pow(pxRnd(i, 31), 0.85) * 0.97),                 // Platz in der Galaxie: Radius …
+          garm: pxRnd(i, 33) < 0.5 ? 0 : Math.PI,                                // … einer von zwei Armen …
+          gj: (pxRnd(i, 35) - 0.5) * 0.55,                                       // … mit Streuung um den Arm (schmale Arme)
+          gh: (pxRnd(i, 37) - 0.5) * 0.12,                                       // leichte Dicke der Scheibe
+          wl: line, wx: ((k + 0.5) / per) * W                                   // Platz auf der Saite
+        });
+      }
+    }
+    function clampQ(v) { return v; }
+    function wave(p, time) {                                                   // Saite: sanft schwingend, an den Rändern ruhig
+      var base = H * 0.2 + p.wl * (H * 0.62 / 6), env = Math.sin(Math.PI * clamp01(p.wx / W));
+      var amp = (10 + p.wl * 3) * env;
+      return base + Math.sin(p.wx * 0.007 + time * 0.0011 * (1 + p.wl * 0.08) + p.wl * 0.9) * amp
+                  + Math.sin(p.wx * 0.017 - time * 0.0007) * amp * 0.35;
+    }
+    function frame(now) {
+      raf = 0;
+      if (!P) build();
+      var sy = window.scrollY, U = H * 0.6;
+      var q = (sy - storyTop) / U;                                             // < 0 im Hero
+      var fade = clamp01(1 - (q - Q) / 0.9);                                   // nach der Story ausblenden (Footer)
+      mouse.x += (mouse.tx - mouse.x) * 0.06; mouse.y += (mouse.ty - mouse.y) * 0.06;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      if (fade <= 0) { schedule(sy); return; }
+      ctx.fillStyle = ink;
+      var cx = W / 2, cy = H / 2 + 10;
+      var tC = clamp01((q - IOUT[0]) / (C0 - 0.2 - IOUT[0]));                  // Funke
+      var tG = clamp01((q - (C0 - 0.2)) / (CEND - (C0 - 0.2)));                // Galaxie öffnet sich
+      var tW = clamp01((q - TOUT[0]) / (L0 + 0.4 - TOUT[0]));                  // Saiten (mit „My passions“)
+      var spin = now * 0.00006 + (q - C0 + 2.55) * 0.35, TILT = 0.48;          // Drehung ab Beginn der Tools-Szene (unabhängig von der Länge des Einstiegs)
+      for (var i = 0; i < N; i++) {
+        var p = P[i], x, y, a, s;
+        /* Universum */
+        var ux = p.x + Math.sin(now * 0.00011 * p.sp + p.ph) * 7 + mouse.x * p.z * 18;
+        var uy = (((p.y - sy * 0.28 * p.z) % H) + H) % H + mouse.y * p.z * 12;
+        var tw = 0.72 + 0.28 * Math.sin(now * 0.0016 * p.sp + p.ph);
+        x = ux; y = uy; a = p.a * tw; s = p.s;
+        /* → Funke (Spirale, ab der aktuellen Position) */
+        if (tC > 0) {
+          var uc = clamp01((tC - p.z * 0.25) / 0.75), kc = uc < 0.5 ? 4 * uc * uc * uc : 1 - Math.pow(-2 * uc + 2, 3) / 2;   // gleichmäßig über den ganzen Weg
+          var dx = x - cx, dy = y - cy, r0 = Math.hypot(dx, dy), a0 = Math.atan2(dy, dx);
+          var rr = r0 * Math.pow(1 - kc, 1.4), aa = a0 + kc * 2.4;
+          x = cx + Math.cos(aa) * rr + (p.sx - cx) * kc; y = cy + Math.sin(aa) * rr + (p.sy - cy) * kc;
+          a = a + (0.85 - a) * kc; s = kc > 0.6 ? 2 : s;
+        }
+        /* → Spiralgalaxie (öffnet sich vom Funken aus, innen zuerst) */
+        if (tG > 0) {
+          var rn = p.gr / GR, kg = ease(clamp01((tG - rn * 0.55) / 0.45));
+          var th = p.garm + rn * 5.2 + p.gj * (0.35 + rn) + spin * (1.6 - rn);    // Spiralarm, innen schneller
+          var gx3 = Math.cos(th) * p.gr, gz3 = Math.sin(th) * p.gr;                 // Scheibe im Raum
+          var depth = gz3 / GR;                                                       // −1 hinten … +1 vorne
+          var gxS = cx + gx3, gyS = cy + 30 + gz3 * TILT + p.gh * GR * 0.25;
+          x = x + (gxS - x) * kg; y = y + (gyS - y) * kg;
+          var core = Math.max(0, 1 - rn * 3) * 0.35;                                // heller Kern
+          a = a + (0.22 + (depth + 1) * 0.2 + core - a) * kg;
+          s = depth > 0.35 ? 2 : (kg > 0.5 ? 1 : s);
+        }
+        /* → Saiten (von links nach rechts) */
+        if (tW > 0) {
+          var kw = ease(clamp01((tW - (p.wx / W) * 0.5) / 0.5));
+          x = x + (p.wx - x) * kw; y = y + (wave(p, now) - y) * kw;
+          a = a + (0.4 - a) * kw;
+        }
+        ctx.globalAlpha = a * fade;
+        ctx.fillRect(Math.round(x), Math.round(y), s, s);
+      }
+      ctx.globalAlpha = 1;
+      schedule(sy);
+    }
+    function schedule(sy) {                                                    // weiterlaufen, solange sichtbar
+      var end = storyTop + (Q + 1) * H * 0.6;
+      if (sy < end && !document.hidden) raf = requestAnimationFrame(frame);
+    }
+    function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+    window.addEventListener('scroll', kick, { passive: true });
+    window.addEventListener('resize', function () { P = null; kick(); });
+    document.addEventListener('visibilitychange', kick);
+    window.addEventListener('mousemove', function (e) {
+      mouse.tx = (e.clientX / window.innerWidth - 0.5); mouse.ty = (e.clientY / window.innerHeight - 0.5);
+    }, { passive: true });
+    kick();
+    return { rebuild: function () { P = null; kick(); } };
+  })();
+
   function measureAll() {
     var sceneB = Math.round(Math.max(12, Math.min(24, window.innerWidth * 0.014)));
     timeline.forEach(function (t) {
       var isText = t.el.classList.contains('cvs-wide') || t.el === toolTitle || t.el === loveTitle;
-      measure(t.el, isText ? 0 : Math.max(6, Math.round(sceneB * 0.6)));
+      var wide = t.el === inners[0];
+      measure(t.el, isText ? 0 : wide ? sceneB : Math.max(6, Math.round(sceneB * 0.6)));
       t.el._key = null;
     });
   }
 
-  var lastQ = 0;
+  var lastQ = 0, holdStickers = 0;                  // bis zu diesem Zeitpunkt bleiben die Sticker stehen (Pillen-Rückflug)
   function render(q) {
     lastQ = q;
+    var hold = performance.now() < holdStickers;
     timeline.forEach(function (t) {
       var c = 1, mode = 'build';
+      if (hold && t.el.classList.contains('cvs-sticker')) { if (t.el._key !== 'hold') { t.el._key = 'hold'; setClip(t.el, 1, 'build'); } return; }
       if (t.inn && q < t.inn[1]) c = clamp01((q - t.inn[0]) / (t.inn[1] - t.inn[0]));
       else if (t.out && q > t.out[0]) { c = 1 - clamp01((q - t.out[0]) / (t.out[1] - t.out[0])); mode = 'dissolve'; }
       var key = mode + (Math.round(c * 200) / 200);
@@ -179,9 +326,41 @@
     var e = ease(clamp01((q - TOUT[0]) / (TOUT[1] - TOUT[0])));   // Tools: hochfahren + ausblenden
     tools.style.transform = e ? 'translateY(' + (-70 * e).toFixed(1) + 'px)' : '';
     tools.style.opacity = e ? (1 - e).toFixed(3) : '';
-    scenes[1].classList.toggle('is-active', q >= 0.75 && e < 0.5);
+    scenes[1].classList.toggle('is-active', q >= C0 - 0.25 && e < 0.5);
+    words.forEach(function (w, i) {                 // Einstieg: Wort für Wort von unten herein
+      var k = ease(clamp01((q - (W0 + i * WS)) / WD));
+      w.style.opacity = k.toFixed(3);
+      w.style.transform = k < 1 ? 'translateY(' + ((1 - k) * 0.45).toFixed(3) + 'em)' : '';
+    });
+    icons.forEach(function (ic, i) {                // 3D-Icons ploppen nacheinander auf (leichtes Überschwingen)
+      var k = clamp01((q - (C0 + i * CS)) / 0.26);
+      var back = k < 1 ? 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2) : 1;
+      ic.style.setProperty('--pop', ease(k).toFixed(3));
+      ic.style.setProperty('--popS', back.toFixed(3));
+      ic.style.setProperty('--flip', ((1 - ease(k)) * -180).toFixed(1) + 'deg');   // flippt herein wie eine geworfene Münze
+    });
   }
-  function refresh() { measureAll(); render(lastQ); }
+  function refresh() { measureAll(); render(lastQ); if (bg) bg.rebuild(); }
+
+  /* 3D-Icons: jedes Logo wird als Stapel aus Ebenen aufgebaut (nach hinten dunkler) → echte Materialstärke,
+     sichtbar beim Hereinflippen und beim Münzwurf (Hover: eine volle Drehung, inklusive dunkler Rückseite). */
+  var LAYERS = 9;
+  icons.forEach(function (ic) {
+    var body = ic.querySelector('.cvs-i3d-body'), img = body.querySelector('img');
+    var depth = parseFloat(ic.style.getPropertyValue('--k')) || 1;
+    img.style.transform = 'translateZ(0px)';
+    for (var l = 1; l < LAYERS; l++) {
+      var c = img.cloneNode(); c.setAttribute('aria-hidden', 'true');
+      c.style.transform = 'translateZ(' + (-l * 2.3 * depth).toFixed(1) + 'px)';   // Ebenenabstand = Materialstärke
+      c.style.filter = (ic.classList.contains('is-mono') ? 'invert(1) ' : '') + 'brightness(' + (0.62 - l * 0.035).toFixed(2) + ')';
+      body.insertBefore(c, img);
+    }
+  });
+  icons.forEach(function (ic) {                     // Münzwurf: startet beim Hover, läuft immer ganz zu Ende
+    ic.addEventListener('mouseenter', function () { if (!reduce && !ic.classList.contains('is-spin')) ic.classList.add('is-spin'); });
+    ic.addEventListener('animationend', function (e) { if (e.animationName === 'cvs-spin') ic.classList.remove('is-spin'); });
+  });
+
 
   measureAll(); render(0);
   /* ============================
@@ -194,7 +373,7 @@
     var noop = { drop: function () {}, reset: function () {} };
     if (!area) return noop;
     var G = 2600, SUB = 3, ITER = 10, MU = 0.55, BOUNCE = 0.18, SLOP = 0.6, BETA = 0.22;
-    var bodies = [], walls = [], held = null, raf = 0, calm = 0, visible = true, dropped = false;
+    var bodies = [], walls = [], held = null, raf = 0, calm = 0, visible = true, dropped = false, flights = [], fraf = 0;
     var W = 0, H = 0, pointer = { x: 0, y: 0, cx: 0, cy: 0 };
 
     function body(x, y, w, h, a, isStatic) {
@@ -323,6 +502,7 @@
 
     function drop() {
       if (dropped) return;
+      finishFlights();                              // falls gerade zurückfliegend: sofort an ihren Platz
       dropped = true;
       buildWalls();
       var ar = area.getBoundingClientRect();
@@ -336,19 +516,50 @@
         el.style.setProperty('--r', '0deg');
         area.appendChild(el);
         var b = body(cx, cy, w, h, deg * Math.PI / 180);
-        b.el = el; b.vx = (Math.random() - 0.5) * 60; b.w = (Math.random() - 0.5) * 1.2;
+        b.el = el; b.src = s; b.vx = (Math.random() - 0.5) * 60; b.w = (Math.random() - 0.5) * 1.2;
         el._b = b;
         bodies.push(b);
         s.classList.add('is-dropped');
       });
       draw(); wake();
     }
+    /* Zurück: jede Pille hebt von ihrer Liegeposition ab und fliegt in einem Bogen an ihren Platz in der Story;
+       das Ziel wird jedes Bild neu gemessen → passt auch, während weiter gescrollt wird */
     function reset() {
       if (!dropped) return;
       dropped = false; held = null;
-      bodies.forEach(function (b) { b.el.remove(); });
+      var now = performance.now();
+      bodies.forEach(function (b, i) {
+        b.el.classList.remove('is-held');
+        flights.push({ b: b, x0: b.x, y0: b.y, a0: b.a, t0: now + i * 40, dur: 820 });
+      });
       bodies = [];
-      stickers.forEach(function (s) { s.classList.remove('is-dropped'); });
+      if (!fraf) fraf = requestAnimationFrame(fly);
+      var until = now + Math.max(0, flights.length - 1) * 40 + 820 + 380;   // alle gelandet + kurze Pause
+      holdStickers = until;
+      render(lastQ);                                  // sofort: Sticker stehen wieder voll, auch bei schnellem Scrollen
+      setTimeout(function () { render(lastQ); }, until - performance.now() + 20);   // danach dem Scroll folgen
+    }
+    function fly(now) {
+      fraf = 0;
+      var ar = area.getBoundingClientRect();
+      flights = flights.filter(function (f) {
+        var k = clamp01((now - f.t0) / f.dur), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        var sr = f.b.src.getBoundingClientRect();
+        var tx = sr.left + sr.width / 2 - ar.left, ty = sr.top + sr.height / 2 - ar.top;
+        var ta = (parseFloat(f.b.src.style.getPropertyValue('--r')) || 0) * Math.PI / 180;
+        var da = ta - f.a0; da = ((da + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;   // kürzester Drehweg
+        var x = f.x0 + (tx - f.x0) * e, y = f.y0 + (ty - f.y0) * e - Math.sin(k * Math.PI) * 90;            // sanfter Bogen
+        var a = f.a0 + da * e, b = f.b;
+        b.el.style.transform = 'translate(' + (x - b.hw).toFixed(1) + 'px,' + (y - b.hh).toFixed(1) + 'px) rotate(' + a.toFixed(4) + 'rad)';
+        if (k >= 1) { b.el.remove(); b.src.classList.remove('is-dropped'); return false; }
+        return true;
+      });
+      if (flights.length) fraf = requestAnimationFrame(fly);
+    }
+    function finishFlights() {
+      flights.forEach(function (f) { f.b.el.remove(); f.b.src.classList.remove('is-dropped'); });
+      flights = [];
     }
 
     /* Ziehen + Werfen (Maus und Finger) */
@@ -382,7 +593,7 @@
     }
     return { drop: drop, reset: reset };
   })();
-  var st = ScrollTrigger.create({
+  stInst = ScrollTrigger.create({
     trigger: story,
     start: 'top top',
     end: '+=' + Math.round(Q * 60) + '%',            // 60 % Bildschirmhöhe Scrollweg pro Schritt
@@ -390,11 +601,18 @@
     anticipatePin: 1,
     invalidateOnRefresh: true,
     onUpdate: function (self) { render(self.progress * Q); },
-    onRefresh: refresh,
-    onLeave: function () { play.drop(); },           // über die Story hinaus → Pillen fallen
-    onEnterBack: function () { play.reset(); }       // zurück → Pillen sortieren sich wieder
+    onRefresh: refresh
   });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { refresh(); ScrollTrigger.refresh(); });
 
-  if (st && st.progress >= 1) setTimeout(play.drop, 0);  // Seite schon unterhalb der Story geladen
+  /* Pillen fallen erst, wenn die Spielfläche schon gut zur Hälfte im Bild ist; ganz zurück → sie sortieren sich wieder */
+  var playArea = document.getElementById('cvPlay');
+  function checkDrop() {
+    if (!playArea) return;
+    var top = playArea.getBoundingClientRect().top, vh = window.innerHeight;
+    if (top < vh * 0.5) play.drop();
+    else if (top > vh * 0.8) play.reset();          // etwas Abstand zur Fall-Schwelle → kein Hin-und-Her
+  }
+  window.addEventListener('scroll', checkDrop, { passive: true });
+  setTimeout(checkDrop, 0);                         // Seite schon weiter unten geladen
 })();

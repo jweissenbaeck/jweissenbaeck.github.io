@@ -689,7 +689,7 @@ body::before {
   z-index: 3;
 }
 
-.globe-section-ascii-bg {
+.globe-section-stars {                 /* Sternenhimmel (script.js → initGlobeStars) */
   position: absolute;
   inset: 0;
   width: 100%;
@@ -720,11 +720,9 @@ body::before {
   transform-origin: center center;
 }
 
-.globe-section-canvas-wrap canvas {
-  display: block;
-  width: 100% !important;
-  height: 100% !important;
-  border-radius: 50%;
+.globe-section-canvas-wrap .globe-canvas {   /* größer als der Container → Platz für den Atmosphären-Schein */
+  position: absolute; left: -15%; top: -15%;
+  width: 130%; height: 130%; display: block;
 }
 
 .globe-text-left {
