@@ -248,70 +248,13 @@ vtStoreDel('jcky:internalNav');
 })();
 
 /* ============================
-   EASTER EGG — Klick auf JCKY (Logo oben links)
-   Klick 1–4: Buchstaben hüpfen + kurzer Hinweis.
-   Klick 5:   Scramble + Pixel-Regen über die Seite.
-   Nach 4s ohne Klick fängt der Zähler von vorn an.
+   FOOTER — Buchstaben-Explosion
+   Klick auf einen Buchstaben des großen JCKY im Footer → er zerplatzt in Pixel und kommt zurück.
 ============================ */
-(function initLogoEasterEgg() {
+(function initFooterExplosion() {
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  var LINES = ['Press me again', 'Again', 'Once more', 'Last one'];
-  var FINAL = 'Press me again';
-  var GLYPHS = '#%&@$*+=?!01';
-
-  /* ── gemeinsame Sprechblase ── */
-  var toast = null, toastTimer = null;
-  function say(msg, ms, x, y) {
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.className = 'egg-toast';
-      toast.setAttribute('role', 'status');
-      toast.setAttribute('aria-live', 'polite');
-      document.body.appendChild(toast);
-    }
-    toast.textContent = msg;
-    var tw = toast.offsetWidth, th = toast.offsetHeight;
-    var left = Math.max(12, Math.min(window.innerWidth - tw - 12, x + 16));
-    var top = y + 18;
-    if (top + th > window.innerHeight - 12) top = y - th - 14;   // unten kein Platz → über den Zeiger
-    toast.style.left = left + 'px';
-    toast.style.top = Math.max(12, top) + 'px';
-    toast.classList.add('is-on');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toast.classList.remove('is-on'); }, ms);
-  }
-
   /* ── gemeinsamer Pixel-Regen ── */
   var rain = null;
-  function burst(cx, cy) {
-    if (reduce) return;
-    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
-    if (!rain) {
-      var cv = document.createElement('canvas');
-      cv.className = 'egg-canvas';
-      cv.setAttribute('aria-hidden', 'true');
-      document.body.appendChild(cv);
-      rain = { cv: cv, ctx: cv.getContext('2d'), parts: [], last: performance.now() };
-      requestAnimationFrame(frame);
-    }
-    var up = cy > window.innerHeight * 0.5;          // unten geklickt → Fontäne nach oben
-    var SIZES = [6, 9, 12, 12, 18];
-    for (var n = 0; n < 190; n++) {
-      var a = up ? (-Math.PI + Math.random() * Math.PI)
-                 : (-Math.PI * 0.45 + Math.random() * Math.PI * 1.1);
-      var v = (up ? 8 : 4) + Math.random() * (up ? 16 : 14);
-      rain.parts.push({
-        x: cx, y: cy,
-        vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4,
-        s: SIZES[Math.floor(Math.random() * SIZES.length)],
-        age: 0, life: 2600 + Math.random() * 1400,
-        c: Math.random() < 0.15 ? 'rgba(240,237,232,0.35)' : ink
-      });
-    }
-  }
-
-  /* Dieselbe Explosion, aber die Pixel entstehen verteilt auf einer Fläche (Footer-Buchstabe).
-     Gleiche Größen, Farben, Tempo und Physik wie oben; Richtung: weg von der Mitte, nach oben. */
   function burstFrom(points, cx, halfW) {
     if (reduce || !points.length) return;
     var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
@@ -367,72 +310,6 @@ vtStoreDel('jcky:internalNav');
     else { rain.cv.remove(); rain = null; }
   }
 
-  /* ── ein Easter Egg an ein Element binden ── */
-  function attach(el, letters, word) {
-    if (!el || !letters.length) return;
-    el.setAttribute('role', 'button');
-    el.setAttribute('tabindex', '0');
-    el.setAttribute('aria-label', word);
-    el.classList.add('egg-target');
-    letters.forEach(function (s, i) {
-      s.style.setProperty('--egg-r', (i % 2 ? 8 : -8) + 'deg');
-      s.style.setProperty('--egg-r2', (i % 2 ? 1.5 : -1.5) + 'deg');
-    });
-    var count = 0, idle = null, scrambling = false;
-
-    function jump(big) {
-      var cls = big ? 'is-jump-big' : 'is-jump';
-      letters.forEach(function (s, i) {
-        s.classList.remove('is-jump', 'is-jump-big');
-        void s.offsetWidth;                         // Animation neu starten
-        s.style.animationDelay = (i * 0.05) + 's';
-        s.classList.add(cls);
-      });
-    }
-    function scramble() {
-      if (scrambling || reduce) return;
-      scrambling = true;
-      /* Breiten fixieren → breitere Scramble-Zeichen verschieben weder Zelle noch Trennlinie */
-      letters.forEach(function (s) { s.style.width = parseFloat(getComputedStyle(s).width) + 'px'; s.style.textAlign = 'center'; });
-      var t0 = performance.now(), DUR = 700;
-      (function tick(now) {
-        var p = (now - t0) / DUR;
-        letters.forEach(function (s, i) {
-          s.textContent = p >= (i + 1) / letters.length ? word[i] : GLYPHS[Math.floor(Math.random() * GLYPHS.length)];
-        });
-        if (p < 1) requestAnimationFrame(tick);
-        else { letters.forEach(function (s, i) { s.textContent = word[i]; s.style.width = ''; s.style.textAlign = ''; }); scrambling = false; }
-      })(t0);
-    }
-    function hit(x, y) {
-      clearTimeout(idle);
-      idle = setTimeout(function () { count = 0; }, 4000);
-      count++;
-      if (count < 5) {
-        jump(false);
-        say(LINES[count - 1], 1600, x, y);
-      } else {
-        count = 0;
-        jump(true);
-        scramble();
-        burst(x, y);
-        say(FINAL, 2200, x, y);
-      }
-    }
-    el.addEventListener('click', function (e) {
-      var r = el.getBoundingClientRect();
-      var x = e.clientX || (r.left + r.width / 2), y = e.clientY || (r.top + r.height / 2);
-      hit(x, y);
-    });
-    el.addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ') return;
-      e.preventDefault();
-      var r = el.getBoundingClientRect();
-      hit(r.left + r.width / 2, r.top + r.height / 2);
-    });
-  }
-
-  /* ── Footer: Klick auf einen Buchstaben → genau dieser explodiert, kommt danach zurück ── */
   function initFooterExplode() {
     var box = document.getElementById('footerWord');
     if (!box || reduce) return;
@@ -499,22 +376,6 @@ vtStoreDel('jcky:internalNav');
   }
 
   function setup() {
-    /* Nav-Logo: Buchstaben einzeln wrappen */
-    var cell = document.getElementById('navLogoName');
-    var txt = cell && cell.querySelector('.nav-logo-text');
-    if (cell && txt) {
-      var word = txt.textContent.trim();
-      txt.textContent = '';
-      var navLetters = word.split('').map(function (ch) {
-        var s = document.createElement('span');
-        s.className = 'egg-ch';
-        s.setAttribute('aria-hidden', 'true');
-        s.textContent = ch;
-        txt.appendChild(s);
-        return s;
-      });
-      attach(cell, navLetters, word);
-    }
     initFooterExplode();
   }
   try {
@@ -946,7 +807,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
    (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
 ============================ */
 (function initContactPixels() {
-  const items = document.querySelectorAll('.projects-cta, .cvh-bubble, .nav .nav-cell, .site-footer-bar .sf-link, .site-footer-bar .sf-right');
+  const items = document.querySelectorAll('.projects-cta, .cvh-bubble, .nav .nav-cell:not(.nav-brand), .site-footer-bar .sf-link, .site-footer-bar .sf-right');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const ROWS = 6;            // feste Zeilenzahl → Blockgröße skaliert mit dem Feld (zoom-stabil)
@@ -1207,8 +1068,12 @@ window.__heroInit = heroInit;
     if (pinLeft) return;
     if (!cardRect) return;
 
+    /* Zeitachse: bisherige Phasen laufen in q (0 … 1) über die ersten 80 % des Scrollwegs;
+       danach bleibt das Video kurz im Vollbild stehen (0.80–0.88), erst dann kommt die Services-Sektion. */
+    const q = Math.min(1, p / 0.80);
+
     // Phase A — letters float up
-    const pA = ph(p, 0.04, 0.40, eIO);
+    const pA = ph(q, 0.04, 0.40, eIO);
     const total   = letters.length;
     const center  = (total - 1) / 2;
 
@@ -1233,10 +1098,10 @@ window.__heroInit = heroInit;
     });
 
     // Phase B — parallax photos
-    const pB        = ph(p, 0.35, 0.78, eIO);
-    const pCardZoom = ph(p, 0.78, 1.00, eIO);
+    const pB        = ph(q, 0.35, 0.78, eIO);
+    const pCardZoom = ph(q, 0.78, 1.00, eIO);
 
-    const imgCardFadeIn = c01(ph(p, 0.35, 0.55));
+    const imgCardFadeIn = c01(ph(q, 0.35, 0.55));
     const cardW    = imgCard.offsetWidth || window.innerWidth * 0.26;
     const maxScale = Math.max(window.innerWidth / cardW, window.innerHeight / (cardW * 0.5625));
     const cardZoom = 1 + pA * 0.05 + pCardZoom * (maxScale - 1.05);
@@ -1244,7 +1109,7 @@ window.__heroInit = heroInit;
     window.__heroFullscreen = pCardZoom > 0.9;   // Bild praktisch Vollbild → Play-Cursor aktiv
 
     if (heroImgWrap) {
-      if (p >= 0.35) {
+      if (q >= 0.35) {
         if (!heroImgWrap.classList.contains('is-revealed')) {
           void heroImgWrap.offsetWidth;
           heroImgWrap.classList.add('is-revealed');
@@ -1254,7 +1119,7 @@ window.__heroInit = heroInit;
       }
     }
 
-    const pExit = ph(p, 0.78, 0.92, eIO);
+    const pExit = ph(q, 0.78, 0.92, eIO);
 
     zpData.forEach(({ item, wrap, scale: targetScale, delay }) => {
       const itemP   = c01((pB - delay) / (1 - delay));
@@ -1278,10 +1143,10 @@ window.__heroInit = heroInit;
     });
 
     // Phase C — bottom sheet (Hero-Reveal; der Pixel-Effekt wird separat an #work getriggert)
-    if (p < 0.80) {
+    if (p < 0.88) {                                   // bis hierhin: Video bleibt im Vollbild
       gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
     } else {
-      const pC = ph(p, 0.80, 1.00, eIO);
+      const pC = ph(p, 0.88, 1.00, eIO);
       const insetTop = c01(1 - pC) * 100;
       gsap.set(panel, { clipPath: `inset(${insetTop}% 0 0 0)` });
     }
@@ -1306,7 +1171,7 @@ window.__heroInit = heroInit;
   ScrollTrigger.create({
     trigger:       hero,
     start:         'top top',
-    end:           '+=230%',
+    end:           '+=290%',                          // +60 %: kurze Haltephase im Vollbild-Video
     pin:           true,
     anticipatePin: 1,
     scrub:         0.4,
@@ -1577,69 +1442,38 @@ ScrollTrigger.create({
 })();
 
 /* ============================
-   GLOBE — Canvas 2D (ohne Three.js)
-   Die Erde als Kugel aus Licht: Landmassen aus feinen Punkten, beleuchtet von oben links
-   (Tag/Nacht mit weicher Schattengrenze, vereinzelte Stadtlichter auf der Nachtseite),
-   gedämpfte Ozean-Punkte zeigen die Kugelform, ein weicher Atmosphären-Schein am Rand.
-   Maus: Land leuchtet unter dem Cursor auf, die Kugel neigt sich leicht; Klick: Welle über die
-   Oberfläche. Salzburg-Pin mit rotem Puls + Label beim Hover. Kamera wie zuvor (Abstand 4.8, 38°).
+   FIND ME HERE — Story + gläserne Pixel-Erde + rollende Erde im Footer
+   · Story (fixiert, scrollgesteuert): Sätze bauen sich aus Pixelblöcken auf und zerfallen wieder
+     (wie auf der Me-Seite). Die Erde zeigt fest Salzburg (Pin + Label), nur eine leichte Neigung zur Maus.
+   · Erde: durchsichtig wie Glas – Land als weiße Pixel, vorne hell (schimmernd, Maus-Glow, Klick-Welle),
+     hinten gedämpft durchscheinend; feiner Atmosphären-Ring. Canvas 2D, ohne Three.js.
+   · Footer: Scrollt man weiter, fällt die Erde in die Fläche über dem Footer, springt und rollt
+     (Drehung passt zur Rollbewegung), lässt sich greifen und werfen. Zurück → sie fliegt an ihren Platz.
 ============================ */
-(function initGlobeSection() {
-  const container = document.getElementById('globeSectionCanvas');
-  if (!container) return;
+(function initFindMe() {
+  const section = document.getElementById('globeSection');
+  const stage = section && section.querySelector('.globe-stage');
+  const linesWrap = document.getElementById('gsLines');
+  const playArea = document.getElementById('globePlay');
+  if (!section || !stage || !linesWrap) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const fine = !window.matchMedia || window.matchMedia('(any-hover: hover)').matches;
   const INK = '240,237,232', ACCENT = '#ff4040';
-  const PAD = 1.3;                                   // Canvas größer als der Container → Platz für den Atmosphären-Schein
+  const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const ease = v => 1 - Math.pow(1 - v, 3);
+  const eio = v => v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
 
-  const cv = document.createElement('canvas');
-  cv.className = 'globe-canvas';
-  cv.setAttribute('role', 'img');
-  cv.setAttribute('aria-label', 'Globe with a pin on Salzburg, Austria');
-  container.style.position = 'relative';
-  container.appendChild(cv);
-  const ctx = cv.getContext('2d');
-  let S = 520, dpr = 1;
-  function resize() {
-    S = container.offsetWidth || 520;
-    dpr = Math.min(2, window.devicePixelRatio || 1);
-    cv.width = Math.round(S * PAD * dpr); cv.height = Math.round(S * PAD * dpr);
-  }
-  resize();
-  new ResizeObserver(resize).observe(container);
-
-  /* ── Geometrie ── */
-  const R = 1.5, D = 4.8, TANF = Math.tan(19 * Math.PI / 180), VIS = R * R / D;   // sichtbar, wenn z > R²/D
-  const DISC = (R / Math.sqrt(D * D - R * R)) / TANF * 0.5;                       // Kugel-Radius in Anteilen von S
-  const off = () => S * (PAD - 1) / 2;                                             // Versatz Container → Canvas
-  function proj(X, Y, Z, o) {
-    const d = D - Z;
-    o.x = off() + (0.5 + X / (d * TANF) * 0.5) * S;
-    o.y = off() + (0.5 - Y / (d * TANF) * 0.5) * S;
-    return o;
-  }
-  function ll(lat, lon, r) {
-    const a = lat * Math.PI / 180, b = lon * Math.PI / 180;
-    return [r * Math.cos(a) * Math.cos(b), r * Math.sin(a), -r * Math.cos(a) * Math.sin(b)];
-  }
-  function mul(A, B) {                               // 3×3-Matrizen, zeilenweise
-    const o = new Array(9);
-    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) o[i * 3 + j] = A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j];
-    return o;
-  }
+  /* ── Geometrie (Kamera wie zuvor: Abstand 4.8, 38°) ── */
+  const R = 1.5, D = 4.8, TANF = Math.tan(19 * Math.PI / 180), VIS = R * R / D;
+  const DISC = (R / Math.sqrt(D * D - R * R)) / TANF * 0.5;                // Kugelradius in Anteilen der Größe S
+  const ll = (lat, lon, r) => { const a = lat * Math.PI / 180, b = lon * Math.PI / 180; return [r * Math.cos(a) * Math.cos(b), r * Math.sin(a), -r * Math.cos(a) * Math.sin(b)]; };
+  const mul = (A, B) => { const o = new Array(9); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) o[i * 3 + j] = A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j]; return o; };
   const rotY = t => { const c = Math.cos(t), s = Math.sin(t); return [c, 0, s, 0, 1, 0, -s, 0, c]; };
   const rotX = t => { const c = Math.cos(t), s = Math.sin(t); return [1, 0, 0, 0, c, -s, 0, s, c]; };
-  /* Grundstellung: Salzburg schaut zum Betrachter, Norden oben */
-  const LAT0 = 47.8, LON0 = 13.05;
-  const BASE = mul(rotX(LAT0 * Math.PI / 180), rotY(-Math.PI / 2 - LON0 * Math.PI / 180));
-  const LIGHT = (function () { const v = [-0.86, 0.34, 0.42], l = Math.hypot(v[0], v[1], v[2]); return v.map(x => x / l); })();   // seitlich → sichtbare Tag/Nacht-Grenze
+  const rotZ = t => { const c = Math.cos(t), s = Math.sin(t); return [c, -s, 0, s, c, 0, 0, 0, 1]; };
+  const LAT0 = 47.8, LON0 = 13.05, YAW0 = -Math.PI / 2 - LON0 * Math.PI / 180, PITCH0 = LAT0 * Math.PI / 180;
 
-  /* ── Punkte: Ozean (gleichmäßig auf der Kugel), Land (aus den Länderumrissen) ── */
-  const ocean = [];
-  const NO = 2300, GA = Math.PI * (3 - Math.sqrt(5));
-  for (let i = 0; i < NO; i++) {
-    const y = 1 - (i + 0.5) / NO * 2, r = Math.sqrt(1 - y * y), t = GA * i;
-    ocean.push([Math.cos(t) * r * R, y * R, Math.sin(t) * r * R]);
-  }
+  /* ── Land-Pixel aus den Länderumrissen ── */
   const land = [];
   function pointInPolygon(lat, lon, rings) {
     for (const ring of rings) {
@@ -1660,184 +1494,294 @@ ScrollTrigger.create({
     }
     return false;
   }
-  function buildLand(features) {
-    const ROWS = 150;
-    for (let row = 0; row < ROWS; row++) {
-      const lat = -90 + (180 / ROWS) * (row + 0.5), n = Math.max(1, Math.round(ROWS * 2 * Math.cos(lat * Math.PI / 180)));
-      for (let col = 0; col < n; col++) {
-        const lon = -180 + (360 / n) * (col + 0.5);
-        if (!isLand(lat, lon, features)) continue;
-        const cell = 180 / ROWS, jl = lat + (Math.random() - 0.5) * cell * 0.9, jo = lon + (Math.random() - 0.5) * (360 / n) * 0.9;   // organisch statt Raster
-        land.push({ p: ll(jl, jo, R * 1.004), ph: Math.random() * 6.283, city: Math.random() < 0.08, big: Math.random() < 0.22 });
-      }
-    }
-  }
   fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
     .then(r => r.json())
-    .then(world => { if (typeof topojson !== 'undefined') buildLand(topojson.feature(world, world.objects.countries).features); })
-    .catch(() => {});
-
-  /* ── Gradnetz + Pin ── */
+    .then(world => {
+      if (typeof topojson === 'undefined') return;
+      const features = topojson.feature(world, world.objects.countries).features, ROWS = 120;
+      for (let row = 0; row < ROWS; row++) {
+        const lat = -90 + (180 / ROWS) * (row + 0.5), n = Math.max(1, Math.round(ROWS * 2 * Math.cos(lat * Math.PI / 180)));
+        for (let col = 0; col < n; col++) { const lon = -180 + (360 / n) * (col + 0.5); if (isLand(lat, lon, features)) land.push(ll(lat, lon, R * 1.004)); }
+      }
+    }).catch(() => {});
   const grid = [];
   [-60, -30, 0, 30, 60].forEach(lat => { const l = []; for (let i = 0; i <= 96; i++) l.push(ll(lat, -180 + i * 3.75, R)); grid.push(l); });
   for (let lon = 0; lon < 360; lon += 30) { const l = []; for (let i = 0; i <= 48; i++) l.push(ll(-90 + i * 3.75, lon, R)); grid.push(l); }
   const PIN_BASE = ll(LAT0, LON0, R + 0.002), PIN_TIP = ll(LAT0, LON0, R + 0.22);
+  const waves = [];
+  for (let i = 0; i < 4; i++) waves.push({ x: 0.25 + Math.random() * 0.5, y: 0.25 + Math.random() * 0.5, f: 0.18 + Math.random() * 0.22, amp: 0.5 + Math.random() * 0.5, ph: Math.random() * 6.283, sp: 0.4 + Math.random() * 0.4 });
 
-  /* ── Interaktion ── */
-  const mouse = { x: -1e4, y: -1e4, on: false };
-  const ripples = [];
-  let hovered = false;
-  cv.addEventListener('mouseenter', () => { hovered = true; });
-  cv.addEventListener('mouseleave', () => { hovered = false; mouse.on = false; });
-  cv.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width * S * PAD; mouse.y = (e.clientY - r.top) / r.height * S * PAD; mouse.on = true; });
-  cv.addEventListener('click', e => {
-    const r = cv.getBoundingClientRect();
-    ripples.push({ x: (e.clientX - r.left) / r.width * S * PAD, y: (e.clientY - r.top) / r.height * S * PAD, t: performance.now() });
-  });
-  let tRotY = 0, tRotX = 0, cRotY = 0, cRotX = 0;
-  window.addEventListener('mousemove', e => {
-    const b = container.getBoundingClientRect(), cx = b.left + b.width / 2, cy = b.top + b.height / 2;
-    tRotY = Math.max(-0.20, Math.min(0.20, ((e.clientX - cx) / (b.width / 2)) * 0.18));
-    tRotX = Math.max(-0.12, Math.min(0.12, ((e.clientY - cy) / (b.height / 2)) * 0.10));
-  }, { passive: true });
-
-  /* ── Label (SVG) wie bisher ── */
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;z-index:5;';
-  container.appendChild(svg);
-  function el(tag, attrs) { const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) n.setAttribute(k, attrs[k]); n.style.opacity = '0'; svg.appendChild(n); return n; }
-  const sLine = el('line', { stroke: 'rgba(240,237,232,0.55)', 'stroke-width': '1', 'stroke-dasharray': '3 3' });
-  const sBadge = el('rect', { rx: '3', fill: '#0a0a09', stroke: 'rgba(240,237,232,0.24)', 'stroke-width': '1' });
-  const sDot = el('circle', { r: '2.5', fill: ACCENT });
-  const sText = el('text', { fill: '#F0EDE8', 'font-family': 'DM Mono, monospace', 'font-size': '9', 'letter-spacing': '0.2em', 'text-anchor': 'start', 'dominant-baseline': 'middle' });
-  sText.textContent = 'SALZBURG, AT';
-
-  /* ── Zeichnen ── */
+  /* ── Erde zeichnen: (cx, cy) = Mitte, S = Größe (Kugelradius = DISC·S), M = Drehung ── */
+  const BUCKETS = 20, front = Array.from({ length: BUCKETS }, () => []), back = [];
   const v = [0, 0, 0], o = { x: 0, y: 0 }, o2 = { x: 0, y: 0 };
-  function rot(M, p, fy) { v[0] = M[0] * p[0] + M[1] * p[1] + M[2] * p[2]; v[1] = M[3] * p[0] + M[4] * p[1] + M[5] * p[2] + fy; v[2] = M[6] * p[0] + M[7] * p[1] + M[8] * p[2]; return v; }
-  const BUCKETS = 24;
-  const bucket = Array.from({ length: BUCKETS }, () => []), bucketBig = Array.from({ length: BUCKETS }, () => []);
-  let clock = 0, last = performance.now(), visible = false;
-
-  function draw(now) {
-    const W = S * PAD, cx = W / 2;
-    const fy = reduce ? 0 : Math.sin(clock * 0.6) * 0.028;                        // leichtes Schweben
-    const M = mul(mul(rotY(cRotY), rotX(cRotX)), BASE);
-    const cy = cx - fy / (D * TANF) * 0.5 * S, rr = DISC * S;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, W);
-
-    /* Atmosphäre: weicher Schein am Rand */
-    let g = ctx.createRadialGradient(cx, cy, rr * 0.94, cx, cy, rr * 1.18);
-    g.addColorStop(0, 'rgba(' + INK + ',0.13)'); g.addColorStop(0.35, 'rgba(' + INK + ',0.05)'); g.addColorStop(1, 'rgba(' + INK + ',0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr * 1.18, 0, 6.2832); ctx.fill();
-    /* Kugelkörper: dunkel, zur Lichtseite minimal heller */
-    g = ctx.createRadialGradient(cx - rr * 0.38, cy - rr * 0.34, rr * 0.05, cx, cy, rr);
-    g.addColorStop(0, '#24211c'); g.addColorStop(0.7, '#151412'); g.addColorStop(1, '#0d0c0b');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 6.2832); ctx.fill();
-
-    const limb = (x, y) => { const d = Math.hypot(x - cx, y - cy) / rr; return d >= 1 ? 0 : Math.min(1, (1 - d) / 0.16); };
-
-    /* Gradnetz */
-    ctx.strokeStyle = 'rgba(' + INK + ',0.05)'; ctx.lineWidth = 1; ctx.beginPath();
-    for (const line of grid) {
-      let pen = false;
-      for (const p of line) {
-        rot(M, p, fy);
-        if (v[2] <= VIS) { pen = false; continue; }
-        proj(v[0], v[1], v[2], o);
-        if (pen) ctx.lineTo(o.x, o.y); else { ctx.moveTo(o.x, o.y); pen = true; }
+  function rot(M, p) { v[0] = M[0] * p[0] + M[1] * p[1] + M[2] * p[2]; v[1] = M[3] * p[0] + M[4] * p[1] + M[5] * p[2]; v[2] = M[6] * p[0] + M[7] * p[1] + M[8] * p[2]; return v; }
+  function proj(cx, cy, S, out) { const d = D - v[2]; out.x = cx + v[0] / (d * TANF) * 0.5 * S; out.y = cy - v[1] / (d * TANF) * 0.5 * S; return out; }
+  function drawGlobe(ctx, cx, cy, S, M, opt) {
+    const rr = DISC * S, blk = Math.max(2, S / 120 * 1.25), now = opt.now, wt = opt.wt;
+    /* Atmosphäre: feiner Ring + weicher Schein (die Kugel selbst bleibt durchsichtig) */
+    let g = ctx.createRadialGradient(cx, cy, rr * 0.86, cx, cy, rr * 1.16);
+    g.addColorStop(0, 'rgba(' + INK + ',0)'); g.addColorStop(0.42, 'rgba(' + INK + ',0.09)'); g.addColorStop(0.5, 'rgba(' + INK + ',0.05)'); g.addColorStop(1, 'rgba(' + INK + ',0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr * 1.16, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = 'rgba(' + INK + ',0.22)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 6.2832); ctx.stroke();
+    /* Gradnetz: hinten kaum, vorne zart */
+    for (let pass = 0; pass < 2; pass++) {
+      ctx.strokeStyle = 'rgba(' + INK + ',' + (pass ? 0.07 : 0.025) + ')'; ctx.beginPath();
+      for (const line of grid) {
+        let pen = false;
+        for (const p of line) {
+          rot(M, p); const isFront = v[2] > VIS;
+          if (isFront !== !!pass) { pen = false; continue; }
+          proj(cx, cy, S, o);
+          if (pen) ctx.lineTo(o.x, o.y); else { ctx.moveTo(o.x, o.y); pen = true; }
+        }
       }
+      ctx.stroke();
     }
-    ctx.stroke();
-
-    /* Ozean: feine, gedämpfte Punkte */
-    ctx.fillStyle = 'rgba(' + INK + ',1)';
-    for (let i = 0; i < BUCKETS; i++) bucket[i].length = 0;
-    const so = Math.max(1, S / 420);
-    for (const p of ocean) {
-      rot(M, p, fy);
-      if (v[2] <= VIS) continue;
-      const lit = (v[0] * LIGHT[0] + v[1] * LIGHT[1] + (v[2]) * LIGHT[2]) / R;
-      proj(v[0], v[1], v[2], o);
-      let a = (0.04 + 0.09 * Math.max(0, lit)) * limb(o.x, o.y);
-      for (const rp of ripples) { const age = (now - rp.t) / 2600, w = Math.abs(Math.hypot(o.x - rp.x, o.y - rp.y) - age * S * 0.75); if (w < S * 0.05) a += (1 - age) * 0.35 * (1 - w / (S * 0.05)); }
-      if (a > 0.004) bucket[Math.min(BUCKETS - 1, Math.floor(a * BUCKETS))].push(o.x, o.y);
-    }
-    flush(so);
-
-    /* Land: hell auf der Tagseite, weicher Übergang zur Nacht, Stadtlichter; Maus + Klick-Wellen */
-    const sl = Math.max(1.3, S / 300), t = now / 1000;
-    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 2600) ripples.splice(i, 1);
-    for (const pt of land) {
-      rot(M, pt.p, fy);
-      if (v[2] <= VIS) continue;
-      const lit = (v[0] * LIGHT[0] + v[1] * LIGHT[1] + v[2] * LIGHT[2]) / R;
-      proj(v[0], v[1], v[2], o);
-      const day = Math.max(0, Math.min(1, (lit + 0.12) / 0.5));
-      let a = 0.16 + 0.74 * day * day * (3 - 2 * day);
-      if (pt.city && lit < 0.05 && !reduce) a += 0.55 * (0.5 + 0.5 * Math.sin(t * 2.2 + pt.ph));
-      if (mouse.on) { const md = Math.hypot(o.x - mouse.x, o.y - mouse.y), mr = S * 0.2; if (md < mr) a += 0.45 * (1 - md / mr); }
-      for (const rp of ripples) {
-        const age = (now - rp.t) / 2600, rad = age * S * 0.75, d = Math.hypot(o.x - rp.x, o.y - rp.y);
-        const w = Math.abs(d - rad); if (w < S * 0.05) a += (1 - age) * 1.1 * (1 - w / (S * 0.05));   // deutliche Welle
+    /* Land */
+    back.length = 0; for (let i = 0; i < BUCKETS; i++) front[i].length = 0;
+    for (const p of land) {
+      rot(M, p); proj(cx, cy, S, o);
+      if (v[2] <= VIS) { back.push(o.x, o.y); continue; }                      // Rückseite: scheint durch
+      const nx = (o.x - cx) / S + 0.5, ny = (o.y - cy) / S + 0.5;
+      const ld = Math.hypot(o.x - cx, o.y - cy) / rr;
+      const lf = Math.max(0, 1 - Math.pow(Math.max(0, ld - 0.75) / 0.27, 2));
+      if (lf <= 0) continue;
+      let w = 0;
+      for (const wv of waves) { const d = Math.hypot(nx - wv.x, ny - wv.y); w += Math.sin(d * wv.f * 60 - wt * wv.sp + wv.ph) * wv.amp / (1 + d * 4); }
+      if (opt.mx != null) { const md = Math.hypot(o.x - opt.mx, o.y - opt.my) / S; if (md < 0.3) w += (1 - md / 0.3) * (0.6 + 0.9 * Math.sin(wt * 3)); }
+      if (opt.ripples) for (const rp of opt.ripples) {
+        const age = now - rp.t; if (age > 4200) continue;
+        const d = Math.hypot(o.x - rp.x, o.y - rp.y) / S, rad = age / 4200 * 0.8;
+        if (Math.abs(d - rad) < 0.1) w += (1 - age / 4200) * 2.2 * (1 - Math.abs(d - rad) / 0.1) * Math.sin((d - rad) * 20);
       }
-      a = Math.min(1, a) * limb(o.x, o.y);
-      if (a > 0.01) (pt.big ? bucketBig : bucket)[Math.min(BUCKETS - 1, Math.floor(a * BUCKETS))].push(o.x, o.y);
+      const a = Math.min(0.95, 0.4 + c01((w + 2) / 4) * 0.55) * lf;
+      front[Math.min(BUCKETS - 1, Math.floor(a * BUCKETS))].push(o.x, o.y);
     }
-    flush(sl * 0.8);                                   // zwei Punktgrößen → Sternenstaub statt Gitter
-    flush(sl * 1.35, bucketBig);
-
-    /* Salzburg-Pin */
-    rot(M, PIN_TIP, fy); const tipVis = v[2] > VIS; proj(v[0], v[1], v[2], o);
-    rot(M, PIN_BASE, fy); proj(v[0], v[1], v[2], o2);
-    if (tipVis) {
-      const pulse = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(clock * 2.6), pulse2 = reduce ? 0.5 : 0.5 + 0.5 * Math.sin(clock * 2.6 + Math.PI), u = S / 520;
-      ctx.strokeStyle = 'rgba(' + INK + ',0.9)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(o2.x, o2.y); ctx.lineTo(o.x, o.y); ctx.stroke();
-      ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(o2.x, o2.y, 2.2 * u, 0, 6.2832); ctx.fill();
-      ctx.globalAlpha = 0.08 + 0.2 * pulse2; ctx.beginPath(); ctx.arc(o.x, o.y, (7 + 6 * pulse2) * u, 0, 6.2832); ctx.fill();
-      ctx.globalAlpha = 0.45 + 0.45 * pulse; ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.6 * u; ctx.beginPath(); ctx.arc(o.x, o.y, (4.6 + 1.2 * pulse) * u, 0, 6.2832); ctx.stroke();
-      ctx.globalAlpha = 1; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(o.x, o.y, 2.6 * u, 0, 6.2832); ctx.fill();
-    }
-    /* Label beim Hover (Container-Koordinaten) */
-    const px = o.x - off(), py = o.y - off(), H = 17, P = 6, TW = 84, DR = 5, DG = 5, bw = DR * 2 + DG + TW + P * 2, bx = px + 14, by = py - 28;
-    sLine.setAttribute('x1', px); sLine.setAttribute('y1', py); sLine.setAttribute('x2', bx); sLine.setAttribute('y2', by + H / 2);
-    sBadge.setAttribute('x', bx); sBadge.setAttribute('y', by); sBadge.setAttribute('width', bw); sBadge.setAttribute('height', H);
-    sDot.setAttribute('cx', bx + P + DR); sDot.setAttribute('cy', by + H / 2);
-    sText.setAttribute('x', bx + P + DR * 2 + DG); sText.setAttribute('y', by + H / 2);
-    const lv = tipVis && hovered ? 1 : 0;
-    [sLine, sBadge, sDot, sText].forEach(n => { n.style.opacity = String(lv); n.style.transition = hovered ? 'opacity 0.3s ease' : 'opacity 0.15s ease'; });
-  }
-  function flush(size, set) {                         // Punkte gebündelt nach Helligkeit zeichnen (schnell)
-    set = set || bucket;
+    ctx.fillStyle = 'rgb(' + INK + ')';
+    ctx.globalAlpha = 0.11;                                                      // Rückseite, gedämpft
+    for (let k = 0; k < back.length; k += 2) ctx.fillRect(back[k] - blk * 0.4, back[k + 1] - blk * 0.4, blk * 0.8, blk * 0.8);
     for (let i = 0; i < BUCKETS; i++) {
-      const b = set[i]; if (!b.length) continue;
+      const b = front[i]; if (!b.length) continue;
       ctx.globalAlpha = (i + 0.5) / BUCKETS;
-      for (let k = 0; k < b.length; k += 2) ctx.fillRect(b[k] - size / 2, b[k + 1] - size / 2, size, size);
-      b.length = 0;
+      for (let k = 0; k < b.length; k += 2) ctx.fillRect(b[k] - blk / 2, b[k + 1] - blk / 2, blk, blk);
     }
     ctx.globalAlpha = 1;
+    /* Salzburg-Pin */
+    const res = { vis: false, x: 0, y: 0 };
+    if (opt.pin > 0.01) {
+      rot(M, PIN_TIP); const vis = v[2] > VIS; proj(cx, cy, S, o);
+      rot(M, PIN_BASE); proj(cx, cy, S, o2);
+      if (vis) {
+        const u = S / 520, p1 = 0.5 + 0.5 * Math.sin(wt * 2.6 * 0.9), p2 = 0.5 + 0.5 * Math.sin(wt * 2.6 * 0.9 + Math.PI);
+        ctx.globalAlpha = opt.pin;
+        ctx.strokeStyle = 'rgba(' + INK + ',0.9)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(o2.x, o2.y); ctx.lineTo(o.x, o.y); ctx.stroke();
+        ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(o2.x, o2.y, 2.2 * u, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = opt.pin * (0.08 + 0.2 * p2); ctx.beginPath(); ctx.arc(o.x, o.y, (7 + 6 * p2) * u, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = opt.pin * (0.45 + 0.45 * p1); ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.6 * u; ctx.beginPath(); ctx.arc(o.x, o.y, (4.6 + 1.2 * p1) * u, 0, 6.2832); ctx.stroke();
+        ctx.globalAlpha = opt.pin; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(o.x, o.y, 2.6 * u, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = 1;
+        res.vis = true; res.x = o.x; res.y = o.y;
+      }
+    }
+    return res;
   }
 
-  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.01 }).observe(container);
-  (function tick(now) {
-    requestAnimationFrame(tick);
-    now = now || performance.now();
+  /* ============================
+     STORY
+     ============================ */
+  const lines = Array.prototype.slice.call(linesWrap.querySelectorAll('.gs-line'));
+  const N = lines.length;
+  const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+  cv.className = 'gs-canvas'; cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Globe with a pin on Salzburg, Austria');
+  stage.insertBefore(cv, stage.firstChild);
+  const label = document.createElement('div');
+  label.className = 'gs-label'; label.setAttribute('aria-hidden', 'true'); label.innerHTML = '<i></i>Salzburg, AT';
+  stage.appendChild(label);
+  let W = 0, H = 0, dpr = 1;
+  function size() { W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  size();
+  window.addEventListener('resize', size);
+  function layout(q) {                                                         // Mitte + Größe der Erde je nach Story-Stand
+    const mobile = W <= 760;
+    const base = mobile ? Math.min(W * 0.95, H * 0.5) : Math.min(H * 0.8, W * 0.46);   // auch herangezoomt unter der Nav
+    const kE = ease(c01(q / Math.max(1, N - 1)));                               // zum letzten Satz minimal kleiner
+    return { cx: mobile ? W / 2 : W * 0.7, cy: mobile ? H * 0.34 : H * 0.53, S: base * (1.02 - 0.08 * kE), kF: 1 };
+  }
+
+  /* Pixel-Engine für die Sätze (gleiche Blockverteilung wie der Seitenwechsel) */
+  function pxRnd(gx, gy) { let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0; x = (x ^ (x >>> 13)) * 1274126177 >>> 0; return ((x ^ (x >>> 16)) >>> 0) / 4294967296; }
+  function setClip(el, cover, mode) {
+    if (cover >= 1) { el.style.clipPath = 'none'; return; }
+    if (cover <= 0) { el.style.clipPath = 'inset(50%)'; return; }
+    const B = el._b, cols = Math.ceil(el._w / B), rows = Math.ceil(el._h / B); let d = '';
+    for (let gy = 0; gy < rows; gy++) { const rb = rows > 1 ? gy / (rows - 1) : 0;
+      for (let gx = 0; gx < cols; gx++) { const rn = pxRnd(gx, gy), thr = mode === 'dissolve' ? rb * 0.62 + rn * 0.38 : (1 - rb) * 0.62 + rn * 0.38;
+        if (cover >= thr) d += 'M' + gx * B + ' ' + gy * B + 'h' + (B + 1) + 'v' + (B + 1) + 'h-' + (B + 1) + 'Z'; } }
+    el.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';
+  }
+  function measureLines() { lines.forEach(l => { l._w = l.offsetWidth; l._h = l.offsetHeight; l._b = Math.max(8, Math.round(parseFloat(getComputedStyle(l).fontSize) * 0.16)); l._key = null; }); }
+  const CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "path('M0 0H1V1Z')"));
+  const animate = !reduce && CLIP_OK && typeof ScrollTrigger !== 'undefined';
+  if (animate) section.classList.add('is-live'); else section.classList.add('is-static');
+
+  let lastQ = 0;
+  function renderLines(q) {
+    lines.forEach((l, i) => {
+      let c = 1, mode = 'build';
+      if (i > 0 && q < i) c = c01((q - (i - 0.42)) / 0.32);
+      else if (i < N - 1 && q > i + 0.3) { c = 1 - c01((q - (i + 0.3)) / 0.28); mode = 'dissolve'; }
+      const key = mode + Math.round(c * 200);
+      if (l._key !== key) { l._key = key; setClip(l, c, mode); }
+    });
+  }
+
+  /* Maus, Klick, Neigung */
+  const mouse = { x: null, y: null };
+  const ripples = [];
+  let tRY = 0, tRX = 0, cRY = 0, cRX = 0, wt = 0, last = performance.now(), visible = false, hidden = false;
+  stage.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
+  stage.addEventListener('mouseleave', () => { mouse.x = mouse.y = null; });
+  stage.addEventListener('click', e => { const r = cv.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }); });
+  window.addEventListener('mousemove', e => {
+    tRY = Math.max(-0.2, Math.min(0.2, (e.clientX / window.innerWidth - 0.5) * 0.36));
+    tRX = Math.max(-0.12, Math.min(0.12, (e.clientY / window.innerHeight - 0.5) * 0.2));
+  }, { passive: true });
+
+  let lastGlobe = null;                                                        // für den Fall in den Footer
+  const FACE = mul(rotX(PITCH0), rotY(YAW0));                                  // Salzburg zeigt zum Betrachter
+  function orientation() { return mul(mul(rotY(cRY), rotX(cRX)), FACE); }     // nur leichte Neigung zur Maus
+  function frame(now) {
+    requestAnimationFrame(frame);
     const dt = Math.min(now - last || 16.7, 50) / 1000; last = now;
     if (!visible) return;
+    const q = lastQ, L = layout(q);
     if (!reduce) {
-      clock += 0.72 * dt;
-      const k = 1 - Math.exp(-dt / 0.55);
-      cRotY += (tRotY - cRotY) * k; cRotX += (tRotX - cRotX) * k;
+      wt += dt * 0.75;
+      const k = 1 - Math.exp(-dt / 0.55); cRY += (tRY - cRY) * k; cRX += (tRX - cRX) * k;
     }
-    draw(now);
-  })();
+    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 4500) ripples.splice(i, 1);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    const fy = reduce ? 0 : Math.sin(wt * 0.6) * L.S * 0.006;
+    lastGlobe = { cx: L.cx, cy: L.cy + fy, S: L.S, kF: L.kF };
+    let pin = { vis: false };
+    if (!hidden) pin = drawGlobe(ctx, L.cx, L.cy + fy, L.S, orientation(), { pin: 1, now: now, wt: wt, mx: mouse.x, my: mouse.y, ripples: ripples });
+    const showLabel = !hidden && pin.vis && q < N - 1.5;                       // Label beim ersten Satz
+    label.classList.toggle('is-on', showLabel);
+    if (pin.vis) label.style.transform = 'translate(' + (pin.x + 14).toFixed(1) + 'px,' + (pin.y - 36).toFixed(1) + 'px)';
+  }
+
+  if (animate) {
+    measureLines(); renderLines(0);
+    ScrollTrigger.create({
+      trigger: section, start: 'top top', end: '+=' + ((N - 1) * 80) + '%', pin: true, anticipatePin: 1, invalidateOnRefresh: true,
+      onUpdate: self => { lastQ = self.progress * (N - 1); renderLines(lastQ); },
+      onRefresh: () => { size(); measureLines(); renderLines(lastQ); }
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureLines(); renderLines(lastQ); });
+  } else lastQ = 1;                                                            // ohne Animation: Erde zeigt Salzburg
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0 }).observe(stage);
+  requestAnimationFrame(frame);
+
+  /* ============================
+     ROLLENDE ERDE IM FOOTER (kleine Physik: Kugel mit Schwerkraft, Boden, Wänden, Rollen, Werfen)
+     ============================ */
+  if (!playArea || !animate) return;
+  const bc = document.createElement('canvas'), bctx = bc.getContext('2d');
+  bc.className = 'gplay-canvas'; bc.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(bc);                                               // fest über dem Bildschirm (nie abgeschnitten)
+  let BW = 0, BH = 0, bdpr = 1, ball = null, braf = 0, held = false, flying = null, calm = 0;
+  const ptr = { x: 0, y: 0, cx: 0, cy: 0, on: false };
+  const G = 2400, BOUNCE = 0.42;
+  /* Physik in Koordinaten der Spielfläche (BW × BH); gezeichnet wird auf dem festen Canvas mit Versatz */
+  let VW = 0, VH = 0;
+  function bsize() {
+    BW = playArea.clientWidth; BH = playArea.clientHeight; VW = window.innerWidth; VH = window.innerHeight;
+    bdpr = Math.min(2, window.devicePixelRatio || 1); bc.width = Math.round(VW * bdpr); bc.height = Math.round(VH * bdpr);
+  }
+  bsize();
+  window.addEventListener('resize', () => { bsize(); if (ball) wake(); });
+  const toCanvas = (x, y) => { const r = playArea.getBoundingClientRect(); return { x: x - r.left, y: y - r.top }; };   // Bildschirm → Spielfläche
+  const storyPos = () => { const r = cv.getBoundingClientRect(), g = lastGlobe || { cx: W * 0.7, cy: H * 0.5, S: Math.min(H, W) * 0.6 }; const p = toCanvas(r.left + g.cx, r.top + g.cy); return { x: p.x, y: p.y, rr: DISC * g.S }; };
+
+  function drop() {
+    if (ball) return;
+    const s = storyPos();
+    ball = { x: s.x, y: s.y, r: s.rr, rt: Math.min(s.rr, playArea.clientHeight * 0.3), vx: (Math.random() - 0.5) * 120, vy: 0, th: 0, w: 0 };   // rt: Größe im Footer
+    flying = null; hidden = true; wake();
+  }
+  function reset() {
+    if (!ball || flying) return;
+    held = false;
+    flying = { t0: performance.now(), x0: ball.x, y0: ball.y, r0: ball.r, th0: ball.th };
+    wake();
+  }
+  function wake() { calm = 0; if (!braf) braf = requestAnimationFrame(bframe); }
+  function physics(dt) {
+    const b = ball, floor = BH - b.r - 4;
+    if (held) {                                                                  // Feder zum Zeiger
+      b.vx += ((ptr.x - b.x) * 70 - b.vx * 9) * dt; b.vy += ((ptr.y - b.y) * 70 - b.vy * 9) * dt;
+    } else b.vy += G * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    let ground = false;
+    if (b.y > floor) { b.y = floor; if (b.vy > 0) b.vy = -b.vy * BOUNCE; if (Math.abs(b.vy) < 70) b.vy = 0; ground = true; }
+    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * 0.55; }
+    if (b.x > BW - b.r) { b.x = BW - b.r; b.vx = -Math.abs(b.vx) * 0.55; }
+    if (b.y < b.r - VH && !held) { b.y = b.r - VH; b.vy = Math.abs(b.vy) * 0.4; }   // Decke: eine Bildschirmhöhe über der Fläche
+    if (ground && !held) { b.vx *= Math.exp(-1.1 * dt); b.w = b.vx / b.r; }       // Rollen: Drehung passt zur Geschwindigkeit
+    else b.w *= Math.exp(-0.4 * dt);
+    if (held) b.w = b.vx / b.r * 0.6;
+    b.th += b.w * dt;
+  }
+  function bframe(now) {
+    braf = 0;
+    if (!ball) return;
+    const dt = 1 / 60;
+    const pr = playArea.getBoundingClientRect();
+    bctx.setTransform(bdpr, 0, 0, bdpr, 0, 0); bctx.clearRect(0, 0, VW, VH);
+    if (flying) {                                                                // zurück an den Platz in der Story
+      const k = c01((now - flying.t0) / 900), e = eio(k), s = storyPos();
+      ball.x = flying.x0 + (s.x - flying.x0) * e; ball.y = flying.y0 + (s.y - flying.y0) * e - Math.sin(k * Math.PI) * 120;
+      ball.r = flying.r0 + (s.rr - flying.r0) * e; ball.th = flying.th0 * (1 - e);
+      if (k >= 1) { ball = null; flying = null; hidden = false; bctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, bc.width, bc.height); return; }
+    } else {
+      ball.r += (ball.rt - ball.r) * 0.07;                                       // schrumpft im Fallen auf Footer-Größe
+      for (let i = 0; i < 3; i++) physics(dt / 3);
+      const moving = held || Math.abs(ball.vx) + Math.abs(ball.vy) > 4 || Math.abs(ball.r - ball.rt) > 0.5;
+      calm = moving ? 0 : calm + 1;
+    }
+    const S = ball.r / DISC;
+    drawGlobe(bctx, pr.left + ball.x, pr.top + ball.y, S, mul(rotZ(-ball.th), mul(rotX(PITCH0), rotY(YAW0))), { pin: 1, now: now, wt: now / 1333, mx: ptr.on ? pr.left + ptr.x : null, my: ptr.on ? pr.top + ptr.y : null });
+    if (flying || calm < 90) braf = requestAnimationFrame(bframe);
+  }
+  /* Greifen + Werfen */
+  const inBall = (x, y) => ball && !flying && Math.hypot(x - ball.x, y - ball.y) < ball.r;
+  window.addEventListener('pointerdown', e => {
+    if (!ball) return; const p = toCanvas(e.clientX, e.clientY);
+    if (!inBall(p.x, p.y)) return;
+    e.preventDefault(); held = true; ptr.x = p.x; ptr.y = p.y; ptr.cx = e.clientX; ptr.cy = e.clientY; playArea.classList.add('is-grabbing'); wake();
+  });
+  window.addEventListener('pointermove', e => {
+    const p = toCanvas(e.clientX, e.clientY); ptr.cx = e.clientX; ptr.cy = e.clientY; ptr.x = p.x; ptr.y = p.y;
+    ptr.on = !!ball && Math.hypot(p.x - (ball ? ball.x : 0), p.y - (ball ? ball.y : 0)) < (ball ? ball.r * 1.2 : 0);
+    playArea.classList.toggle('is-over', !!ball && inBall(p.x, p.y));
+    if (ball) wake();
+  }, { passive: true });
+  window.addEventListener('scroll', () => { if (held) { const p = toCanvas(ptr.cx, ptr.cy); ptr.x = p.x; ptr.y = p.y; } if (ball) wake(); }, { passive: true });   // beim Scrollen neu zeichnen
+  const release = () => { if (!held) return; held = false; playArea.classList.remove('is-grabbing'); wake(); };
+  window.addEventListener('pointerup', release); window.addEventListener('pointercancel', release);
+  /* Fallen, sobald die Fläche über dem Footer halb im Bild ist; zurück, wenn sie wieder unten raus ist */
+  function check() {
+    const top = playArea.getBoundingClientRect().top, vh = window.innerHeight;
+    if (top < vh * 0.5) drop(); else if (top > vh * 0.82) reset();
+  }
+  window.addEventListener('scroll', check, { passive: true });
+  setTimeout(check, 0);
 })();
 
 /* ============================
    GLOBE SECTION — Sternenhimmel im Hintergrund (wie auf der Me-Seite)
    Pixel-Sterne in Tiefenebenen: funkeln leise, treiben langsam, folgen minimal der Maus.
-   Alle paar Sekunden zieht eine Sternschnuppe vorbei; ein Klick schickt eine Lichtwelle durch die Sterne.
+   Ein Klick schickt eine Lichtwelle durch die Sterne.
 ============================ */
 (function initGlobeStars() {
   const section = document.getElementById('globeSection');
@@ -1850,7 +1794,6 @@ ScrollTrigger.create({
   const ctx = canvas.getContext('2d');
   let W = 0, H = 0, dpr = 1, stars = [], visible = false, last = performance.now();
   const mouse = { x: 0, y: 0, tx: 0, ty: 0 }, ripples = [];
-  let shoot = null, nextShoot = performance.now() + 2500;
   function rnd(i, k) { let h = ((i + 1) * 374761393 + (k + 1) * 668265263) >>> 0; h = (h ^ (h >>> 13)) * 1274126177 >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
   function build() {
     W = section.offsetWidth; H = section.offsetHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -1882,22 +1825,6 @@ ScrollTrigger.create({
       ctx.globalAlpha = Math.min(1, a);
       ctx.fillRect(Math.round(x), Math.round(y), s.s, s.s);
     }
-    /* Sternschnuppe */
-    if (!reduce) {
-      if (!shoot && now > nextShoot) {
-        const ang = Math.PI * (0.78 + Math.random() * 0.1);                      // schräg nach links unten
-        shoot = { x: W * (0.35 + Math.random() * 0.6), y: H * (0.05 + Math.random() * 0.3), vx: Math.cos(ang) * 900, vy: Math.sin(ang) * 900, life: 0, len: 140 + Math.random() * 110 };
-      }
-      if (shoot) {
-        shoot.life += dt; shoot.x += shoot.vx * dt; shoot.y += shoot.vy * dt;
-        const k = Math.min(1, shoot.life / 0.15) * Math.max(0, 1 - shoot.life / 0.95), l = shoot.len / 900;
-        const g = ctx.createLinearGradient(shoot.x, shoot.y, shoot.x - shoot.vx * l, shoot.y - shoot.vy * l);
-        g.addColorStop(0, 'rgba(240,237,232,' + (0.85 * k).toFixed(3) + ')'); g.addColorStop(1, 'rgba(240,237,232,0)');
-        ctx.globalAlpha = 1; ctx.strokeStyle = g; ctx.lineWidth = 1.4;
-        ctx.beginPath(); ctx.moveTo(shoot.x, shoot.y); ctx.lineTo(shoot.x - shoot.vx * l, shoot.y - shoot.vy * l); ctx.stroke();
-        if (shoot.life > 0.95) { shoot = null; nextShoot = now + 5000 + Math.random() * 6000; }
-      }
-    }
     ctx.globalAlpha = 1;
   }
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.01 }).observe(section);
@@ -1909,60 +1836,6 @@ ScrollTrigger.create({
     const dt = Math.min(now - last || 16.7, 50) / 1000; last = now;
     if (visible) draw(now, dt);
   })();
-})();
-
-/* ============================
-   GLOBE SECTION — Scroll Split
-============================ */
-(function initGlobeScrollSplit() {
-  const section    = document.getElementById('globeSection');
-  const canvasWrap = document.getElementById('globeSectionCanvas');
-  const textLeft   = document.getElementById('globeTextLeft');
-  const line1      = document.getElementById('globeHeadline');
-
-  if (!section || !canvasWrap || !textLeft) return;
-
-  const c01  = v => Math.max(0, Math.min(1, v));
-  const eOut = t => 1 - Math.pow(1 - c01(t), 3);
-  const eInOut = t => { t = c01(t); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; };
-  const ph   = (p, a, b) => eOut(c01((p - a) / (b - a)));
-  const phIO = (p, a, b) => eInOut(c01((p - a) / (b - a)));
-
-  gsap.set(canvasWrap, { x: 0, scale: 1, transformOrigin: 'center center' });
-  gsap.set(textLeft,   { opacity: 0 });
-  gsap.set(line1, { y: '110%' });
-
-  function getTargetX() {
-    const vw = window.innerWidth;
-    const cw = canvasWrap.offsetWidth;
-    const scaledHalf = (cw * 1.18) / 2;
-    return Math.min(vw * 0.75, vw - scaledHalf - 40) - vw / 2;
-  }
-
-  function applyProgress(p) {
-    /* Kugel: sanfter Ein-/Auslauf (eInOut) statt reinem eOut → kein „Anspringen" */
-    const move = phIO(p, 0.00, 1.00);
-    gsap.set(canvasWrap, { x: move * getTargetX(), scale: 1 + move * 0.18 });
-    gsap.set(textLeft, { opacity: ph(p, 0.55, 0.88) });
-    gsap.set(line1,    { y: (1 - ph(p, 0.60, 0.90)) * 110 + '%' });
-  }
-
-  ScrollTrigger.create({
-    trigger:       section,
-    start:         'top top',
-    end:           '+=180%',
-    pin:           true,
-    pinSpacing:    true,
-    anticipatePin: 1,
-    scrub:         0.9,
-    invalidateOnRefresh: true,
-    onUpdate(self)  { applyProgress(self.progress); },
-    onLeaveBack() {
-      gsap.set(canvasWrap, { x: 0, scale: 1 });
-      gsap.set(textLeft,   { opacity: 0 });
-      gsap.set(line1, { y: '110%' });
-    },
-  });
 })();
 
 /* ============================

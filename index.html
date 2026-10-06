@@ -308,35 +308,18 @@
 </section>
 
 <!-- GLOBE SECTION -->
-<section class="globe-section" id="globeSection">
-
-  <div class="globe-layout" id="globeLayout">
-
-    <div class="globe-text-left" id="globeTextLeft">
-
-      <div class="globe-kicker">
-        <span class="globe-kicker-loc">47.80°N / 13.05°E · Salzburg, AT</span>
-      </div>
-
-      <div class="globe-text-clip">
-        <span class="globe-display-line" id="globeHeadline">Find me here</span>
-      </div>
-
-      <p class="globe-bio">
-        I was born in Salzburg and still call it home — I love the blend of rural calm
-        and city energy. Design and art have fascinated me for as long as I can remember,
-        and that pull naturally led me into digital work, specialising in UI/UX design and
-        sharpened by a focus on digitalisation during my studies. Both professionally and
-        in my free time I love living out my creativity — through design and playing piano —
-        and I'm just as passionate about my time in the gym.
-      </p>
+<section class="globe-section" id="globeSection" aria-label="Find me here">
+  <!-- Story: zwei Sätze bauen sich beim Scrollen aus Pixeln auf; die gläserne Erde zeigt Salzburg (script.js → initFindMe) -->
+  <div class="globe-stage">
+    <div class="gs-lines" id="gsLines">
+      <p class="gs-line">Born and raised in Salzburg, still the place I call home.</p>
+      <p class="gs-line">Let's create something together.</p>
     </div>
-
-    <div class="globe-section-canvas-wrap" id="globeSectionCanvas"></div>
-
   </div>
-
 </section>
+
+<!-- Spielfläche über dem Footer: hier fällt die Erde hinein und rollt (greifen + werfen) -->
+<section class="gplay" id="globePlay" aria-label="The globe, drag it around"></section>
 
 </div><!-- /bottom-sheet -->
 

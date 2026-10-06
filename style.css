@@ -140,43 +140,13 @@ body::before {
 .nav-center .nav-cell:last-child { border-right: 1px solid rgba(240,237,232,0.16); }
 .nav-right .nav-cell { border-left: 1px solid rgba(240,237,232,0.16); }
 .nav-right .nav-cell:last-child { padding-right: 28px; }
-.nav-brand { letter-spacing: 0.04em; color: var(--ink); }
+.nav-brand { letter-spacing: 0.04em; color: var(--ink); pointer-events: none; cursor: default; }   /* reines Logo: kein Hover, kein Klick */
 /* ── Easter Egg: Klick auf JCKY (Logo oben links) ── */
-.egg-target { cursor: pointer; user-select: none; -webkit-user-select: none; }
-.egg-target:focus-visible { outline: 1px solid var(--ink); outline-offset: -4px; }
-.egg-ch { display: inline-block; }
-.egg-ch.is-jump { animation: egg-jump 0.55s var(--ease-out-expo) both; }
-.egg-ch.is-jump-big { animation: egg-jump-big 0.8s var(--ease-out-expo) both; }
-@keyframes egg-jump {
-  0%   { transform: translateY(0) rotate(0); }
-  35%  { transform: translateY(-8px) rotate(var(--egg-r, -8deg)); }
-  70%  { transform: translateY(1px) rotate(0); }
-  100% { transform: none; }
-}
-@keyframes egg-jump-big {
-  0%   { transform: none; }
-  25%  { transform: translateY(-14px) scale(1.25) rotate(var(--egg-r, -12deg)); }
-  55%  { transform: translateY(3px) scale(0.9); }
-  100% { transform: none; }
-}
-.egg-toast {
-  position: fixed; top: 0; left: 0; z-index: 2001;   /* Position setzt JS (neben dem Klickpunkt) */
-  max-width: min(320px, calc(100vw - 56px));
-  padding: 9px 12px;
-  background: var(--ink); color: var(--bg-dark, #0a0a09);
-  font-family: var(--font-mono); font-size: 11px; line-height: 1.5;
-  letter-spacing: 0.14em; text-transform: uppercase;
-  pointer-events: none;
-  opacity: 0; transform: translateY(-6px);
-  transition: opacity 0.25s ease, transform 0.4s var(--ease-out-expo);
-}
-.egg-toast.is-on { opacity: 1; transform: none; }
 .egg-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000; }
 /* Footer: Klick auf einen Buchstaben → er explodiert (sofort weg) und blendet danach sanft wieder ein */
 .ftp-ch { cursor: pointer; transition: opacity 0.7s var(--ease-out-expo); }
 .ftp-ch.is-gone { opacity: 0; transition: none; }
 @media (prefers-reduced-motion: reduce) {
-  .egg-ch.is-jump, .egg-ch.is-jump-big { animation: none; }
 }
 /* JCKY-Logo oben links — jetzt echter Text in Anton (wie der Hero-Name) */
 .nav-logo-text {
@@ -698,91 +668,48 @@ body::before {
   z-index: 0;
 }
 
-.globe-layout {
-  position: relative;
-  z-index: 4;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100vh;
-  padding: 0 6vw;
-  padding-bottom: 4vh;
+/* ── Find me here: fixierte Story-Bühne – Sätze links, gläserne Erde rechts (script.js → initFindMe) ── */
+.globe-stage { position: relative; z-index: 4; width: 100%; height: 100vh; height: 100svh; }
+.gs-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.gs-lines {
+  position: absolute; left: 6vw; top: 50%; transform: translateY(-50%);
+  width: min(44vw, 720px); height: 64vh; pointer-events: none;
 }
-
-.globe-section-canvas-wrap {
-  position: relative;
-  width: clamp(260px, 36vw, 500px);
-  height: clamp(260px, 36vw, 500px);
-  flex-shrink: 0;
-  will-change: transform;
-  transform-origin: center center;
+.gs-line {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); margin: 0;
+  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif; font-weight: 400;
+  font-size: clamp(2rem, 3.6vw, 4.6rem); line-height: 1.04; letter-spacing: 0.01em;
+  text-transform: uppercase; text-wrap: balance; color: var(--ink);
 }
-
-.globe-section-canvas-wrap .globe-canvas {   /* größer als der Container → Platz für den Atmosphären-Schein */
-  position: absolute; left: -15%; top: -15%;
-  width: 130%; height: 130%; display: block;
+.gs-title { font-size: clamp(3rem, 6.4vw, 8.2rem); line-height: 0.92; }
+.globe-section.is-live .gs-line { clip-path: inset(50%); }      /* baut sich beim Scrollen aus Pixeln auf */
+.gs-label {                                                       /* Salzburg-Label am Pin */
+  position: absolute; left: 0; top: 0; z-index: 5;
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 9px;
+  background: #0a0a09; border: 1px solid rgba(240,237,232,0.24); border-radius: 3px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink); white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 0.35s ease;
 }
+.gs-label i { width: 6px; height: 6px; border-radius: 50%; background: #ff4040; }
+.gs-label.is-on { opacity: 1; }
+/* Ohne Animation: Sätze untereinander, Erde zeigt Salzburg */
+.globe-section.is-static .gs-lines { top: 12vh; transform: none; height: auto; }
+.globe-section.is-static .gs-line { position: static; transform: none; margin-bottom: 0.5em; font-size: clamp(1.6rem, 2.6vw, 3rem); }
 
-.globe-text-left {
-  position: absolute;
-  left: 6vw;
-  top: calc(50% - 6vh);
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 0.04em;
-  opacity: 0;
-  will-change: opacity;
-  max-width: 48vw;
+/* ── Spielfläche über dem Footer: hier fällt die Erde hinein und rollt (greifen + werfen) ── */
+.gplay { position: relative; z-index: 11; height: 72vh; min-height: 420px; background: var(--bg); }
+.gplay-canvas {                                                   /* fest über dem Bildschirm → die Erde wird beim Fallen/Zurückfliegen nie abgeschnitten */
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  z-index: 900; pointer-events: none;                             /* über den Sektionen, unter der Navigation */
 }
+.gplay.is-over { cursor: grab; }
+.gplay.is-grabbing, .gplay.is-grabbing * { cursor: grabbing; }
 
-/* Mono-Kicker: Katalog-Code + Salzburg-Koordinaten (Bezug zum Globe-Pin) */
-.globe-kicker {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 26px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-}
-.globe-kicker-loc { color: rgba(240,237,232,0.5); letter-spacing: 0.16em; }
-
-.globe-text-clip {
-  overflow: hidden;
-  line-height: 0.88;
-}
-
-.globe-display-line {
-  display: block;
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(3rem, 6vw, 8rem);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  line-height: 0.88;
-  color: var(--ink);
-  text-transform: uppercase;
-  white-space: nowrap;
-  will-change: transform;
-  transform: translateY(110%);
-}
-
-/* ── Find me here — Textlayout ── */
-
-/* ── Bio-Text (ersetzt die Kontakt-Liste) ── */
-.globe-bio {
-  position: relative;
-  z-index: 1;
-  margin-top: 2.2em;
-  max-width: 46ch;
-  font-family: var(--font-mono);
-  font-size: clamp(12px, 1.05vw, 15px);
-  font-weight: 400;
-  line-height: 1.85;
-  color: rgba(240,237,232,0.62);
+@media (max-width: 760px) {
+  .gs-lines { left: 6vw; right: 6vw; width: auto; top: auto; bottom: 7vh; transform: none; height: 36vh; }
+  .gs-line { font-size: clamp(1.5rem, 7vw, 2.4rem); }
+  .gs-title { font-size: clamp(2.6rem, 12vw, 4rem); }
 }
 
 
