@@ -148,14 +148,19 @@ body::before {
 .ftp-ch.is-gone { opacity: 0; transition: none; }
 @media (prefers-reduced-motion: reduce) {
 }
-/* JCKY-Logo oben links — jetzt echter Text in Anton (wie der Hero-Name) */
-.nav-logo-text {
-  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
-  font-weight: 400;
-  font-size: 26px;
-  line-height: 1;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
+/* JCKY-Logo oben links — die Unterschrift aus der Intro als SVG.
+   Strichstärke in Pfad-Einheiten: 15 ≙ ~1,75 px bei 34 px Höhe (so bleibt sie als Strich animierbar). */
+.nav-logo-sig {
+  display: block;
+  height: 34px; width: auto;
+  overflow: visible;
+}
+.nav-logo-sig path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 15;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 /* JCKY im Footer — Textwort in Anton (wie im Hero), per JS randlos über die volle Breite
    gestreckt (transform: scale). Der 28px-Seitenabstand kommt von .site-footer-text. */
@@ -190,6 +195,12 @@ body::before {
   line-height: 1;
   white-space: nowrap;
   transform-origin: 0 0;
+}
+
+/* Schmal: Sprungmarken (Start / What I do / Find me here) ausblenden – sonst läuft die Leiste über.
+   Logo + Seiten bleiben. */
+@media (max-width: 900px) {
+  .nav-center { display: none; }
 }
 
 /* aktive Sektion: weißer Text + weißer Bottom-Stroke */
@@ -259,30 +270,35 @@ body::before {
 }
 
 /* ============================
-   PLAY CURSOR — nur wenn Hero-Bild Vollbild ist und man drüber hovert
-   Eckiges Label wie eine Nav-Zelle im Hover (Ink-Fläche, dunkle Barlow-Schrift)
+   VIDEO CURSOR — Play-Button aus Pixelblöcken über dem Hero-Video (script.js → initVideoCursor)
+   Label als dunkler Chip wie „Salzburg, AT" am Globus → auf jedem Bild lesbar
 ============================ */
-#playCursor {
+#videoCursor {
   position: fixed; left: 0; top: 0;
   pointer-events: none;
   z-index: 100000;
+  opacity: 0;
   will-change: transform;
 }
-#playCursor .pc-inner {
-  display: flex; align-items: center; gap: 9px;
-  height: 36px; padding: 0 16px 0 13px;
-  transform: translate(-50%, -50%);                /* am Zeiger zentriert */
-  background: var(--ink); color: var(--bg-dark, #0a0a09);
-  font-family: 'Barlow Condensed', Arial, sans-serif; font-weight: 700;
-  font-size: 15px; letter-spacing: 0.04em; line-height: 1; text-transform: uppercase;
-  clip-path: inset(100% 0 0 0);                     /* wischt von unten herein */
-  transition: clip-path 0.45s var(--ease-out-expo);
+#videoCursor .vc-inner { position: relative; width: 96px; height: 96px; transform: translate(-50%, -50%); }
+#videoCursor .vc-px { display: block; width: 96px; height: 96px; filter: drop-shadow(0 8px 22px rgba(0,0,0,0.35)); }
+#videoCursor .vc-label {
+  position: absolute; left: 50%; top: calc(100% + 12px); transform: translateX(-50%);
+  padding: 5px 9px;
+  background: var(--bg-dark); border: 1px solid rgba(240,237,232,0.24); border-radius: 3px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  white-space: pre; color: var(--ink);
 }
-#playCursor.is-visible .pc-inner { clip-path: inset(0 0 0 0); }
-#playCursor svg { width: 10px; height: 10px; flex: none; }
-#playCursor svg path { fill: currentColor; }
-.play-cursor-on #heroImgCard, .play-cursor-on #heroImgCard * { cursor: none; }   /* nur ein Zeiger sichtbar */
-@media (prefers-reduced-motion: reduce) { #playCursor .pc-inner { transition: none; } }
+.video-cursor-on #heroImgCard, .video-cursor-on #heroImgCard * { cursor: none; }   /* nur ein Zeiger sichtbar */
+
+/* Pixel-Scrollbar am rechten Rand (script.js → initScrollReveals); difference → auch über dem Video sichtbar */
+.px-scrollbar {
+  position: fixed; top: 0; right: 6px; z-index: 1001;
+  width: 4px; height: 100vh;
+  pointer-events: none; mix-blend-mode: difference;
+  opacity: 0; transition: opacity 0.5s ease;
+}
+.px-scrollbar.is-on { opacity: 1; transition-duration: 0.15s; }
 
 .hero-img-card {
   position: absolute;
@@ -619,99 +635,75 @@ body::before {
 
 
 /* ============================
-   GLOBE SECTION
+   STORY — „Von Pixeln zu Menschen" (script.js → initStory)
+   Fixierte Bühne: Pixel-Partikel morphen durch drei Kapitel (Pixel-Avatar → Salzburg → winkende Hand mit UI-Karten),
+   links bauen sich die Sätze aus Pixeln auf, unten links die Kapitel-Anzeige.
+   Die Hand ist anklickbar (E-Mail), unter dem letzten Satz steht die Adresse als dezenter Link.
 ============================ */
-.globe-section {
-  background: var(--bg);
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.story {
   position: relative;
   z-index: 10;
+  background: var(--bg);
   overflow: hidden;
-  min-height: 100vh;
 }
+.story-stage { position: relative; width: 100%; height: 100vh; height: 100svh; }
+.story-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 
-.globe-section::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 220px;
-  background: linear-gradient(to bottom, var(--bg) 0%, transparent 100%);
+/* Sätze: links, Anton wie zuvor; bauen sich aus Pixeln auf und zerfallen wieder */
+.story-lines {
+  position: absolute; left: var(--edge, 28px); top: 50%; z-index: 3;
+  width: min(40vw, 660px); height: 60vh;
+  transform: translateY(-50%);
   pointer-events: none;
-  z-index: 3;
 }
-
-.globe-section::after {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 300px;
-  background: linear-gradient(to top,
-    #111110 0%,
-    #111110 16%,
-    rgba(17,17,16,0.92) 30%,
-    rgba(17,17,16,0.7) 46%,
-    rgba(17,17,16,0.42) 64%,
-    rgba(17,17,16,0.18) 82%,
-    transparent 100%);
-  pointer-events: none;
-  z-index: 3;
-}
-
-.globe-section-stars {                 /* Sternenhimmel (script.js → initGlobeStars) */
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── Find me here: fixierte Story-Bühne – Sätze links, gläserne Erde rechts (script.js → initFindMe) ── */
-.globe-stage { position: relative; z-index: 4; width: 100%; height: 100vh; height: 100svh; }
-.gs-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.gs-lines {
-  position: absolute; left: 6vw; top: 50%; transform: translateY(-50%);
-  width: min(44vw, 720px); height: 64vh; pointer-events: none;
-}
-.gs-line {
-  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); margin: 0;
+.story-line {
+  position: absolute; left: 0; right: 0; top: 50%; margin: 0;
+  transform: translateY(-50%);
   font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif; font-weight: 400;
   font-size: clamp(2rem, 3.6vw, 4.6rem); line-height: 1.04; letter-spacing: 0.01em;
   text-transform: uppercase; text-wrap: balance; color: var(--ink);
 }
-.gs-title { font-size: clamp(3rem, 6.4vw, 8.2rem); line-height: 0.92; }
-.globe-section.is-live .gs-line { clip-path: inset(50%); }      /* baut sich beim Scrollen aus Pixeln auf */
-.gs-label {                                                       /* Salzburg-Label am Pin */
-  position: absolute; left: 0; top: 0; z-index: 5;
-  display: inline-flex; align-items: center; gap: 8px; padding: 5px 9px;
-  background: #0a0a09; border: 1px solid rgba(240,237,232,0.24); border-radius: 3px;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--ink); white-space: nowrap; pointer-events: none;
-  opacity: 0; transition: opacity 0.35s ease;
-}
-.gs-label i { width: 6px; height: 6px; border-radius: 50%; background: #ff4040; }
-.gs-label.is-on { opacity: 1; }
-/* Ohne Animation: Sätze untereinander, Erde zeigt Salzburg */
-.globe-section.is-static .gs-lines { top: 12vh; transform: none; height: auto; }
-.globe-section.is-static .gs-line { position: static; transform: none; margin-bottom: 0.5em; font-size: clamp(1.6rem, 2.6vw, 3rem); }
+.story.is-live .story-line { clip-path: inset(50%); }
 
-/* ── Spielfläche über dem Footer: hier fällt die Erde hinein und rollt (greifen + werfen) ── */
-.gplay { position: relative; z-index: 11; height: 72vh; min-height: 420px; background: var(--bg); }
-.gplay-canvas {                                                   /* fest über dem Bildschirm → die Erde wird beim Fallen/Zurückfliegen nie abgeschnitten */
-  position: fixed; inset: 0; width: 100%; height: 100%;
-  z-index: 900; pointer-events: none;                             /* über den Sektionen, unter der Navigation */
+/* Kapitel-Anzeige: 01 / 03 · Balken · Kapitelname (Mono, wie die Labels der Seite) */
+.story-hud {
+  position: absolute; left: var(--edge, 28px); bottom: 26px; z-index: 3;
+  display: flex; align-items: center; gap: 16px;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--ink-muted);
+  pointer-events: none;
 }
-.gplay.is-over { cursor: grab; }
-.gplay.is-grabbing, .gplay.is-grabbing * { cursor: grabbing; }
+.story-num { color: var(--ink); font-variant-numeric: tabular-nums; }
+.story-bars { display: flex; gap: 4px; }
+.story-bars i { position: relative; overflow: hidden; width: 34px; height: 2px; background: rgba(240,237,232,0.16); }
+.story-bars b { position: absolute; inset: 0; background: var(--ink); transform-origin: 0 50%; transform: scaleX(0); }
+.story-chapter { white-space: pre; }
+
+/* Letzter Satz: „Don't be shy, say hi to me." + dezenter E-Mail-Link darunter (baut sich mit dem Satz auf) */
+.story-line--hi p { margin: 0; }
+.story-mail {
+  display: inline-block; margin-top: 22px;
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.4; letter-spacing: 0.08em; text-transform: none;
+  color: var(--ink-muted); text-decoration: none;
+  border-bottom: 1px solid rgba(240,237,232,0.3); padding-bottom: 3px;
+  pointer-events: auto;
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.story-mail:hover, .story-mail:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
+.story-stage.is-hand { cursor: pointer; }                         /* über der winkenden Hand: zurückwinken = E-Mail */
+
+/* Ohne Animation: Sätze untereinander */
+.story.is-static .story-lines { top: 12vh; transform: none; height: auto; }
+.story.is-static .story-line { position: static; transform: none; margin-bottom: 0.5em; font-size: clamp(1.6rem, 2.6vw, 3rem); }
+.story.is-static .story-hud { display: none; }                    /* ohne Scroll-Story keine Kapitel */
 
 @media (max-width: 760px) {
-  .gs-lines { left: 6vw; right: 6vw; width: auto; top: auto; bottom: 7vh; transform: none; height: 36vh; }
-  .gs-line { font-size: clamp(1.5rem, 7vw, 2.4rem); }
-  .gs-title { font-size: clamp(2.6rem, 12vw, 4rem); }
+  .story-lines { left: 6vw; right: 6vw; width: auto; top: 50vh; height: 18vh; transform: none; }
+  .story-line { font-size: clamp(1.5rem, 7vw, 2.4rem); }
+  .story-mail { font-size: 12px; margin-top: 16px; }
+  .story-hud { top: 66px; bottom: auto; left: 6vw; gap: 12px; font-size: 10px; }
+  .story-bars i { width: 22px; }
 }
-
 
 
 /* Hover im Pixel-Stil: Ink-Blöcke steigen verstreut von unten auf (Canvas .gc-pixels) */
@@ -731,66 +723,59 @@ body::before {
 
 
 /* ============================
-   PAGE LOADER
+   PAGE LOADER — Unterschrift + Teilung (script.js → initLoader)
+   Zwei deckungsgleiche Hälften (oben / unten per clip-path) mit derselben Unterschrift;
+   beim Teilen gleiten sie auseinander und schneiden die Unterschrift entlang der Linie.
 ============================ */
 #pageLoader {
   position: fixed;
   inset: 0;
-  background: var(--bg-dark);
   z-index: 99999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   pointer-events: all;
 }
+#pageLoader.is-hidden { pointer-events: none; }
 
-#pageLoader.is-hidden {
-  pointer-events: none;
+.ld-half {
+  position: absolute; inset: 0;
+  background: var(--bg-dark);
+  will-change: transform;
 }
-
-.loader-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  width: clamp(240px, 40vw, 480px);
+.ld-top { clip-path: inset(0 0 50% 0); }
+.ld-bot { clip-path: inset(50% 0 0 0); }
+.ld-stage {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  will-change: transform;
 }
-
-.loader-name {
-  font-family: var(--font-mono);
-  font-size: clamp(9px, 1vw, 12px);
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
+.ld-sig {
+  width: min(74vw, 760px); height: auto;
+  overflow: visible;
+  transform: translateY(-2%);                    /* optische Mitte: die Unterstreichung hängt nach unten */
 }
-
-.loader-bar-wrap {
-  width: 100%;
-  height: 1px;
-  background: var(--ink-ghost);
-  position: relative;
-  overflow: hidden;
+.ld-sig path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 5.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
+/* ohne JS bzw. vor dem Start: Unterschrift unsichtbar (JS setzt dasharray) */
+#pageLoader:not(.is-ready) .ld-sig path { opacity: 0; }
 
-.loader-bar {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 0%;
+.ld-line {                                        /* Schnittlinie, wächst von der Mitte nach außen */
+  position: absolute; left: 0; right: 0; top: 50%;
+  height: 1px; margin-top: -0.5px;
   background: var(--ink);
-  transition: width 0.1s linear;
+  transform: scaleX(0); transform-origin: 50% 50%;
+  z-index: 1;
 }
-
-.loader-percent {
-  font-family: var(--font-mono);
-  font-size: clamp(52px, 10vw, 110px);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  color: var(--ink);
-  line-height: 1;
-  min-width: 3ch;
-  text-align: right;
-  align-self: flex-end;
+.ld-meta {                                        /* erscheint nur, wenn das Laden länger dauert als die Unterschrift */
+  position: absolute; right: 28px; bottom: 22px; z-index: 1;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-muted);
+  opacity: 0; transition: opacity 0.4s ease;
 }
+.ld-meta.is-on { opacity: 1; }
 
 /* ============================
    PAGE TRANSITIONS — Editorial Panel (Aino-Stil)

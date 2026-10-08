@@ -26,15 +26,21 @@
 </head>
 <body>
 
-<!-- LOADER -->
-<div id="pageLoader">
-  <div class="loader-inner">
-    <div class="loader-name">JACOB WEISSENBÄCK</div>
-    <div class="loader-bar-wrap">
-      <div class="loader-bar" id="loaderBar"></div>
+<!-- LOADER — „Jcky" wird wie eine Unterschrift gezeichnet, dann teilt sich der Bildschirm entlang einer Linie
+     (obere Hälfte nach oben, untere nach unten). Die zweite Hälfte entsteht per JS als Kopie (script.js → initLoader). -->
+<div id="pageLoader" aria-hidden="true">
+  <div class="ld-half ld-top">
+    <div class="ld-stage">
+      <svg class="ld-sig" viewBox="80 30 740 330" focusable="false">
+        <path d="M 128 110 C 170 70, 250 48, 300 62 C 262 120, 236 190, 214 250 C 198 292, 160 322, 128 308 C 98 294, 110 262, 160 262 C 204 262, 246 256, 276 244
+                 M 402 158 C 394 132, 346 128, 320 164 C 296 198, 306 240, 340 238 C 370 236, 392 214, 410 196
+                 C 432 160, 462 110, 486 66 C 464 120, 442 190, 424 248 C 436 212, 456 182, 488 162 C 514 146, 536 152, 524 170 C 510 188, 478 194, 462 190 C 488 202, 502 234, 522 246 C 538 254, 552 232, 566 206
+                 C 578 186, 586 170, 592 162 C 582 192, 578 224, 598 228 C 622 232, 640 198, 654 164 C 636 222, 614 292, 586 320 C 562 342, 526 346, 524 324 C 522 300, 586 286, 666 282 C 716 280, 766 284, 798 294"/>
+      </svg>
     </div>
-    <div class="loader-percent" id="loaderPercent">0</div>
   </div>
+  <span class="ld-line"></span>
+  <span class="ld-meta">Loading <span id="loaderPercent">0</span>%</span>
 </div>
 
 <!-- CUSTOM CURSOR -->
@@ -42,7 +48,15 @@
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <div class="nav-left">
-    <span class="nav-cell nav-brand" id="navLogoName"><span class="nav-txt nav-logo-text">JCKY</span></span>
+    <!-- Logo: dieselbe Unterschrift wie in der Intro; zeichnet sich nach der Intro einmal kurz (script.js → initNavSignature) -->
+    <span class="nav-cell nav-brand" id="navLogoName">
+      <svg class="nav-txt nav-logo-sig" viewBox="106 52 698 292" role="img" aria-label="JCKY" focusable="false">
+        <path d="M 128 110 C 170 70, 250 48, 300 62 C 262 120, 236 190, 214 250 C 198 292, 160 322, 128 308 C 98 294, 110 262, 160 262 C 204 262, 246 256, 276 244
+                 M 402 158 C 394 132, 346 128, 320 164 C 296 198, 306 240, 340 238 C 370 236, 392 214, 410 196
+                 C 432 160, 462 110, 486 66 C 464 120, 442 190, 424 248 C 436 212, 456 182, 488 162 C 514 146, 536 152, 524 170 C 510 188, 478 194, 462 190 C 488 202, 502 234, 522 246 C 538 254, 552 232, 566 206
+                 C 578 186, 586 170, 592 162 C 582 192, 578 224, 598 228 C 622 232, 640 198, 654 164 C 636 222, 614 292, 586 320 C 562 342, 526 346, 524 324 C 522 300, 586 286, 666 282 C 716 280, 766 284, 798 294"/>
+      </svg>
+    </span>
   </div>
   <div class="nav-center">
     <a href="#hero"    class="nav-cell nav-sec" data-section="hero"><span class="nav-txt">Start</span></a>
@@ -307,19 +321,30 @@
 
 </section>
 
-<!-- GLOBE SECTION -->
-<section class="globe-section" id="globeSection" aria-label="Find me here">
-  <!-- Story: zwei Sätze bauen sich beim Scrollen aus Pixeln auf; die gläserne Erde zeigt Salzburg (script.js → initFindMe) -->
-  <div class="globe-stage">
-    <div class="gs-lines" id="gsLines">
-      <p class="gs-line">Born and raised in Salzburg, still the place I call home.</p>
-      <p class="gs-line">Let's create something together.</p>
+<!-- STORY — „Von Pixeln zu Menschen": Pixel-Partikel morphen beim Scrollen durch drei Kapitel
+     (Pixel-Avatar → Salzburg → winkende Hand + UI-Karten). Links bauen sich die Sätze aus Pixeln auf;
+     die Hand ist anklickbar (E-Mail) (script.js → initStory). -->
+<section class="story" id="storySection" aria-label="About me and contact">
+  <div class="story-stage">
+
+    <div class="story-lines" id="storyLines">
+      <p class="story-line">Hi, I'm Jacob.</p>
+      <p class="story-line">Born and raised in Salzburg, still the place I call home.</p>
+      <div class="story-line story-line--hi">
+        <p>Don't be shy, say hi to me.</p>
+        <a class="story-mail" href="mailto:j.weissenbaeck@gmx.at">j.weissenbaeck@gmx.at</a>
+      </div>
     </div>
+
+    <!-- Kapitel-Anzeige -->
+    <div class="story-hud" aria-hidden="true">
+      <span class="story-num"><span id="storyNum">01</span> / 03</span>
+      <span class="story-bars" id="storyBars"><i><b></b></i><i><b></b></i><i><b></b></i></span>
+      <span class="story-chapter" id="storyChapter">Me</span>
+    </div>
+
   </div>
 </section>
-
-<!-- Spielfläche über dem Footer: hier fällt die Erde hinein und rollt (greifen + werfen) -->
-<section class="gplay" id="globePlay" aria-label="The globe, drag it around"></section>
 
 </div><!-- /bottom-sheet -->
 
@@ -339,7 +364,6 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" defer></script>
 <script src="script.js" defer></script>
 </body>
 </html>

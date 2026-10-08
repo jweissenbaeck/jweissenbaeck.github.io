@@ -144,11 +144,18 @@
 .pj-shot {
   flex-basis: 0; min-width: 0;
   overflow: hidden; background: #16150f;
+  will-change: translate;                          /* Parallax: projects.js setzt translate je nach Bildgröße */
 }
 .pj-shot img {
   width: 100%; aspect-ratio: 16 / 9;
   object-fit: cover; display: block;
   filter: grayscale(12%);
+  scale: 1.12;                                     /* Überstand, damit das Bild im Rahmen gleiten kann */
+  transition: scale 1s var(--ease-out-expo), filter 0.5s ease;
+}
+.pj-shot:hover img { scale: 1.18; filter: none; }  /* Hover: sanft hinein, volle Farbe */
+@media (prefers-reduced-motion: reduce) {
+  .pj-shot img { scale: 1; transition: none; }
 }
 
 /* ── MOBILE ── */

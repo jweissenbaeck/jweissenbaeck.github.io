@@ -11,6 +11,122 @@ const ARRIVED_VIA_INTERNAL_NAV = vtStoreGet('jcky:internalNav') === '1';
 vtStoreDel('jcky:internalNav');
 
 /* ============================
+   NACH DER INTRO — schwere Vorarbeit (Globus-Land, Footer-Vermessung) erst starten, wenn sich der
+   Loader geteilt hat; sonst blockiert sie den Browser genau während die Unterschrift gezeichnet wird.
+   Ohne Loader (Unterseiten, interne Navigation) sofort. Sicherheitsnetz: spätestens nach 9 s.
+============================ */
+function afterIntro(fn) {
+  const loader = document.getElementById('pageLoader');
+  if (window.__introDone || !loader || ARRIVED_VIA_INTERNAL_NAV) { setTimeout(fn, 0); return; }
+  let done = false;
+  const run = () => { if (done) return; done = true; setTimeout(fn, 60); };
+  window.addEventListener('jcky:intro-done', run, { once: true });
+  setTimeout(run, 9000);
+}
+/* Arbeit in kleinen Häppchen auf Leerlaufzeit verteilen (≈ 8 ms pro Stück) */
+const onIdle = (cb) => (window.requestIdleCallback ? requestIdleCallback(cb, { timeout: 250 }) : setTimeout(cb, 16));
+
+/* ============================
+   UNTERSCHRIFT ZEICHNEN (Intro + Nav-Logo)
+   SVG startet das Strichmuster bei jedem Absetzen („M") neu → J und „cky" würden gleichzeitig wachsen.
+   Darum: Pfad in einzelne Striche teilen und nacheinander zeichnen, mit kurzer Pause fürs Absetzen.
+============================ */
+function sigSplit(svg) {
+  const src = svg && svg.querySelector('path');
+  if (!src) return [];
+  const parts = src.getAttribute('d').trim().split(/(?=M)/).map(s => s.trim()).filter(Boolean);
+  if (parts.length < 2) return [src];
+  parts.forEach(d => { const p = src.cloneNode(); p.setAttribute('d', d); svg.appendChild(p); });
+  src.remove();
+  return [...svg.querySelectorAll('path')];
+}
+/* Fortschritt 0…1 auf die Striche verteilen (nach Länge; dazwischen je 4 % „Luft" für den abgesetzten Stift) */
+function sigPlan(paths) {
+  const lens = paths.map(p => p.getTotalLength()), sum = lens.reduce((a, b) => a + b, 0), lift = sum * 0.04;
+  const total = sum + lift * (paths.length - 1);
+  return { lens, total, lift };
+}
+function sigDraw(paths, plan, p) {
+  let s = p * plan.total;
+  paths.forEach((el, i) => {
+    const L = plan.lens[i], drawn = Math.max(0, Math.min(L, s));
+    el.style.strokeDasharray = L + ' ' + L;
+    el.style.strokeDashoffset = (L - drawn).toFixed(2);
+    el.style.visibility = drawn > 0.5 ? '' : 'hidden';             // sonst zeigt die runde Kappe schon einen Punkt
+    s -= L + plan.lift;
+  });
+}
+
+/* ============================
+   PIXEL-BAUSTEINE für Scroll-Einblendungen — gleiche Blockverteilung wie Seitenwechsel und Scroll-Wipe.
+   pxMeasure(el, Blockgröße) einmal (bzw. nach Größenänderung), dann pxClip(el, cover 0…1, 'build' | 'dissolve').
+   build = baut sich von unten auf · dissolve = zerfällt nach oben.
+============================ */
+const PX_REDUCE  = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+const PX_CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "path('M0 0H1V1Z')"));
+function pxRand(gx, gy) {
+  let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
+  x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+}
+function pxMeasure(el, B) { el._pxW = el.offsetWidth; el._pxH = el.offsetHeight; el._pxB = Math.max(4, Math.round(B)); el._pxKey = null; }
+function pxClip(el, cover, mode) {
+  const key = mode + Math.round(cover * 120);                     // nur bei sichtbarer Änderung neu setzen
+  if (el._pxKey === key) return;
+  el._pxKey = key;
+  if (cover >= 1) { el.style.clipPath = 'none'; return; }
+  if (cover <= 0) { el.style.clipPath = 'inset(50%)'; return; }
+  const B = el._pxB, cols = Math.ceil(el._pxW / B), rows = Math.ceil(el._pxH / B);
+  let d = '';
+  for (let gy = 0; gy < rows; gy++) {
+    const rb = rows > 1 ? gy / (rows - 1) : 0;
+    for (let gx = 0; gx < cols; gx++) {
+      const rn = pxRand(gx, gy);
+      const thr = mode === 'dissolve' ? rb * 0.62 + rn * 0.38 : (1 - rb) * 0.62 + rn * 0.38;
+      if (cover >= thr) d += 'M' + gx * B + ' ' + gy * B + 'h' + (B + 1) + 'v' + (B + 1) + 'h-' + (B + 1) + 'Z';
+    }
+  }
+  el.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';
+}
+
+/* EINTIPPEN (Mono-Texte): Zeichen erscheinen von links, davor ein kleines Fenster aus Zufallsbuchstaben.
+   typePrepare(el) leert den Text vorab (Layout bleibt: geschützte Leerzeichen), typeIn(el) spielt ihn ab. */
+const TYPE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function typePrepare(el) {
+  if (!el || PX_REDUCE || el._typeOrig != null) return;
+  el._typeOrig = el.textContent;
+  el.textContent = el._typeOrig.replace(/\S/g, ' ');
+}
+function typeIn(el, dur) {
+  if (!el || el._typeOrig == null || el._typed) return;
+  el._typed = true;
+  const run = el._typeRun = (el._typeRun || 0) + 1;              // neuer Lauf bricht einen laufenden ab
+  const orig = el._typeOrig, n = orig.length, t0 = performance.now(), D = dur || 700, WIN = 4;
+  (function loop(now) {
+    if (run !== el._typeRun) return;
+    const k = Math.min(1, (now - t0) / D), upto = Math.floor(k * n), tick = Math.floor(now / 55);
+    let s = '';
+    for (let i = 0; i < n; i++) {
+      const ch = orig[i];
+      if (i < upto || /\s/.test(ch)) s += ch;
+      else if (i < upto + WIN) s += TYPE_CHARS[((i * 7 + tick * 13) >>> 0) % 26];
+      else s += ' ';
+    }
+    el.textContent = k < 1 ? s : orig;
+    if (k < 1) requestAnimationFrame(loop);
+  })(t0);
+}
+/* einmal auslösen, sobald el ins untere Bilddrittel kommt */
+function onEnterOnce(el, fn, margin) {
+  if (!el) return;
+  if (!('IntersectionObserver' in window)) { fn(); return; }
+  const io = new IntersectionObserver((en) => {
+    if (en[0].isIntersecting) { io.disconnect(); fn(); }
+  }, { rootMargin: '0px 0px ' + (margin || '-15%') + ' 0px' });
+  io.observe(el);
+}
+
+/* ============================
    FOOTER — JCKY (Anton-Text), randlos über die volle Breite
    Jeder Buchstabe wird einzeln gesetzt. Seine echte Form wird zeilenweise
    per Canvas abgetastet, damit:
@@ -172,8 +288,10 @@ vtStoreDel('jcky:internalNav');
     else window.addEventListener('resize', fit);
   }
   try {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);
-    else setup();
+    /* Abtasten kostet ~200 ms → erst nach der Intro (der Footer ist ohnehin ganz unten) */
+    const start = () => afterIntro(() => { try { setup(); } catch (e) {} });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
   } catch (e) {}
 })();
 
@@ -385,12 +503,17 @@ vtStoreDel('jcky:internalNav');
 })();
 
 /* ============================
-   PAGE LOADER
+   PAGE LOADER — Unterschrift + Teilung
+   1. „Jcky" wird wie eine Unterschrift gezeichnet (Strich-Animation, ruhig an- und ausschwingend).
+   2. Ist die Seite bereit, zieht sich von der Mitte aus eine feine Linie über den Bildschirm …
+   3. … und der Bildschirm teilt sich entlang der Linie: obere Hälfte nach oben, untere nach unten
+      (beide tragen die Unterschrift → sie wird mittendurch geschnitten). Dabei steigt der Hero-Name auf.
+   Lädt die Seite länger als die Unterschrift dauert, erscheint unten rechts dezent „Loading 64 %".
+   Volle Länge einmal pro Sitzung; bei erneutem Laden eine kurze Version.
 ============================ */
 (function initLoader() {
-  const loader  = document.getElementById('pageLoader');
-  const bar     = document.getElementById('loaderBar');
-  const pct     = document.getElementById('loaderPercent');
+  const loader = document.getElementById('pageLoader');
+  const pct    = document.getElementById('loaderPercent');
   if (!loader) return;
 
   /* Bei interner Navigation Loader überspringen — die Slide-Transition
@@ -406,86 +529,117 @@ vtStoreDel('jcky:internalNav');
 
   document.documentElement.style.overflow = 'hidden';
 
-  let progress = 0;
-  let targetProgress = 0;
-  let done = false;
-  let progressRaf = null;
+  const top  = loader.querySelector('.ld-top');
+  const line = loader.querySelector('.ld-line');
+  const meta = loader.querySelector('.ld-meta');
+  sigSplit(top.querySelector('.ld-sig'));                             // J und „cky" als eigene Striche (nacheinander)
+  const bot  = top.cloneNode(true);                                   // zweite Hälfte = deckungsgleiche Kopie
+  bot.classList.replace('ld-top', 'ld-bot');
+  top.after(bot);
+  const sigs = [...loader.querySelectorAll('.ld-sig')].map(s => [...s.querySelectorAll('path')]);
+  const stages = [...loader.querySelectorAll('.ld-stage')];
 
-  function renderProgress() {
-    progress += (targetProgress - progress) * 0.16;
-    if (bar) bar.style.width = Math.round(progress) + '%';
-    if (pct) pct.textContent = Math.floor(progress) + '%';
+  const quick = vtStoreGet('jcky:introSeen') === '1';                 // schon gesehen → kurze Version
+  vtStoreSet('jcky:introSeen', '1');
+  const DRAW = PX_REDUCE ? 0 : quick ? 750 : 2300;                    // Unterschrift (ms)
+  const LINE = PX_REDUCE ? 0 : quick ? 320 : 520;                     // Linie wächst (ms)
+  const SPLIT = PX_REDUCE ? 0 : quick ? 900 : 1250;                   // Teilung (ms)
+  const EXPO = 'cubic-bezier(0.76, 0, 0.24, 1)';                      // weich an- und auslaufend
 
-    if (Math.abs(targetProgress - progress) > 0.4) {
-      progressRaf = requestAnimationFrame(renderProgress);
-    } else {
-      progress = targetProgress;
-      if (bar) bar.style.width = Math.round(progress) + '%';
-      if (pct) pct.textContent = Math.floor(progress) + '%';
-      progressRaf = null;
+  /* ── 1. Unterschrift zeichnen ── */
+  const plan = sigPlan(sigs[0]);
+  const drawAll = (p) => sigs.forEach(paths => sigDraw(paths, plan, p));
+  drawAll(0);
+  loader.classList.add('is-ready');
+  const penEase = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;   // wie ein Stift: anziehen, gleiten, auslaufen
+  /* Bild für Bild statt nach der Uhr: hängt der Browser kurz, pausiert der Strich (max. 1/30 s pro Bild)
+     statt Teile zu überspringen. Start erst nach dem ersten wirklich gezeichneten Bild + kurzer Ruhe. */
+  const drawn = new Promise((resolve) => {
+    if (!DRAW) { drawAll(1); resolve(); return; }
+    let elapsed = 0, last = 0;
+    function frame(now) {
+      if (last) elapsed += Math.min(now - last, 1000 / 30);
+      last = now;
+      const k = Math.min(1, elapsed / DRAW);
+      drawAll(penEase(k));
+      if (k < 1) requestAnimationFrame(frame); else resolve();
     }
-  }
+    /* Start nach dem „load"-Ruck (ScrollTrigger vermisst dann alles neu), spätestens nach 0,7 s */
+    const loaded = new Promise(r => { if (document.readyState === 'complete') r(); else window.addEventListener('load', r, { once: true }); });
+    Promise.race([loaded, new Promise(r => setTimeout(r, 700))]).then(() =>
+      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => requestAnimationFrame(frame), quick ? 40 : 120))));
+  });
 
-  function setProgress(p) {
-    targetProgress = Math.min(100, Math.max(targetProgress, p));
-    if (!progressRaf) {
-      progressRaf = requestAnimationFrame(renderProgress);
+  /* ── Laden: echte Bereitschaft (load + Schriften); Prozent nur als Fallback-Anzeige ── */
+  let shown = 0, target = 0;
+  const trickle = setInterval(() => { target = Math.min(88, target + Math.random() * 4 + 1.5); }, 120);
+  const ready = new Promise((resolve) => {
+    const go = () => { clearInterval(trickle); target = 100; (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(resolve); };
+    if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
+  });
+  (function count() {
+    shown += (target - shown) * 0.15;
+    if (pct) pct.textContent = Math.floor(shown);
+    if (!loader.classList.contains('is-hidden')) requestAnimationFrame(count);
+  })();
+  drawn.then(() => { setTimeout(() => { if (!loader.classList.contains('is-splitting')) meta.classList.add('is-on'); }, 350); });
+
+  /* ── 2. + 3. Linie, dann Teilung ── */
+  function finish() {
+    loader.classList.add('is-hidden');
+    loader.style.display = 'none';
+    window.__introDone = true;
+    window.dispatchEvent(new Event('jcky:intro-done'));             // jetzt darf die schwere Vorarbeit starten (afterIntro)
+  }
+  Promise.all([drawn, ready]).then(() => new Promise(r => setTimeout(r, PX_REDUCE ? 0 : quick ? 120 : 280))).then(() => {
+    loader.classList.add('is-splitting');
+    meta.classList.remove('is-on');
+    if (PX_REDUCE) {                                                  // ohne Bewegung: kurz ausblenden
+      document.documentElement.style.overflow = '';
+      if (typeof window.__heroInit === 'function') window.__heroInit();
+      loader.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.then(finish);
+      return;
     }
-  }
-
-  function hideLoader() {
-    if (done) return;
-    done = true;
-    setProgress(100);
-
+    line.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: LINE, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' });
     setTimeout(() => {
-      const nameEl     = document.getElementById('heroWordFullname');
-      const subtitleEl = document.querySelector('.hero-subtitle');
-      if (nameEl)     nameEl.style.transform     = 'translateY(110%)';
-      if (subtitleEl) subtitleEl.style.transform = 'translateY(110%)';
+      document.documentElement.style.overflow = '';
+      line.animate([{ opacity: 1 }, { opacity: 0 }], { duration: SPLIT * 0.35, easing: 'ease-out', fill: 'forwards' });
+      const opts = { duration: SPLIT, easing: EXPO, fill: 'forwards' };
+      top.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-52%)' }], opts);
+      bot.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(52%)' }], opts)
+        .finished.then(finish);
+      stages.forEach(s => s.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }], opts));   // leichte Tiefe beim Öffnen
+      /* Hero-Name steigt auf, während sich die Hälften öffnen */
+      setTimeout(() => { if (typeof window.__heroInit === 'function') window.__heroInit(); }, SPLIT * 0.22);
+    }, LINE + 60);
+  });
+})();
 
-      loader.style.transition = 'opacity 0.55s cubic-bezier(0.16,1,0.3,1), transform 0.75s cubic-bezier(0.16,1,0.3,1)';
-      loader.style.opacity    = '0';
-      loader.style.transform  = 'translateY(-12px)';
-
-      setTimeout(() => {
-        loader.classList.add('is-hidden');
-        loader.style.display = 'none';
-
-        document.documentElement.style.overflow = '';
-
-        if (nameEl)     nameEl.style.transform     = '';
-        if (subtitleEl) subtitleEl.style.transform = '';
-
-        requestAnimationFrame(() => {
-          if (typeof window.__heroInit === 'function') {
-            window.__heroInit();
-          }
-        });
-      }, 700);
-    }, 700);
+/* ============================
+   NAV-LOGO — dieselbe Unterschrift wie in der Intro; zeichnet sich nach der Intro einmal kurz nach
+   (große Unterschrift → kleine oben links). Ohne Intro (interne Navigation, Unterseiten) oder bei
+   Reduced Motion steht sie einfach da.
+============================ */
+(function initNavSignature() {
+  const svg = document.querySelector('.nav-logo-sig');
+  const loader = document.getElementById('pageLoader');
+  if (!svg || !loader || PX_REDUCE || ARRIVED_VIA_INTERNAL_NAV) return;
+  const paths = sigSplit(svg), plan = sigPlan(paths);
+  sigDraw(paths, plan, 0);                                              // versteckt, bis die Intro fertig ist
+  let started = false;
+  function draw() {
+    if (started) return;
+    started = true;
+    const t0 = performance.now(), D = 1100;
+    (function frame(now) {
+      const k = Math.min(1, (now - t0) / D), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      sigDraw(paths, plan, e);
+      if (k < 1) requestAnimationFrame(frame);
+      else paths.forEach(p => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; });
+    })(t0);
   }
-
-  let trickle = 0;
-  const trickleInterval = setInterval(() => {
-    trickle += Math.random() * 3.8 + 1.2;
-    if (trickle >= 84) { trickle = 84; clearInterval(trickleInterval); }
-    setProgress(trickle);
-  }, 120);
-
-  if (document.readyState === 'complete') {
-    clearInterval(trickleInterval);
-    hideLoader();
-  } else {
-    window.addEventListener('load', () => {
-      clearInterval(trickleInterval);
-      setProgress(90);
-      document.fonts.ready.then(() => {
-        setProgress(97);
-        setTimeout(hideLoader, 240);
-      });
-    });
-  }
+  window.addEventListener('jcky:intro-done', draw, { once: true });
+  setTimeout(draw, 9000);                                               // Sicherheitsnetz: Logo nie dauerhaft unsichtbar
 })();
 
 /* ============================
@@ -786,7 +940,14 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     let href = link.getAttribute('href');
     if (!href || href === '#') return;
 
-    if (href === '#contact') href = '#globeSection';
+    /* „Find me here" → direkt ins Kontakt-Kapitel der Story (liegt mitten im fixierten Scrollweg) */
+    if (href === '#contact') {
+      const y = typeof window.__storyContactY === 'function' ? window.__storyContactY() : null;
+      e.preventDefault();
+      if (y != null) lenis.scrollTo(y, { duration: 2.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
+      else { const s = document.getElementById('storySection'); if (s) lenis.scrollTo(s, { duration: 2.2 }); }
+      return;
+    }
 
     const target = document.querySelector(href);
     if (!target) return;
@@ -887,45 +1048,88 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 })();
 
 /* ============================
-   PLAY CURSOR — Hero-Bild im Vollbild
-   Eckiges Label im Stil der Nav-Hover-Zellen (helle Fläche, dunkle Schrift, Barlow):
-   Play-Dreieck + „Play“. Wischt von unten herein, folgt der Maus mit leichter Verzögerung;
-   der System-Cursor wird dabei ausgeblendet. Nur wenn das Bild Vollbild ist und man drüber hovert.
+   VIDEO CURSOR — Play-Button aus Pixelblöcken über dem Hero-Video
+   Helle Pixel-Scheibe mit dunklem Play-Dreieck (wie die Nav-Hover-Zellen: Ink-Fläche, dunkles Zeichen);
+   baut sich beim Hovern von der Mitte aus auf und zerfällt beim Verlassen von außen nach innen.
+   Folgt der Maus mit Nachlauf, neigt sich leicht in Bewegungsrichtung, drückt sich beim Klicken ein.
+   Darunter tippt sich „Play reel" ein. Aktiv, sobald das Video sichtbar ist (nicht erst im Vollbild).
 ============================ */
-(function initPlayCursor() {
+(function initVideoCursor() {
   const card = document.getElementById('heroImgCard');
   if (!card) return;
   const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
   if (!fine) return;
 
+  const SIZE = 96, G = 12, B = SIZE / G;                // 12 × 12 Blöcke à 8 px
+  /* Form: Scheibe minus Play-Dreieck (in Block-Einheiten, Mitte = 0) */
+  const tri = [[-1.7, -2.9], [-1.7, 2.9], [3.1, 0]];
+  const side = (p, a, b) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+  const inTri = (p) => { const d1 = side(p, tri[0], tri[1]), d2 = side(p, tri[1], tri[2]), d3 = side(p, tri[2], tri[0]); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
+  const cells = [];
+  for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) {
+    const p = [gx + 0.5 - G / 2, gy + 0.5 - G / 2], r = Math.hypot(p[0], p[1]);
+    if (r > G / 2 - 0.25) continue;
+    cells.push({ x: gx * B, y: gy * B, dark: inTri(p), thr: (r / (G / 2)) * 0.6 + pxRand(gx, gy + 40) * 0.4 });   // innen zuerst
+  }
+
   const cur = document.createElement('div');
-  cur.id = 'playCursor';
+  cur.id = 'videoCursor';
   cur.setAttribute('aria-hidden', 'true');
-  cur.innerHTML = '<span class="pc-inner"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg><span class="pc-txt">Play</span></span>';
+  cur.innerHTML = '<div class="vc-inner"><canvas class="vc-px"></canvas><span class="vc-label">Play reel</span></div>';
   document.body.appendChild(cur);
+  const inner = cur.querySelector('.vc-inner'), cv = cur.querySelector('.vc-px'), ctx = cv.getContext('2d');
+  const label = cur.querySelector('.vc-label');
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = SIZE * dpr; cv.height = SIZE * dpr;
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue('--ink').trim() || '#F0EDE8', dark = css.getPropertyValue('--bg-dark').trim() || '#0A0A09';
 
-  let overCard = false, wasOn = false;
+  let over = false, down = false, wasOn = false, cover = 0, press = 1, tilt = 0, lastT = 0, lastKey = -1;
   let cx = window.innerWidth / 2, cy = window.innerHeight / 2, px = cx, py = cy;
-
-  card.addEventListener('mouseenter', () => { overCard = true; });
-  card.addEventListener('mouseleave', () => { overCard = false; });
+  card.addEventListener('mouseenter', () => { over = true; });
+  card.addEventListener('mouseleave', () => { over = false; down = false; });
+  card.addEventListener('mousedown', () => { down = true; });
+  window.addEventListener('mouseup', () => { down = false; });
   window.addEventListener('mousemove', (e) => { cx = e.clientX; cy = e.clientY; }, { passive: true });
 
-  function active() { return overCard && window.__heroFullscreen === true; }
+  function draw(c) {
+    const key = Math.round(c * 60);
+    if (key === lastKey) return;
+    lastKey = key;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    for (const k of cells) if (c >= k.thr) { ctx.fillStyle = k.dark ? dark : ink; ctx.fillRect(k.x, k.y, B + 0.5, B + 0.5); }
+  }
 
-  (function loop() {
+  (function loop(now) {
     requestAnimationFrame(loop);
-    const on = active();
-    if (on && !wasOn) { px = cx; py = cy; }          // beim Erscheinen direkt am Zeiger starten
-    wasOn = on;
-    cur.classList.toggle('is-visible', on);
-    document.documentElement.classList.toggle('play-cursor-on', on);
-    window.__playCursorActive = on;                  // Hero-Partikel pausieren, solange das Label sichtbar ist
-    if (on) {
-      px += (cx - px) * 0.28; py += (cy - py) * 0.28; // leicht nachgezogen
-      cur.style.transform = 'translate3d(' + px.toFixed(1) + 'px,' + py.toFixed(1) + 'px,0)';
+    const dt = Math.min((now - (lastT || now)) || 16.7, 50) / 1000; lastT = now;
+    const visible = typeof gsap !== 'undefined' ? +gsap.getProperty(card, 'opacity') > 0.6 : true;
+    const on = over && visible;
+    if (on !== wasOn) {
+      document.documentElement.classList.toggle('video-cursor-on', on);
+      window.__playCursorActive = on;                 // Hero-Partikel pausieren, solange der Cursor da ist
+      if (on) {
+        if (cover < 0.05) { px = cx; py = cy; }       // beim Erscheinen direkt am Zeiger starten
+        if (!PX_REDUCE) { label._typeOrig = 'Play reel'; label._typed = false; typeIn(label, 420); }
+      }
+      wasOn = on;
     }
-  })();
+    if (!on && cover <= 0.001) { if (cur.style.opacity !== '0') cur.style.opacity = '0'; return; }
+    cur.style.opacity = '1';
+    cover = PX_REDUCE ? (on ? 1 : 0) : smoothTowards(cover, on ? 1 : 0, on ? 0.12 : 0.08, dt);
+    if (Math.abs(cover - (on ? 1 : 0)) < 0.004) cover = on ? 1 : 0;
+    draw(cover);
+    label.style.opacity = c01v(cover * 2 - 1).toFixed(2);
+    const vx = cx - px;
+    px = smoothTowards(px, cx, 0.07, dt); py = smoothTowards(py, cy, 0.07, dt);
+    tilt = smoothTowards(tilt, Math.max(-14, Math.min(14, vx * 0.35)), 0.1, dt);
+    press = smoothTowards(press, down ? 0.86 : 1, 0.06, dt);
+    cur.style.transform = 'translate3d(' + px.toFixed(1) + 'px,' + py.toFixed(1) + 'px,0)';
+    inner.style.transform = 'translate(-50%,-50%) rotate(' + tilt.toFixed(2) + 'deg) scale(' + press.toFixed(3) + ')';
+  })(performance.now());
+
+  function c01v(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 })();
 
 /* ============================
@@ -967,10 +1171,13 @@ const heroInit = (instant) => {
     return;
   }
 
+  const subtitle = document.querySelector('.hero-subtitle');
+  typePrepare(subtitle);                                          // Untertitel tippt sich ein, während er hereingleitet
   const heroTL = gsap.timeline({ delay: 0.0 });
   heroTL
     .to('#heroWordFullname', { y: '0%', duration: 0.75, ease: 'power4.out' }, 0.05)
-    .to('.hero-subtitle',    { y: '0%', duration: 0.6,  ease: 'power3.out' }, 0.65);
+    .to('.hero-subtitle',    { y: '0%', duration: 0.6,  ease: 'power3.out' }, 0.65)
+    .call(() => typeIn(subtitle, 650), null, 0.7);
 };
 
 /* ============================
@@ -1203,7 +1410,7 @@ window.__heroInit = heroInit;
   const links = [...document.querySelectorAll('.nav-sec[data-section]')];
 
   const workEl    = document.getElementById('work');
-  const contactEl = document.getElementById('globeSection') || document.getElementById('contact');
+  const contactEl = document.getElementById('storySection') || document.getElementById('contact');
 
   function setActive(sectionId) {
     links.forEach(link => {
@@ -1385,6 +1592,8 @@ window.__heroInit = heroInit;
     const name   = item.querySelector('.svc-name');
     const skills = item.querySelector('.svc-skills');
     const imgId  = item.dataset.img;
+    const skillEls = skills ? [...skills.querySelectorAll('.svc-skill')] : [];
+    skillEls.forEach(s => { s.dataset.t = s.textContent; });
 
     name.addEventListener('mouseenter', () => {
       const nameRect = name.getBoundingClientRect();
@@ -1393,6 +1602,14 @@ window.__heroInit = heroInit;
       if (skills) {
         skills.style.left = (nameRect.right - itemRect.left + 24) + 'px';
         gsap.set(skills, { opacity: 1, x: 0 });
+        /* Werkzeuge tippen sich nacheinander ein (Mono, wie die Überschrift) */
+        if (!PX_REDUCE) skillEls.forEach((s, i) => {
+          s._typeRun = (s._typeRun || 0) + 1;                       // laufendes Tippen abbrechen
+          s._typeOrig = s.dataset.t; s._typed = false;
+          s.textContent = s.dataset.t.replace(/\S/g, ' ');
+          const run = s._typeRun;
+          setTimeout(() => { if (run === s._typeRun) typeIn(s, 260); }, i * 70);
+        });
       }
       scramble(name);
     });
@@ -1406,21 +1623,134 @@ window.__heroInit = heroInit;
 })();
 
 /* ============================
-   SCROLL ANIMATIONS
+   SCROLL-EINBLENDUNGEN — alles im Pixel-Stil der Seite, an den Scroll gekoppelt (rückwärts genauso)
+   · What I do: Überschrift tippt sich ein; jeder Service-Name baut sich beim Hereinkommen aus Pixeln auf,
+     zerfällt oben wieder und driftet dabei leicht – Zeilen abwechselnd nach links / rechts
+   · „My Work"-Button baut sich einmal aus Pixeln auf
+   · Footer: JCKY setzt sich Buchstabe für Buchstabe aus Pixeln zusammen, „Thank you…" tippt sich ein
+   Ohne Animation (Reduced Motion / kein clip-path: path) bleibt alles sofort sichtbar.
 ============================ */
-gsap.set('.svc-item', { opacity: 0, y: 24 });
-ScrollTrigger.create({
-  trigger: '.services-list',
-  start: 'top 82%',
-  once: true,
-  onEnter() {
-    gsap.to('.svc-item', {
-      opacity: 1, y: 0,
-      duration: 0.75, stagger: 0.07,
-      ease: 'power3.out',
-    });
+(function initScrollReveals() {
+  const live = !PX_REDUCE && PX_CLIP_OK;
+  const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const ease = v => 1 - Math.pow(1 - v, 3);
+  const fontPx = el => parseFloat(getComputedStyle(el).fontSize) || 16;
+
+  /* Einmalig: Pixel-Aufbau über die Zeit (wie der Name auf „Me") */
+  function buildOnce(el, B, dur) {
+    pxMeasure(el, B);
+    const t0 = performance.now(), D = dur || 900;
+    (function frame(now) {
+      const k = Math.min(1, (now - t0) / D);
+      pxClip(el, ease(k), 'build');
+      if (k < 1) requestAnimationFrame(frame);
+    })(t0);
   }
-});
+
+  /* ── What I do ── */
+  const eyebrow = document.querySelector('.svc-eyebrow-txt');
+  typePrepare(eyebrow);
+  onEnterOnce(eyebrow, () => typeIn(eyebrow, 650));
+
+  const items = [...document.querySelectorAll('.svc-item')];
+  const names = items.map(it => it.querySelector('.svc-name'));
+  if (live && names.length) {
+    const measureNames = () => names.forEach(n => pxMeasure(n, fontPx(n) * 0.09));
+    function updateNames() {
+      const vh = window.innerHeight, amp = Math.min(70, window.innerWidth * 0.05);
+      names.forEach((n, i) => {
+        const r = items[i].getBoundingClientRect();
+        if (r.bottom < -vh * 0.2 || r.top > vh * 1.2) return;               // weit weg → nichts tun
+        const inn = c01((vh - r.top) / (vh * 0.3));                          // kommt unten herein
+        if (inn < 1) pxClip(n, ease(inn), 'build');
+        else pxClip(n, ease(c01((r.bottom - 52) / (vh * 0.2))), 'dissolve'); // zerfällt unter der Nav
+        const k = (r.top + r.height / 2 - vh / 2) / vh;                     // −0.5 … 0.5 um die Bildmitte
+        n.style.translate = (k * amp * (i % 2 ? 1 : -1)).toFixed(1) + 'px 0';
+      });
+    }
+    measureNames(); updateNames();
+    lenis.on('scroll', updateNames);
+    window.addEventListener('resize', () => { measureNames(); updateNames(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureNames(); updateNames(); });
+  }
+
+  const cta = document.getElementById('svcFlipBtn');
+  if (live && cta) {
+    pxMeasure(cta, 10); pxClip(cta, 0, 'build');
+    onEnterOnce(cta, () => buildOnce(cta, Math.max(8, cta.offsetHeight / 6), 700), '-10%');
+  }
+
+  /* ── Footer (nur Startseite; „Me" teilt den Footer, bleibt aber unverändert) ── */
+  const onIndex = !!document.getElementById('hero');
+  const footerBox = onIndex ? document.getElementById('footerWord') : null;
+  const note = onIndex ? document.querySelector('.ftp-note') : null;
+  typePrepare(note);
+  onEnterOnce(footerBox, () => setTimeout(() => typeIn(note, 1100), 250), '-5%');
+  if (live && footerBox) {
+    function updateFooter() {
+      const spans = footerBox.querySelectorAll('.ftp-ch');
+      if (!spans.length) return;
+      const r = footerBox.getBoundingClientRect(), vh = window.innerHeight;
+      if (r.top > vh * 1.1) { spans.forEach(s => { if (s._pxW) pxClip(s, 0, 'build'); }); return; }
+      const p = c01((vh - r.top) / (r.height * 1.05));                      // 0 = Wort unten am Rand · 1 = ganz im Bild
+      spans.forEach((s, i) => {
+        if (s._pxW !== s.offsetWidth || s._pxH !== s.offsetHeight) pxMeasure(s, fontPx(s) * 0.05);   // Größe passt sich an (Fit)
+        pxClip(s, ease(c01((p - i * 0.12) / 0.55)), 'build');
+      });
+    }
+    updateFooter();
+    lenis.on('scroll', updateFooter);
+    window.addEventListener('resize', updateFooter);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(updateFooter);
+    window.addEventListener('load', updateFooter);
+  }
+
+  /* Footer-Leiste: LinkedIn · Email · Behance · „made with love" bauen sich nacheinander aus Pixeln auf */
+  const barCells = onIndex ? [...document.querySelectorAll('.site-footer-bar .sf-link, .site-footer-bar .sf-right')] : [];
+  if (live && barCells.length) {
+    barCells.forEach(c => { c.style.clipPath = 'inset(50%)'; });
+    onEnterOnce(barCells[0].parentNode.parentNode, () => barCells.forEach((c, i) =>
+      setTimeout(() => buildOnce(c, Math.max(6, c.offsetHeight / 5), 520), 120 + i * 110)), '-2%');
+  }
+
+  /* Pixel-Scrollbar (die native ist ausgeblendet): Spalte aus kleinen Blöcken am rechten Rand,
+     füllt sich mit dem Scrollen von oben – mit ausgefranster Pixelkante –, blendet sich im Ruhezustand aus */
+  if ((onIndex || document.body.classList.contains('projects-page')) && !PX_REDUCE) {   // Startseite + My Work
+    const bar = document.createElement('canvas');
+    bar.className = 'px-scrollbar'; bar.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(bar);
+    const bctx = bar.getContext('2d'), BW = 4, STEP = 7, TOP = 64, BOTTOM = 14;
+    let H = 0, rows = 0, dpr = 1, idle = 0;
+    const thr = [];
+    function sizeBar() {
+      H = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+      bar.width = BW * dpr; bar.height = H * dpr;
+      rows = Math.max(1, Math.floor((H - TOP - BOTTOM) / STEP));
+      thr.length = 0;
+      for (let i = 0; i < rows; i++) thr.push(i / rows * 0.9 + pxRand(i, 77) * 0.1);   // oben zuerst, Kante leicht verstreut
+    }
+    function drawBar(p) {
+      bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bctx.clearRect(0, 0, BW, H);
+      bctx.fillStyle = 'rgb(240,237,232)';
+      for (let i = 0; i < rows; i++) {
+        const d = p - thr[i];
+        bctx.globalAlpha = d < 0 ? 0.14 : d < 0.04 ? 1 : 0.62;                   // Spur · heller Kopf · gefüllt
+        bctx.fillRect(0, TOP + i * STEP, BW, BW);
+      }
+      bctx.globalAlpha = 1;
+    }
+    sizeBar();
+    lenis.on('scroll', (e) => {
+      const lim = (e && e.limit) || (document.documentElement.scrollHeight - window.innerHeight) || 1;
+      drawBar(c01(((e && e.scroll) || window.scrollY) / lim));
+      bar.classList.add('is-on');
+      clearTimeout(idle);
+      idle = setTimeout(() => bar.classList.remove('is-on'), 1200);
+    });
+    window.addEventListener('resize', sizeBar);
+  }
+})();
 
 /* ============================
    PIXEL WIPE — an die Services-Section gekoppelt (nicht mehr am Hero-Pin)
@@ -1442,400 +1772,364 @@ ScrollTrigger.create({
 })();
 
 /* ============================
-   FIND ME HERE — Story + gläserne Pixel-Erde + rollende Erde im Footer
-   · Story (fixiert, scrollgesteuert): Sätze bauen sich aus Pixelblöcken auf und zerfallen wieder
-     (wie auf der Me-Seite). Die Erde zeigt fest Salzburg (Pin + Label), nur eine leichte Neigung zur Maus.
-   · Erde: durchsichtig wie Glas – Land als weiße Pixel, vorne hell (schimmernd, Maus-Glow, Klick-Welle),
-     hinten gedämpft durchscheinend; feiner Atmosphären-Ring. Canvas 2D, ohne Three.js.
-   · Footer: Scrollt man weiter, fällt die Erde in die Fläche über dem Footer, springt und rollt
-     (Drehung passt zur Rollbewegung), lässt sich greifen und werfen. Zurück → sie fliegt an ihren Platz.
+   STORY — „Von Pixeln zu Menschen"
+   Fixierte Bühne mit ~5000 Pixel-Partikeln, die beim Scrollen durch drei Kapitel morphen:
+     01 Pixel-Avatar (Mosaik aus assets/jcky-3.jpg)  →  02 Skyline Salzburg (Festung, Dom, Salzach)  →  03 Winkende Hand
+     + „HI!"-Sprechblase und schwebende UI-Karten
+   · Morph: jeder Partikel startet leicht versetzt, wird auf halbem Weg auseinandergewirbelt und setzt sich neu zusammen
+   · Tiefe: jeder Partikel hat z → Parallax zur Maus (beim Porträt treten helle Partien = Gesicht nach vorne)
+   · Interaktion: Partikel weichen dem Cursor aus, Klick schickt eine Schockwelle durch; die Hand ist anklickbar (E-Mail)
+   · Läuft im selben Takt wie Lenis + ScrollTrigger (gsap.ticker) → Scroll-Position und Bild nie um ein Frame versetzt
+   · Kein harter Stopp: die Partikel sammeln sich schon, während die Section hereinscrollt (Sternenstaub → Porträt)
+   · Formen werden erst nach der Intro aufgebaut (afterIntro), damit die Unterschrift-Intro flüssig bleibt
 ============================ */
-(function initFindMe() {
-  const section = document.getElementById('globeSection');
-  const stage = section && section.querySelector('.globe-stage');
-  const linesWrap = document.getElementById('gsLines');
-  const playArea = document.getElementById('globePlay');
+(function initStory() {
+  const section = document.getElementById('storySection');
+  const stage = section && section.querySelector('.story-stage');
+  const linesWrap = document.getElementById('storyLines');
   if (!section || !stage || !linesWrap) return;
-  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const fine = !window.matchMedia || window.matchMedia('(any-hover: hover)').matches;
-  const INK = '240,237,232', ACCENT = '#ff4040';
+  const animate = !PX_REDUCE && PX_CLIP_OK && typeof ScrollTrigger !== 'undefined';
+  section.classList.add(animate ? 'is-live' : 'is-static');
+  const MAIL = 'mailto:j.weissenbaeck@gmx.at';
   const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
-  const ease = v => 1 - Math.pow(1 - v, 3);
   const eio = v => v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
+  const span = (t, w) => c01((t - w[0]) / (w[1] - w[0]));
 
-  /* ── Geometrie (Kamera wie zuvor: Abstand 4.8, 38°) ── */
-  const R = 1.5, D = 4.8, TANF = Math.tan(19 * Math.PI / 180), VIS = R * R / D;
-  const DISC = (R / Math.sqrt(D * D - R * R)) / TANF * 0.5;                // Kugelradius in Anteilen der Größe S
-  const ll = (lat, lon, r) => { const a = lat * Math.PI / 180, b = lon * Math.PI / 180; return [r * Math.cos(a) * Math.cos(b), r * Math.sin(a), -r * Math.cos(a) * Math.sin(b)]; };
-  const mul = (A, B) => { const o = new Array(9); for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) o[i * 3 + j] = A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j]; return o; };
-  const rotY = t => { const c = Math.cos(t), s = Math.sin(t); return [c, 0, s, 0, 1, 0, -s, 0, c]; };
-  const rotX = t => { const c = Math.cos(t), s = Math.sin(t); return [1, 0, 0, 0, c, -s, 0, s, c]; };
-  const rotZ = t => { const c = Math.cos(t), s = Math.sin(t); return [c, -s, 0, s, c, 0, 0, 0, 1]; };
-  const LAT0 = 47.8, LON0 = 13.05, YAW0 = -Math.PI / 2 - LON0 * Math.PI / 180, PITCH0 = LAT0 * Math.PI / 180;
+  /* ── Zeitachse: t in Bildschirmhöhen, 0 = Bühne oben angekommen (Pin-Beginn) ── */
+  const C = 0.85;                                        // Scrollweg pro Kapitel
+  const LAST = 2;                                        // Kapitel 0 … 2
+  const PIN = LAST * C + 0.6;                            // zwei Wechsel + das letzte Kapitel steht noch
+  const FORM = [-0.95, 0.05];                            // Sternenstaub → Porträt (Section scrollt noch herein)
+  const MORPH = k => [k * C + 0.3, (k + 1) * C - 0.05];  // Wechsel Kapitel k → k+1
+  const LINES = [
+    { inn: [-0.45, -0.1], out: [0.3, 0.5] },
+    { inn: [C - 0.25, C + 0.05], out: [C + 0.3, C + 0.5] },
+    { inn: [2 * C - 0.25, 2 * C + 0.05], out: null },
+  ];
+  const NAMES = ['Me', 'Salzburg', 'Say hi'];
 
-  /* ── Land-Pixel aus den Länderumrissen ── */
-  const land = [];
-  function pointInPolygon(lat, lon, rings) {
-    for (const ring of rings) {
-      let inside = false;
-      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-        const [xi, yi] = ring[i], [xj, yj] = ring[j];
-        if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
-      }
-      if (inside) return true;
-    }
-    return false;
-  }
-  function isLand(lat, lon, features) {
-    for (const f of features) {
-      const g = f.geometry; if (!g) continue;
-      const polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
-      for (const p of polys) if (pointInPolygon(lat, lon, p)) return true;
-    }
-    return false;
-  }
-  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
-    .then(r => r.json())
-    .then(world => {
-      if (typeof topojson === 'undefined') return;
-      const features = topojson.feature(world, world.objects.countries).features, ROWS = 120;
-      for (let row = 0; row < ROWS; row++) {
-        const lat = -90 + (180 / ROWS) * (row + 0.5), n = Math.max(1, Math.round(ROWS * 2 * Math.cos(lat * Math.PI / 180)));
-        for (let col = 0; col < n; col++) { const lon = -180 + (360 / n) * (col + 0.5); if (isLand(lat, lon, features)) land.push(ll(lat, lon, R * 1.004)); }
-      }
-    }).catch(() => {});
-  const grid = [];
-  [-60, -30, 0, 30, 60].forEach(lat => { const l = []; for (let i = 0; i <= 96; i++) l.push(ll(lat, -180 + i * 3.75, R)); grid.push(l); });
-  for (let lon = 0; lon < 360; lon += 30) { const l = []; for (let i = 0; i <= 48; i++) l.push(ll(-90 + i * 3.75, lon, R)); grid.push(l); }
-  const PIN_BASE = ll(LAT0, LON0, R + 0.002), PIN_TIP = ll(LAT0, LON0, R + 0.22);
-  const waves = [];
-  for (let i = 0; i < 4; i++) waves.push({ x: 0.25 + Math.random() * 0.5, y: 0.25 + Math.random() * 0.5, f: 0.18 + Math.random() * 0.22, amp: 0.5 + Math.random() * 0.5, ph: Math.random() * 6.283, sp: 0.4 + Math.random() * 0.4 });
-
-  /* ── Erde zeichnen: (cx, cy) = Mitte, S = Größe (Kugelradius = DISC·S), M = Drehung ── */
-  const BUCKETS = 20, front = Array.from({ length: BUCKETS }, () => []), back = [];
-  const v = [0, 0, 0], o = { x: 0, y: 0 }, o2 = { x: 0, y: 0 };
-  function rot(M, p) { v[0] = M[0] * p[0] + M[1] * p[1] + M[2] * p[2]; v[1] = M[3] * p[0] + M[4] * p[1] + M[5] * p[2]; v[2] = M[6] * p[0] + M[7] * p[1] + M[8] * p[2]; return v; }
-  function proj(cx, cy, S, out) { const d = D - v[2]; out.x = cx + v[0] / (d * TANF) * 0.5 * S; out.y = cy - v[1] / (d * TANF) * 0.5 * S; return out; }
-  function drawGlobe(ctx, cx, cy, S, M, opt) {
-    const rr = DISC * S, blk = Math.max(2, S / 120 * 1.25), now = opt.now, wt = opt.wt;
-    /* Atmosphäre: feiner Ring + weicher Schein (die Kugel selbst bleibt durchsichtig) */
-    let g = ctx.createRadialGradient(cx, cy, rr * 0.86, cx, cy, rr * 1.16);
-    g.addColorStop(0, 'rgba(' + INK + ',0)'); g.addColorStop(0.42, 'rgba(' + INK + ',0.09)'); g.addColorStop(0.5, 'rgba(' + INK + ',0.05)'); g.addColorStop(1, 'rgba(' + INK + ',0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, rr * 1.16, 0, 6.2832); ctx.fill();
-    ctx.strokeStyle = 'rgba(' + INK + ',0.22)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(cx, cy, rr, 0, 6.2832); ctx.stroke();
-    /* Gradnetz: hinten kaum, vorne zart */
-    for (let pass = 0; pass < 2; pass++) {
-      ctx.strokeStyle = 'rgba(' + INK + ',' + (pass ? 0.07 : 0.025) + ')'; ctx.beginPath();
-      for (const line of grid) {
-        let pen = false;
-        for (const p of line) {
-          rot(M, p); const isFront = v[2] > VIS;
-          if (isFront !== !!pass) { pen = false; continue; }
-          proj(cx, cy, S, o);
-          if (pen) ctx.lineTo(o.x, o.y); else { ctx.moveTo(o.x, o.y); pen = true; }
-        }
-      }
-      ctx.stroke();
-    }
-    /* Land */
-    back.length = 0; for (let i = 0; i < BUCKETS; i++) front[i].length = 0;
-    for (const p of land) {
-      rot(M, p); proj(cx, cy, S, o);
-      if (v[2] <= VIS) { back.push(o.x, o.y); continue; }                      // Rückseite: scheint durch
-      const nx = (o.x - cx) / S + 0.5, ny = (o.y - cy) / S + 0.5;
-      const ld = Math.hypot(o.x - cx, o.y - cy) / rr;
-      const lf = Math.max(0, 1 - Math.pow(Math.max(0, ld - 0.75) / 0.27, 2));
-      if (lf <= 0) continue;
-      let w = 0;
-      for (const wv of waves) { const d = Math.hypot(nx - wv.x, ny - wv.y); w += Math.sin(d * wv.f * 60 - wt * wv.sp + wv.ph) * wv.amp / (1 + d * 4); }
-      if (opt.mx != null) { const md = Math.hypot(o.x - opt.mx, o.y - opt.my) / S; if (md < 0.3) w += (1 - md / 0.3) * (0.6 + 0.9 * Math.sin(wt * 3)); }
-      if (opt.ripples) for (const rp of opt.ripples) {
-        const age = now - rp.t; if (age > 4200) continue;
-        const d = Math.hypot(o.x - rp.x, o.y - rp.y) / S, rad = age / 4200 * 0.8;
-        if (Math.abs(d - rad) < 0.1) w += (1 - age / 4200) * 2.2 * (1 - Math.abs(d - rad) / 0.1) * Math.sin((d - rad) * 20);
-      }
-      const a = Math.min(0.95, 0.4 + c01((w + 2) / 4) * 0.55) * lf;
-      front[Math.min(BUCKETS - 1, Math.floor(a * BUCKETS))].push(o.x, o.y);
-    }
-    ctx.fillStyle = 'rgb(' + INK + ')';
-    ctx.globalAlpha = 0.11;                                                      // Rückseite, gedämpft
-    for (let k = 0; k < back.length; k += 2) ctx.fillRect(back[k] - blk * 0.4, back[k + 1] - blk * 0.4, blk * 0.8, blk * 0.8);
-    for (let i = 0; i < BUCKETS; i++) {
-      const b = front[i]; if (!b.length) continue;
-      ctx.globalAlpha = (i + 0.5) / BUCKETS;
-      for (let k = 0; k < b.length; k += 2) ctx.fillRect(b[k] - blk / 2, b[k + 1] - blk / 2, blk, blk);
-    }
-    ctx.globalAlpha = 1;
-    /* Salzburg-Pin */
-    const res = { vis: false, x: 0, y: 0 };
-    if (opt.pin > 0.01) {
-      rot(M, PIN_TIP); const vis = v[2] > VIS; proj(cx, cy, S, o);
-      rot(M, PIN_BASE); proj(cx, cy, S, o2);
-      if (vis) {
-        const u = S / 520, p1 = 0.5 + 0.5 * Math.sin(wt * 2.6 * 0.9), p2 = 0.5 + 0.5 * Math.sin(wt * 2.6 * 0.9 + Math.PI);
-        ctx.globalAlpha = opt.pin;
-        ctx.strokeStyle = 'rgba(' + INK + ',0.9)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(o2.x, o2.y); ctx.lineTo(o.x, o.y); ctx.stroke();
-        ctx.fillStyle = ACCENT; ctx.beginPath(); ctx.arc(o2.x, o2.y, 2.2 * u, 0, 6.2832); ctx.fill();
-        ctx.globalAlpha = opt.pin * (0.08 + 0.2 * p2); ctx.beginPath(); ctx.arc(o.x, o.y, (7 + 6 * p2) * u, 0, 6.2832); ctx.fill();
-        ctx.globalAlpha = opt.pin * (0.45 + 0.45 * p1); ctx.strokeStyle = ACCENT; ctx.lineWidth = 1.6 * u; ctx.beginPath(); ctx.arc(o.x, o.y, (4.6 + 1.2 * p1) * u, 0, 6.2832); ctx.stroke();
-        ctx.globalAlpha = opt.pin; ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(o.x, o.y, 2.6 * u, 0, 6.2832); ctx.fill();
-        ctx.globalAlpha = 1;
-        res.vis = true; res.x = o.x; res.y = o.y;
-      }
-    }
-    return res;
-  }
-
-  /* ============================
-     STORY
-     ============================ */
-  const lines = Array.prototype.slice.call(linesWrap.querySelectorAll('.gs-line'));
-  const N = lines.length;
+  /* ── Bühne ── */
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
-  cv.className = 'gs-canvas'; cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', 'Globe with a pin on Salzburg, Austria');
+  cv.className = 'story-canvas'; cv.setAttribute('role', 'img');
+  cv.setAttribute('aria-label', 'Pixel particles forming a pixel avatar of Jacob, then the Salzburg skyline, then a waving hand with a speech bubble saying Hi');
   stage.insertBefore(cv, stage.firstChild);
-  const label = document.createElement('div');
-  label.className = 'gs-label'; label.setAttribute('aria-hidden', 'true'); label.innerHTML = '<i></i>Salzburg, AT';
-  stage.appendChild(label);
   let W = 0, H = 0, dpr = 1;
   function size() { W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
   size();
   window.addEventListener('resize', size);
-  function layout(q) {                                                         // Mitte + Größe der Erde je nach Story-Stand
-    const mobile = W <= 760;
-    const base = mobile ? Math.min(W * 0.95, H * 0.5) : Math.min(H * 0.8, W * 0.46);   // auch herangezoomt unter der Nav
-    const kE = ease(c01(q / Math.max(1, N - 1)));                               // zum letzten Satz minimal kleiner
-    return { cx: mobile ? W / 2 : W * 0.7, cy: mobile ? H * 0.34 : H * 0.53, S: base * (1.02 - 0.08 * kE), kF: 1 };
+  /* Mitte + Maßstab der Formation je Kapitel (S = Bildschirm-Pixel pro Formbreite) */
+  function layout(k) {
+    const m = W <= 760;
+    const S = (m ? W * 0.94 : Math.min(W * 0.52, H * 1.05)) * (k === LAST ? 1.08 : 1);   // letztes Kapitel etwas größer → „HI!" gut lesbar
+    return { cx: m ? W / 2 : W * 0.66, cy: m ? H * 0.29 : H * 0.47, S: S };
   }
-
-  /* Pixel-Engine für die Sätze (gleiche Blockverteilung wie der Seitenwechsel) */
-  function pxRnd(gx, gy) { let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0; x = (x ^ (x >>> 13)) * 1274126177 >>> 0; return ((x ^ (x >>> 16)) >>> 0) / 4294967296; }
-  function setClip(el, cover, mode) {
-    if (cover >= 1) { el.style.clipPath = 'none'; return; }
-    if (cover <= 0) { el.style.clipPath = 'inset(50%)'; return; }
-    const B = el._b, cols = Math.ceil(el._w / B), rows = Math.ceil(el._h / B); let d = '';
-    for (let gy = 0; gy < rows; gy++) { const rb = rows > 1 ? gy / (rows - 1) : 0;
-      for (let gx = 0; gx < cols; gx++) { const rn = pxRnd(gx, gy), thr = mode === 'dissolve' ? rb * 0.62 + rn * 0.38 : (1 - rb) * 0.62 + rn * 0.38;
-        if (cover >= thr) d += 'M' + gx * B + ' ' + gy * B + 'h' + (B + 1) + 'v' + (B + 1) + 'h-' + (B + 1) + 'Z'; } }
-    el.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';
-  }
-  function measureLines() { lines.forEach(l => { l._w = l.offsetWidth; l._h = l.offsetHeight; l._b = Math.max(8, Math.round(parseFloat(getComputedStyle(l).fontSize) * 0.16)); l._key = null; }); }
-  const CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "path('M0 0H1V1Z')"));
-  const animate = !reduce && CLIP_OK && typeof ScrollTrigger !== 'undefined';
-  if (animate) section.classList.add('is-live'); else section.classList.add('is-static');
-
-  let lastQ = 0;
-  function renderLines(q) {
-    lines.forEach((l, i) => {
-      let c = 1, mode = 'build';
-      if (i > 0 && q < i) c = c01((q - (i - 0.42)) / 0.32);
-      else if (i < N - 1 && q > i + 0.3) { c = 1 - c01((q - (i + 0.3)) / 0.28); mode = 'dissolve'; }
-      const key = mode + Math.round(c * 200);
-      if (l._key !== key) { l._key = key; setClip(l, c, mode); }
-    });
-  }
-
-  /* Maus, Klick, Neigung */
-  const mouse = { x: null, y: null };
-  const ripples = [];
-  let tRY = 0, tRX = 0, cRY = 0, cRX = 0, wt = 0, last = performance.now(), visible = false, hidden = false;
-  stage.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
-  stage.addEventListener('mouseleave', () => { mouse.x = mouse.y = null; });
-  stage.addEventListener('click', e => { const r = cv.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }); });
-  window.addEventListener('mousemove', e => {
-    tRY = Math.max(-0.2, Math.min(0.2, (e.clientX / window.innerWidth - 0.5) * 0.36));
-    tRX = Math.max(-0.12, Math.min(0.12, (e.clientY / window.innerHeight - 0.5) * 0.2));
-  }, { passive: true });
-
-  let lastGlobe = null;                                                        // für den Fall in den Footer
-  const FACE = mul(rotX(PITCH0), rotY(YAW0));                                  // Salzburg zeigt zum Betrachter
-  function orientation() { return mul(mul(rotY(cRY), rotX(cRX)), FACE); }     // nur leichte Neigung zur Maus
-  function frame(now) {
-    requestAnimationFrame(frame);
-    const dt = Math.min(now - last || 16.7, 50) / 1000; last = now;
-    if (!visible) return;
-    const q = lastQ, L = layout(q);
-    if (!reduce) {
-      wt += dt * 0.75;
-      const k = 1 - Math.exp(-dt / 0.55); cRY += (tRY - cRY) * k; cRX += (tRX - cRX) * k;
-    }
-    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 4500) ripples.splice(i, 1);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-    const fy = reduce ? 0 : Math.sin(wt * 0.6) * L.S * 0.006;
-    lastGlobe = { cx: L.cx, cy: L.cy + fy, S: L.S, kF: L.kF };
-    let pin = { vis: false };
-    if (!hidden) pin = drawGlobe(ctx, L.cx, L.cy + fy, L.S, orientation(), { pin: 1, now: now, wt: wt, mx: mouse.x, my: mouse.y, ripples: ripples });
-    const showLabel = !hidden && pin.vis && q < N - 1.5;                       // Label beim ersten Satz
-    label.classList.toggle('is-on', showLabel);
-    if (pin.vis) label.style.transform = 'translate(' + (pin.x + 14).toFixed(1) + 'px,' + (pin.y - 36).toFixed(1) + 'px)';
-  }
-
-  if (animate) {
-    measureLines(); renderLines(0);
-    ScrollTrigger.create({
-      trigger: section, start: 'top top', end: '+=' + ((N - 1) * 80) + '%', pin: true, anticipatePin: 1, invalidateOnRefresh: true,
-      onUpdate: self => { lastQ = self.progress * (N - 1); renderLines(lastQ); },
-      onRefresh: () => { size(); measureLines(); renderLines(lastQ); }
-    });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureLines(); renderLines(lastQ); });
-  } else lastQ = 1;                                                            // ohne Animation: Erde zeigt Salzburg
-  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0 }).observe(stage);
-  requestAnimationFrame(frame);
+  /* Drift: jede Form wandert in ihrem Kapitel beim Scrollen leicht nach oben (Parallax zu den Sätzen).
+     Je Form berechnet und beim Morph überblendet → nie ein Sprung beim Kapitelwechsel. */
+  const drift = (s, t) => s < 0 ? 0 : -(t - s * C) * H * 0.05;
 
   /* ============================
-     ROLLENDE ERDE IM FOOTER (kleine Physik: Kugel mit Schwerkraft, Boden, Wänden, Rollen, Werfen)
+     FORMEN
      ============================ */
-  if (!playArea || !animate) return;
-  const bc = document.createElement('canvas'), bctx = bc.getContext('2d');
-  bc.className = 'gplay-canvas'; bc.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(bc);                                               // fest über dem Bildschirm (nie abgeschnitten)
-  let BW = 0, BH = 0, bdpr = 1, ball = null, braf = 0, held = false, flying = null, calm = 0;
-  const ptr = { x: 0, y: 0, cx: 0, cy: 0, on: false };
-  const G = 2400, BOUNCE = 0.42;
-  /* Physik in Koordinaten der Spielfläche (BW × BH); gezeichnet wird auf dem festen Canvas mit Versatz */
-  let VW = 0, VH = 0;
-  function bsize() {
-    BW = playArea.clientWidth; BH = playArea.clientHeight; VW = window.innerWidth; VH = window.innerHeight;
-    bdpr = Math.min(2, window.devicePixelRatio || 1); bc.width = Math.round(VW * bdpr); bc.height = Math.round(VH * bdpr);
-  }
-  bsize();
-  window.addEventListener('resize', () => { bsize(); if (ball) wake(); });
-  const toCanvas = (x, y) => { const r = playArea.getBoundingClientRect(); return { x: x - r.left, y: y - r.top }; };   // Bildschirm → Spielfläche
-  const storyPos = () => { const r = cv.getBoundingClientRect(), g = lastGlobe || { cx: W * 0.7, cy: H * 0.5, S: Math.min(H, W) * 0.6 }; const p = toCanvas(r.left + g.cx, r.top + g.cy); return { x: p.x, y: p.y, rr: DISC * g.S }; };
-
-  function drop() {
-    if (ball) return;
-    const s = storyPos();
-    ball = { x: s.x, y: s.y, r: s.rr, rt: Math.min(s.rr, playArea.clientHeight * 0.3), vx: (Math.random() - 0.5) * 120, vy: 0, th: 0, w: 0 };   // rt: Größe im Footer
-    flying = null; hidden = true; wake();
-  }
-  function reset() {
-    if (!ball || flying) return;
-    held = false;
-    flying = { t0: performance.now(), x0: ball.x, y0: ball.y, r0: ball.r, th0: ball.th };
-    wake();
-  }
-  function wake() { calm = 0; if (!braf) braf = requestAnimationFrame(bframe); }
-  function physics(dt) {
-    const b = ball, floor = BH - b.r - 4;
-    if (held) {                                                                  // Feder zum Zeiger
-      b.vx += ((ptr.x - b.x) * 70 - b.vx * 9) * dt; b.vy += ((ptr.y - b.y) * 70 - b.vy * 9) * dt;
-    } else b.vy += G * dt;
-    b.x += b.vx * dt; b.y += b.vy * dt;
-    let ground = false;
-    if (b.y > floor) { b.y = floor; if (b.vy > 0) b.vy = -b.vy * BOUNCE; if (Math.abs(b.vy) < 70) b.vy = 0; ground = true; }
-    if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx) * 0.55; }
-    if (b.x > BW - b.r) { b.x = BW - b.r; b.vx = -Math.abs(b.vx) * 0.55; }
-    if (b.y < b.r - VH && !held) { b.y = b.r - VH; b.vy = Math.abs(b.vy) * 0.4; }   // Decke: eine Bildschirmhöhe über der Fläche
-    if (ground && !held) { b.vx *= Math.exp(-1.1 * dt); b.w = b.vx / b.r; }       // Rollen: Drehung passt zur Geschwindigkeit
-    else b.w *= Math.exp(-0.4 * dt);
-    if (held) b.w = b.vx / b.r * 0.6;
-    b.th += b.w * dt;
-  }
-  function bframe(now) {
-    braf = 0;
-    if (!ball) return;
-    const dt = 1 / 60;
-    const pr = playArea.getBoundingClientRect();
-    bctx.setTransform(bdpr, 0, 0, bdpr, 0, 0); bctx.clearRect(0, 0, VW, VH);
-    if (flying) {                                                                // zurück an den Platz in der Story
-      const k = c01((now - flying.t0) / 900), e = eio(k), s = storyPos();
-      ball.x = flying.x0 + (s.x - flying.x0) * e; ball.y = flying.y0 + (s.y - flying.y0) * e - Math.sin(k * Math.PI) * 120;
-      ball.r = flying.r0 + (s.rr - flying.r0) * e; ball.th = flying.th0 * (1 - e);
-      if (k >= 1) { ball = null; flying = null; hidden = false; bctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, bc.width, bc.height); return; }
-    } else {
-      ball.r += (ball.rt - ball.r) * 0.07;                                       // schrumpft im Fallen auf Footer-Größe
-      for (let i = 0; i < 3; i++) physics(dt / 3);
-      const moving = held || Math.abs(ball.vx) + Math.abs(ball.vy) > 4 || Math.abs(ball.r - ball.rt) > 0.5;
-      calm = moving ? 0 : calm + 1;
+  /* 01 — Avatar: einmalig aus assets/jcky-3.jpg erzeugt (Kopf + Hals; Wand und T-Shirt freigestellt:
+     Pixel mit Farbe oder dunkel = Person), bewusst abstrakt als Mosaik: 40 Spalten, 4 Helligkeitsstufen
+     („1"–„4", „." = leer), große Blöcke mit Fuge. So muss die Startseite das 4-MB-Foto nicht laden. */
+  const PORTRAIT_COLS = 40;
+  const PORTRAIT = "..............3333223..............................332222222233..........................332221111111223........................322222211111111223.....................32222211111111111123....................222221111111111111123..................3222122211111111111122..................22112222211111111111113................322112232222221111111112................221112333333222222211111................2211233333333322222221113...............2222244444433333322222112...............2222344444433333332332112...............2223444444444333333332112...............3223444444444444433333112..............43224443333333443333333113..............33224443321223332212233124..............34334443222233332122223124..............44344443322234432112233133..............43344444433344432222233233..............4444444444444443322333323................444444444444443333333323................44444444444444333333333..................4344444344444333333333...................44444434433333333333....................44444333333322333334....................4444433333222222333......................444433333333322333......................333333333333323334......................33333444333333223.......................43333443323332223.......................4433333333332222.......................44443333333322223......................4444443333333222334.....................44444443332222233333....................444444444333333333334...................444444444443333333334....................4444444444433333333......................444444444433333334.......................4444444443333334.........................44444444333344............................4444444444..................";
+  function portraitPoints() {
+    const rows = PORTRAIT.length / PORTRAIT_COLS, WN = 0.46, cell = WN / PORTRAIT_COLS, pts = [];
+    const TONE = [0, 0.2, 0.45, 0.72, 1];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < PORTRAIT_COLS; c++) {
+      const ch = PORTRAIT[r * PORTRAIT_COLS + c];
+      if (ch === '.') continue;
+      const lv = +ch;
+      pts.push({ x: (c - PORTRAIT_COLS / 2) * cell, y: (r - rows / 2) * cell, a: TONE[lv], z: (lv - 2.5) * 0.18, tag: 0, s: cell * 0.8 });
     }
-    const S = ball.r / DISC;
-    drawGlobe(bctx, pr.left + ball.x, pr.top + ball.y, S, mul(rotZ(-ball.th), mul(rotX(PITCH0), rotY(YAW0))), { pin: 1, now: now, wt: now / 1333, mx: ptr.on ? pr.left + ptr.x : null, my: ptr.on ? pr.top + ptr.y : null });
-    if (flying || calm < 90) braf = requestAnimationFrame(bframe);
+    return pts;
   }
-  /* Greifen + Werfen */
-  const inBall = (x, y) => ball && !flying && Math.hypot(x - ball.x, y - ball.y) < ball.r;
-  window.addEventListener('pointerdown', e => {
-    if (!ball) return; const p = toCanvas(e.clientX, e.clientY);
-    if (!inBall(p.x, p.y)) return;
-    e.preventDefault(); held = true; ptr.x = p.x; ptr.y = p.y; ptr.cx = e.clientX; ptr.cy = e.clientY; playArea.classList.add('is-grabbing'); wake();
-  });
-  window.addEventListener('pointermove', e => {
-    const p = toCanvas(e.clientX, e.clientY); ptr.cx = e.clientX; ptr.cy = e.clientY; ptr.x = p.x; ptr.y = p.y;
-    ptr.on = !!ball && Math.hypot(p.x - (ball ? ball.x : 0), p.y - (ball ? ball.y : 0)) < (ball ? ball.r * 1.2 : 0);
-    playArea.classList.toggle('is-over', !!ball && inBall(p.x, p.y));
-    if (ball) wake();
-  }, { passive: true });
-  window.addEventListener('scroll', () => { if (held) { const p = toCanvas(ptr.cx, ptr.cy); ptr.x = p.x; ptr.y = p.y; } if (ball) wake(); }, { passive: true });   // beim Scrollen neu zeichnen
-  const release = () => { if (!held) return; held = false; playArea.classList.remove('is-grabbing'); wake(); };
-  window.addEventListener('pointerup', release); window.addEventListener('pointercancel', release);
-  /* Fallen, sobald die Fläche über dem Footer halb im Bild ist; zurück, wenn sie wieder unten raus ist */
-  function check() {
-    const top = playArea.getBoundingClientRect().top, vh = window.innerHeight;
-    if (top < vh * 0.5) drop(); else if (top > vh * 0.82) reset();
-  }
-  window.addEventListener('scroll', check, { passive: true });
-  setTimeout(check, 0);
-})();
 
-/* ============================
-   GLOBE SECTION — Sternenhimmel im Hintergrund (wie auf der Me-Seite)
-   Pixel-Sterne in Tiefenebenen: funkeln leise, treiben langsam, folgen minimal der Maus.
-   Ein Klick schickt eine Lichtwelle durch die Sterne.
-============================ */
-(function initGlobeStars() {
-  const section = document.getElementById('globeSection');
-  if (!section) return;
-  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const canvas = document.createElement('canvas');
-  canvas.className = 'globe-section-stars';
-  canvas.setAttribute('aria-hidden', 'true');
-  section.insertBefore(canvas, section.firstChild);
-  const ctx = canvas.getContext('2d');
-  let W = 0, H = 0, dpr = 1, stars = [], visible = false, last = performance.now();
-  const mouse = { x: 0, y: 0, tx: 0, ty: 0 }, ripples = [];
-  function rnd(i, k) { let h = ((i + 1) * 374761393 + (k + 1) * 668265263) >>> 0; h = (h ^ (h >>> 13)) * 1274126177 >>> 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+  /* Formen auf eine 1000 × 520-Leinwand zeichnen und im Pixelraster abtasten.
+     Rotkanal = Helligkeit, Blaukanal = Tiefe (0 hinten … 255 vorne), Grünkanal 0 bei hellem Rot = Hand (winkt). */
+  const DW = 1000, DH = 520;
+  function sample(draw, step) {
+    const c = document.createElement('canvas'); c.width = DW; c.height = DH;
+    const g = c.getContext('2d'); draw(g);
+    const d = g.getImageData(0, 0, DW, DH).data, pts = [];
+    for (let y = Math.floor(step / 2); y < DH; y += step) for (let x = Math.floor(step / 2); x < DW; x += step) {
+      const i = (y * DW + x) * 4, al = d[i + 3];
+      if (al < 90) continue;
+      pts.push({ x: (x - DW / 2) / DW, y: (y - DH / 2) / DW, a: (al / 255) * (0.3 + 0.7 * d[i] / 255), z: d[i + 2] / 127.5 - 1, tag: d[i] - d[i + 1] > 120 ? 1 : 0, s: 0 });
+    }
+    return pts;
+  }
+  const col = (lum, z, tag) => 'rgb(' + lum + ',' + (tag ? 0 : lum) + ',' + Math.round((z + 1) * 127.5) + ')';
+
+  /* 02 — Salzburg: Festungsberg mit Hohensalzburg, Dom mit Doppeltürmen + Kuppel, Kollegienkirche, Altstadt, Salzach */
+  function drawSalzburg(g) {
+    g.fillStyle = col(95, -0.6);                                         // Festungsberg (hinten, gedämpft)
+    g.beginPath(); g.moveTo(40, 434);
+    g.bezierCurveTo(180, 432, 290, 330, 400, 282); g.bezierCurveTo(470, 254, 700, 252, 770, 278);
+    g.bezierCurveTo(860, 312, 920, 402, 980, 434); g.closePath(); g.fill();
+    g.fillStyle = col(255, -0.1);                                        // Festung
+    g.fillRect(420, 206, 330, 60); g.fillRect(396, 238, 58, 42); g.fillRect(720, 236, 54, 44);
+    g.fillRect(540, 150, 78, 60);                                       // Hoher Stock
+    const roof = (x1, x2, y, top) => { g.beginPath(); g.moveTo(x1, y); g.lineTo(x2, y); g.lineTo((x1 + x2) / 2, top); g.closePath(); g.fill(); };
+    roof(532, 626, 150, 110);
+    g.fillRect(445, 170, 30, 40); roof(440, 480, 170, 140);              // Turm links
+    g.fillRect(690, 174, 26, 36); roof(686, 720, 174, 146);              // Turm rechts
+    g.fillRect(625, 180, 14, 30); roof(622, 642, 180, 150);              // Kapelle
+    for (let x = 420; x < 750; x += 18) g.fillRect(x, 198, 9, 8);        // Zinnen
+    g.globalCompositeOperation = 'destination-out';                     // Fenster als Lücken
+    for (let x = 440; x < 735; x += 26) g.fillRect(x, 224, 8, 12);
+    g.fillRect(560, 168, 9, 14); g.fillRect(590, 168, 9, 14);
+    g.globalCompositeOperation = 'source-over';
+    g.fillStyle = col(175, 0.2);                                         // Altstadt-Dächer (vorne, mittelhell)
+    const roofs = [[90, 30], [128, 40], [300, 34], [342, 44], [392, 30], [430, 38], [478, 28], [520, 42], [566, 32],
+                   [610, 40], [656, 30], [700, 36], [744, 28], [780, 40], [900, 32], [940, 26]];
+    roofs.forEach(([x, h]) => g.fillRect(x, 432 - h, 36, h));
+    g.fillStyle = col(255, 0.7);                                         // Dom (vorne)
+    const tower = (x) => { g.fillRect(x, 312, 36, 120); g.fillRect(x + 4, 290, 28, 22); g.beginPath(); g.arc(x + 18, 290, 15, Math.PI, 0); g.fill(); g.fillRect(x + 15, 256, 6, 22); };
+    tower(166); tower(248);
+    g.fillRect(202, 336, 46, 96);                                       // Fassade
+    g.fillRect(200, 326, 50, 14); g.beginPath(); g.arc(225, 326, 26, Math.PI, 0); g.fill(); g.fillRect(222, 288, 6, 14);   // Kuppel
+    g.fillRect(818, 362, 64, 70); g.beginPath(); g.arc(850, 362, 30, Math.PI, 0); g.fill(); g.fillRect(847, 318, 6, 16);   // Kollegienkirche
+    g.strokeStyle = col(120, -0.3); g.lineWidth = 5;                     // Salzach
+    [454, 474].forEach((y, k) => { g.beginPath(); for (let x = 30; x <= 970; x += 10) { const yy = y + Math.sin(x * 0.02 + k * 2) * 4; x === 30 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); });
+  }
+  /* 03 — Winkende Hand + schwebende UI-Karten. Die Hand ist markiert (dreht sich beim Winken ums Handgelenk). */
+  function drawHand(g) {
+    const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
+    const cut = (fn) => { g.globalCompositeOperation = 'destination-out'; fn(); g.globalCompositeOperation = 'source-over'; };
+    /* Finger: abgerundeter Balken, leicht gespreizt (um seinen Ansatz gedreht) */
+    const finger = (bx, by, w, len, ang) => { g.save(); g.translate(bx, by); g.rotate(ang); rr(-w / 2, -len, w, len + 30, w / 2); g.fill(); g.restore(); };
+    g.fillStyle = col(255, 0.2, 1);
+    finger(447, 262, 34, 150, -0.17);                 // Zeigefinger
+    finger(487, 256, 36, 172, -0.05);                 // Mittelfinger
+    finger(527, 260, 34, 158, 0.07);                  // Ringfinger
+    finger(563, 272, 30, 120, 0.2);                   // kleiner Finger
+    finger(440, 340, 38, 88, -0.62);                  // Daumen (schräg nach oben abgespreizt)
+    rr(428, 244, 156, 168, 46); g.fill();             // Handfläche
+    g.fillRect(462, 396, 92, 66);                     // Handgelenk
+    /* Fugen zwischen den Fingern + Lebenslinie, damit die Form als Hand lesbar bleibt */
+    cut(() => {
+      g.lineWidth = 11; g.lineCap = 'round';
+      [[467, 268, 465, 192], [508, 266, 509, 182], [546, 270, 551, 200]].forEach(([x1, y1, x2, y2]) => { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); });
+      g.beginPath(); g.moveTo(452, 318); g.quadraticCurveTo(486, 342, 482, 392); g.stroke();
+    });
+    /* Ärmel (Umriss) */
+    g.strokeStyle = col(200, 0.2, 1); g.lineWidth = 7; rr(444, 454, 128, 60, 10); g.stroke();
+    /* Karte links oben: Profil */
+    g.strokeStyle = col(255, 0.9); g.lineWidth = 7; rr(130, 80, 220, 128, 16); g.stroke();
+    g.fillStyle = col(255, 0.9); g.beginPath(); g.arc(176, 124, 22, 0, Math.PI * 2); g.fill();
+    g.fillRect(210, 112, 110, 10); g.fillStyle = col(140, 0.9); g.fillRect(210, 130, 76, 8);
+    g.fillStyle = col(255, 0.9); rr(154, 166, 96, 26, 13); g.fill();
+    /* Karte links unten: Farben + Typo */
+    g.strokeStyle = col(200, 0.75); g.lineWidth = 6; rr(170, 300, 180, 92, 14); g.stroke();
+    [255, 205, 160, 115].forEach((l, k) => { g.fillStyle = col(l, 0.75); rr(190 + k * 36, 318, 26, 26, 6); g.fill(); });
+    g.fillStyle = col(140, 0.75); g.fillRect(190, 358, 120, 7); g.fillRect(190, 372, 80, 7);
+    /* rechts oben: Sprechblase „HI!" (Umriss, Schrift positiv) */
+    g.strokeStyle = col(255, 0.95); g.lineWidth = 7; rr(690, 52, 200, 126, 30); g.stroke();
+    g.beginPath(); g.moveTo(716, 174); g.lineTo(694, 214); g.lineTo(750, 176); g.stroke();
+    g.fillStyle = col(255, 0.95); g.font = '400 92px Anton, Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('HI!', 790, 118);
+    /* rechts unten: Toggle + Slider */
+    g.strokeStyle = col(200, 0.85); g.lineWidth = 6; rr(680, 260, 200, 120, 16); g.stroke();
+    g.fillStyle = col(255, 0.85); rr(702, 282, 64, 32, 16); g.fill();
+    cut(() => { g.beginPath(); g.arc(749, 298, 11, 0, Math.PI * 2); g.fill(); });
+    g.fillStyle = col(140, 0.85); g.fillRect(782, 290, 76, 8);
+    g.fillStyle = col(150, 0.85); g.fillRect(702, 348, 156, 5);
+    g.fillStyle = col(255, 0.85); g.fillRect(702, 348, 80, 5); g.beginPath(); g.arc(784, 350, 11, 0, Math.PI * 2); g.fill();
+  }
+  const HAND_BOX = { x0: (380 - DW / 2) / DW, x1: (620 - DW / 2) / DW, y0: (80 - DH / 2) / DW, y1: (515 - DH / 2) / DW };    // Klickfläche (normiert)
+  const HAND = { px: (508 - DW / 2) / DW, py: (470 - DH / 2) / DW, tipY: (130 - DH / 2) / DW };          // Handgelenk (Drehpunkt) + Höhe der Fingerspitzen
+
+  /* ============================
+     PARTIKEL
+     ============================ */
+  let N = 0, ready = false;
+  let SX, SY, SA, SZ, SS, AMB, TAG;                // je Form: Ziel (normiert), Helligkeit, Tiefe, Blockgröße, „Staub"-Flag, Vibrier-Flag
+  let AX, AY, AZ, DL, SCA, SCR, PH, SP;            // je Partikel: Staub-Position, Verzögerung, Streuung, Phase
   function build() {
-    W = section.offsetWidth; H = section.offsetHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    const n = Math.round(W * H / 2400);
-    stars = [];
-    for (let i = 0; i < n; i++) {
-      const z = 0.18 + Math.pow(rnd(i, 4), 2.2) * 0.82;                       // meist fern, wenige nah
-      stars.push({ x: rnd(i, 1) * W, y: rnd(i, 2) * H, z: z, s: z > 0.82 ? 3 : z > 0.5 ? 2 : 1, a: 0.1 + z * 0.55, ph: rnd(i, 9) * 6.283, sp: 0.5 + rnd(i, 17), px: 0, py: 0 });
+    const shapes = [portraitPoints(), sample(drawSalzburg, 7), sample(drawHand, 6)];
+    N = Math.max.apply(null, shapes.map(s => s.length)) + 480;
+    const f32 = () => new Float32Array(N);
+    AX = f32(); AY = f32(); AZ = f32(); DL = f32(); SCA = f32(); SCR = f32(); PH = f32(); SP = f32();
+    for (let i = 0; i < N; i++) {
+      AX[i] = pxRand(i, 1); AY[i] = pxRand(i, 2); AZ[i] = pxRand(i, 3) * 2 - 1;
+      DL[i] = pxRand(i, 4); SCA[i] = pxRand(i, 5) * 6.2832; SCR[i] = 0.4 + pxRand(i, 6) * 0.6;
+      PH[i] = pxRand(i, 7) * 6.2832; SP[i] = 0.6 + pxRand(i, 8);
     }
-  }
-  section.addEventListener('mousemove', e => { const r = section.getBoundingClientRect(); mouse.tx = (e.clientX - r.left) / r.width - 0.5; mouse.ty = (e.clientY - r.top) / r.height - 0.5; }, { passive: true });
-  section.addEventListener('click', e => { const r = section.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() }); });
-  function draw(now, dt) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgb(240,237,232)';
-    mouse.x += (mouse.tx - mouse.x) * 0.05; mouse.y += (mouse.ty - mouse.y) * 0.05;
-    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 2200) ripples.splice(i, 1);
-    for (const s of stars) {
-      if (!reduce) s.x -= s.z * 4 * dt;                                         // langsames Treiben
-      if (s.x < -4) s.x += W + 8;
-      let x = s.x + mouse.x * s.z * 26, y = s.y + mouse.y * s.z * 16;
-      let a = s.a * (reduce ? 1 : 0.72 + 0.28 * Math.sin(now * 0.0016 * s.sp + s.ph));
-      for (const rp of ripples) {                                               // Lichtwelle: hellt auf + schiebt sanft weg
-        const age = (now - rp.t) / 2200, rad = age * Math.max(W, H) * 0.7, dx = x - rp.x, dy = y - rp.y, d = Math.hypot(dx, dy) || 1, w = Math.abs(d - rad);
-        if (w < 60) { const k = (1 - age) * (1 - w / 60); a += k * 0.6; x += dx / d * k * 10 * s.z; y += dy / d * k * 10 * s.z; }
+    SX = []; SY = []; SA = []; SZ = []; SS = []; AMB = []; TAG = [];
+    shapes.forEach((pts, s) => {
+      /* zufällige, aber feste Zuordnung Partikel → Punkt: ergibt beim Morphen das wirbelnde Durcheinander */
+      const order = pts.map((p, k) => [pxRand(k, 40 + s), p]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
+      const sx = f32(), sy = f32(), sa = f32(), sz = f32(), ss = f32(), amb = new Uint8Array(N), tag = new Uint8Array(N);
+      for (let i = 0; i < N; i++) {
+        const p = order[i];
+        if (p) { sx[i] = p.x; sy[i] = p.y; sa[i] = p.a; sz[i] = Math.max(-1, Math.min(1, p.z * 0.8 + (pxRand(i, 50 + s) - 0.5) * 0.4)); tag[i] = p.tag; ss[i] = p.s; }
+        else amb[i] = 1;
       }
-      ctx.globalAlpha = Math.min(1, a);
-      ctx.fillRect(Math.round(x), Math.round(y), s.s, s.s);
+      SX.push(sx); SY.push(sy); SA.push(sa); SZ.push(sz); SS.push(ss); AMB.push(amb); TAG.push(tag);
+    });
+    ready = true;
+  }
+
+  /* Ziel von Partikel i in Form s (s = −1 → Sternenstaub) */
+  const A = { x: 0, y: 0, a: 0, z: 0, s: 0 }, B = { x: 0, y: 0, a: 0, z: 0, s: 0 };
+  const zSize = z => z > 0.45 ? 4 : z > -0.35 ? 3 : 2;                    // nah = größer
+  function target(s, i, L, t, now, out) {
+    if (s < 0 || AMB[s][i]) {
+      out.x = AX[i] * W + Math.sin(now * 0.00012 * SP[i] + PH[i]) * 18;
+      out.y = AY[i] * H + Math.cos(now * 0.0001 * SP[i] + PH[i]) * 14;
+      out.a = 0.1 + 0.22 * (0.5 + 0.5 * Math.sin(now * 0.0016 * SP[i] + PH[i]));
+      out.z = AZ[i]; out.s = zSize(out.z);
+      return;
+    }
+    out.x = L.cx + SX[s][i] * L.S; out.y = L.cy + SY[s][i] * L.S + drift(s, t); out.a = SA[s][i]; out.z = SZ[s][i];
+    out.s = SS[s][i] ? SS[s][i] * L.S : zSize(out.z);
+  }
+
+  /* ── Maus, Klick, Neigung ── */
+  const mouse = { x: -9999, y: -9999 }, ripples = [];
+  let tx = 0, ty = 0, rx = 0, ry = 0, handHot = false, lastT = -9;
+  function overHand() {
+    if (lastT < LAST * C - 0.15) return false;                             // erst, wenn das Telefon steht
+    const L = layout(LAST), dy = drift(LAST, lastT);
+    return mouse.x > L.cx + HAND_BOX.x0 * L.S && mouse.x < L.cx + HAND_BOX.x1 * L.S &&
+           mouse.y > L.cy + HAND_BOX.y0 * L.S + dy && mouse.y < L.cy + HAND_BOX.y1 * L.S + dy;
+  }
+  stage.addEventListener('mousemove', e => {
+    const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
+    const hot = overHand();
+    if (hot !== handHot) { handHot = hot; stage.classList.toggle('is-hand', hot); }
+  });
+  stage.addEventListener('mouseleave', () => { mouse.x = mouse.y = -9999; handHot = false; stage.classList.remove('is-hand'); });
+  stage.addEventListener('click', e => {
+    if (e.target.closest('a')) return;
+    if (overHand()) { window.location.href = MAIL; return; }                // zurückwinken → E-Mail
+    const r = cv.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() });
+  });
+  window.addEventListener('mousemove', e => { tx = e.clientX / window.innerWidth - 0.5; ty = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+
+  /* ── Sätze: Pixel-Aufbau / -Zerfall nach Zeitfenster ── */
+  const lines = [...linesWrap.querySelectorAll('.story-line')];
+  const measureLines = () => lines.forEach(l => pxMeasure(l, Math.max(8, parseFloat(getComputedStyle(l).fontSize) * 0.16)));
+  function renderLines(t) {
+    lines.forEach((l, i) => {
+      const w = LINES[i] || LINES[LINES.length - 1];
+      if (w.out && t > w.out[0]) pxClip(l, 1 - span(t, w.out), 'dissolve');
+      else pxClip(l, span(t, w.inn), 'build');
+    });
+  }
+
+  /* ── Kapitel-Anzeige ── */
+  const num = document.getElementById('storyNum'), chapter = document.getElementById('storyChapter');
+  const bars = [...section.querySelectorAll('.story-bars b')];
+  let shownCh = -1;
+  function renderHud(t) {
+    const ch = Math.max(0, Math.min(LAST, Math.round(t / C)));
+    if (ch !== shownCh) {
+      shownCh = ch;
+      if (num) num.textContent = '0' + (ch + 1);
+      if (chapter) { chapter._typeOrig = NAMES[ch]; chapter._typed = false; chapter.textContent = NAMES[ch].replace(/\S/g, ' '); typeIn(chapter, 360); }
+    }
+    bars.forEach((b, j) => { b.style.transform = 'scaleX(' + c01((t + C / 2 - j * C) / C).toFixed(3) + ')'; });
+  }
+
+  /* ── Zeichnen (im gsap-Takt nach Lenis + ScrollTrigger) ── */
+  const BUCK = 8, SIZES = 8, groups = Array.from({ length: BUCK * SIZES }, () => []);   // Helligkeit × Blockgröße (2–9 px)
+  let story = null, visible = false, last = 0;
+  const storyT = () => story ? (window.scrollY - story.start) / window.innerHeight : PIN;
+  function frame() {
+    const now = performance.now(), dt = Math.min(now - (last || now) || 16.7, 50) / 1000; last = now;
+    if (!visible) return;
+    const t = storyT(); lastT = t;
+    if (animate) { renderLines(t); renderHud(t); }
+    if (!ready) return;
+    rx = smoothTowards(rx, tx, 0.5, dt); ry = smoothTowards(ry, ty, 0.5, dt);
+    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 1600) ripples.splice(i, 1);
+
+    /* welches Kapitel / welcher Wechsel? */
+    let a = LAST, b = LAST, u = 1;
+    if (t < FORM[1]) { a = -1; b = 0; u = span(t, FORM); }
+    else for (let k = 0; k < LAST; k++) {
+      const w = MORPH(k);
+      if (t < w[0]) { a = b = k; break; }
+      if (t < w[1]) { a = k; b = k + 1; u = span(t, w); break; }
+    }
+    const LA = layout(Math.max(0, a)), LB = layout(b);
+    const R = 90, swirl = Math.min(W, H) * 0.16;
+    /* Hand winkt: alle 2,4 s zwei Schwünge ums Handgelenk, dann kurze Pause (sobald sie steht) */
+    const handOn = b === LAST ? (a === LAST ? 1 : c01((u - 0.85) / 0.15)) : 0;
+    const wp = (now % 2400) / 2400, wv = wp < 0.62 ? wp / 0.62 : -1;
+    const wave = PX_REDUCE || wv < 0 ? 0 : handOn * 0.22 * Math.sin(wv * Math.PI * 4) * Math.sin(wv * Math.PI);
+    const LH = layout(LAST), pivX = LH.cx + HAND.px * LH.S, pivY = LH.cy + HAND.py * LH.S + drift(LAST, t);
+    const wc = Math.cos(wave), ws = Math.sin(wave);
+
+    for (let g = 0; g < groups.length; g++) groups[g].length = 0;
+    for (let i = 0; i < N; i++) {
+      target(a, i, LA, t, now, A);
+      let e = 1;
+      if (a !== b) { target(b, i, LB, t, now, B); e = eio(c01((u - DL[i] * 0.4) / 0.6)); }
+      else { B.x = A.x; B.y = A.y; B.a = A.a; B.z = A.z; B.s = A.s; }
+      let x = A.x + (B.x - A.x) * e, y = A.y + (B.y - A.y) * e;
+      const al = A.a + (B.a - A.a) * e, z = A.z + (B.z - A.z) * e;
+      if (a !== b) { const sc = Math.sin(Math.PI * e) * SCR[i] * swirl; x += Math.cos(SCA[i]) * sc; y += Math.sin(SCA[i]) * sc; }   // auseinanderwirbeln
+      if (wave && b === LAST && TAG[LAST][i] && !AMB[LAST][i]) {                   // Hand dreht sich ums Handgelenk
+        const dx0 = x - pivX, dy0 = y - pivY, rxp = pivX + dx0 * wc - dy0 * ws, ryp = pivY + dx0 * ws + dy0 * wc;
+        x += (rxp - x) * e; y += (ryp - y) * e;
+      }
+      x += z * rx * 34 + Math.sin(now * 0.0013 * SP[i] + PH[i]) * (0.3 + z * 0.25);  // Parallax + leises Atmen (ruhig → Linien bleiben scharf)
+      y += z * ry * 24 + Math.cos(now * 0.0011 * SP[i] + PH[i]) * (0.3 + z * 0.25);
+      const dx = x - mouse.x, dy = y - mouse.y, d2 = dx * dx + dy * dy;            // dem Cursor ausweichen
+      if (d2 < R * R) { const d = Math.sqrt(d2) || 1, f = (1 - d / R); x += dx / d * f * f * 28; y += dy / d * f * f * 28; }
+      for (const rp of ripples) {                                                  // Schockwelle
+        const age = (now - rp.t) / 1600, rad = age * Math.max(W, H) * 0.6, ex = x - rp.x, ey = y - rp.y, dd = Math.hypot(ex, ey) || 1, w = Math.abs(dd - rad);
+        if (w < 70) { const k = (1 - age) * (1 - w / 70); x += ex / dd * k * 22; y += ey / dd * k * 22; }
+      }
+      if (al < 0.03) continue;
+      let size = A.s + (B.s - A.s) * e;
+      if (a !== b) size *= 1 - 0.45 * Math.sin(Math.PI * e);                        // im Flug kleiner, landen als Block
+      const sz = Math.max(0, Math.min(SIZES - 1, Math.round(size) - 2));
+      groups[sz * BUCK + Math.min(BUCK - 1, Math.floor(al * BUCK))].push(x, y);
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = 'rgb(240,237,232)';
+    for (let g = 0; g < groups.length; g++) {
+      const p = groups[g]; if (!p.length) continue;
+      const s = Math.floor(g / BUCK) + 2;
+      ctx.globalAlpha = ((g % BUCK) + 0.5) / BUCK;
+      for (let k = 0; k < p.length; k += 2) ctx.fillRect(Math.round(p[k] - s / 2), Math.round(p[k + 1] - s / 2), s, s);
+    }
+    /* Bewegungsstriche neben den Fingerspitzen, solange die Hand winkt (aus Pixeln, wie beim 👋) */
+    const swing = Math.abs(wave) / 0.22;
+    if (swing > 0.05) {
+      const tipD = (HAND.tipY - HAND.py) * LH.S, tx0 = pivX - tipD * ws, ty0 = pivY + tipD * wc;   // gedrehte Fingerspitzen-Mitte
+      for (let side = -1; side <= 1; side += 2) for (let k = 0; k < 2; k++) {
+        const rad = LH.S * (0.1 + k * 0.03), al = swing * (1 - k * 0.4);
+        ctx.globalAlpha = al;
+        for (let a2 = -0.5; a2 <= 0.5; a2 += 0.1) ctx.fillRect(Math.round(tx0 + side * Math.cos(a2) * rad), Math.round(ty0 + 10 + Math.sin(a2) * rad * 0.9), 3, 3);
+      }
     }
     ctx.globalAlpha = 1;
   }
-  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0.01 }).observe(section);
-  window.addEventListener('resize', build);
-  build();
-  (function tick(now) {
-    requestAnimationFrame(tick);
-    now = now || performance.now();
-    const dt = Math.min(now - last || 16.7, 50) / 1000; last = now;
-    if (visible) draw(now, dt);
-  })();
+
+  /* ── Start ── */
+  if (animate) {
+    measureLines(); renderLines(-2);
+    story = ScrollTrigger.create({
+      trigger: section, start: 'top top', end: '+=' + Math.round(PIN * 100) + '%', pin: true, invalidateOnRefresh: true,
+      onRefresh: () => { size(); measureLines(); },
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureLines);
+  }
+  /* Nav „Find me here" → direkt ins letzte Kapitel */
+  window.__storyContactY = () => story ? story.start + (LAST * C + 0.1) * window.innerHeight : null;
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0 }).observe(stage);
+  afterIntro(() => {
+    const go = () => { try { build(); } catch (e) {} };
+    if (document.fonts && document.fonts.load) document.fonts.load('400 92px Anton').then(go, go); else go();
+  });
+  if (typeof gsap !== 'undefined') gsap.ticker.add(frame);                // gleicher Takt wie Lenis + ScrollTrigger
+  else (function loop() { requestAnimationFrame(loop); frame(); })();
 })();
 
 /* ============================
