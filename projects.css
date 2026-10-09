@@ -54,15 +54,15 @@
   display: flex; align-items: stretch;
   padding: 0 28px;              /* bündig zur Nav → Einheit */
   background: var(--bg);
-  border-top: 1px solid rgba(240,237,232,0.16);
-  border-bottom: 1px solid rgba(240,237,232,0.16);
+  border-top: 1px solid rgba(255,255,255,0.16);
+  border-bottom: 1px solid rgba(255,255,255,0.16);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
 }
 /* „Filter“ als eingefasste Zelle mit rechtem Stroke (volle Höhe) */
 .pj-filter-group {
   display: flex; align-items: center; gap: clamp(16px, 2vw, 28px);
   padding-right: clamp(20px, 3vw, 40px);
-  border-right: 1px solid rgba(240,237,232,0.16);
+  border-right: 1px solid rgba(255,255,255,0.16);
 }
 /* Filter-Top-Stroke ist immer sichtbar. Sitzt die Nav direkt auf dem oben
    geklemmten Filter, wird stattdessen die Nav-Unterkante ausgeblendet → nur EINE Linie. */
@@ -78,15 +78,15 @@
 /* Chevron im Strichstil der Seite (wie Hover-Pfeil und Close-X) */
 .pj-filter-caret { width: 12px; height: 12px; flex: none; transition: transform 0.45s var(--ease-out-expo); }
 .pj-filter-field.is-open .pj-filter-caret { transform: rotate(180deg); }
-.pj-filter-btn:focus-visible { outline: 1px solid var(--ink); outline-offset: 6px; }
+.pj-filter-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 6px; }
 
 /* Dropdown: bündig unter der Filterzelle, dunkler Panel, gedämpfte Einträge */
 .pj-filter-menu {
   position: absolute; top: 100%; left: 0;
   min-width: 240px; margin: 0; padding: 12px 0 18px; list-style: none;
   background: var(--bg);
-  border: 1px solid rgba(240,237,232,0.10);
-  border-top: 1px solid rgba(240,237,232,0.16);   /* Top-Rand sichtbar (war none) */
+  border: 1px solid rgba(255,255,255,0.10);
+  border-top: 1px solid rgba(255,255,255,0.16);   /* Top-Rand sichtbar (war none) */
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: opacity 0.22s ease, transform 0.4s var(--ease-out-expo), visibility 0s linear 0.22s;
   z-index: 40;
@@ -97,19 +97,19 @@
   padding: 11px 26px; cursor: pointer;
   font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em;
   text-transform: none;                       /* Einträge in Normalschreibung wie in der Inspo */
-  color: rgba(240,237,232,0.45);
+  color: rgba(255,255,255,0.45);
   transition: color 0.2s ease;
 }
 /* Pixel-Quadrat wie bei den Listen der CV-Seite: umrandet, aktiv = gefüllt */
 .pj-filter-menu li::before {
   content: ''; flex: none; width: 6px; height: 6px; box-sizing: border-box;
-  border: 1px solid rgba(240,237,232,0.35);
+  border: 1px solid rgba(255,255,255,0.35);
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .pj-filter-menu li:hover { color: var(--ink); }
-.pj-filter-menu li:hover::before { border-color: var(--ink); }
+.pj-filter-menu li:hover::before { border-color: var(--accent); }
 .pj-filter-menu li.is-active { color: var(--ink); }
-.pj-filter-menu li.is-active::before { background: var(--ink); border-color: var(--ink); }
+.pj-filter-menu li.is-active::before { background: var(--accent); border-color: var(--accent); }   /* aktiver Filter: Quadrat in Akzentfarbe */
 
 /* ── Projekt-Liste: pro Projekt Kopf oben links + Reihe aus 3 Bildern ── */
 .pj-grid {
@@ -133,7 +133,7 @@
 }
 .pj-project-meta {
   font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em;
-  text-transform: uppercase; color: rgba(240,237,232,0.45);
+  text-transform: uppercase; color: rgba(255,255,255,0.45);
 }
 
 /* Reihe aus 3 Bildern (16:9), unterschiedliche Breiten, oben ausgerichtet */
@@ -143,7 +143,7 @@
 }
 .pj-shot {
   flex-basis: 0; min-width: 0;
-  overflow: hidden; background: #16150f;
+  overflow: hidden; background: #2C2C2C;
   will-change: translate;                          /* Parallax: projects.js setzt translate je nach Bildgröße */
 }
 .pj-shot img {

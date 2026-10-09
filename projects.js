@@ -1,7 +1,7 @@
 /* ============================================================
    PROJECTS — Titel-Preview + Sticky-Filter + Projekt-Liste
    Effekte (im Pixel-/Tipp-Stil der Startseite; Bausteine aus script.js: pxClip, typeIn, onEnterOnce …):
-   · Titel: baut sich beim Öffnen aus Pixeln auf; Laufband reagiert auf Scroll-Tempo und -Richtung;
+   · Titel: steht von Anfang an; Laufband reagiert auf Scroll-Tempo und -Richtung;
      beim Runterscrollen bleibt er langsamer zurück (Parallax) und zerfällt in Pixel
    · Projekte: Name dekodiert sich, Meta tippt sich ein, Bilder bauen sich nacheinander aus Pixeln auf
    · Parallax: kleine / mittlere / große Bilder wandern unterschiedlich schnell, jedes Bild gleitet in seinem Rahmen
@@ -271,9 +271,9 @@ window.addEventListener('DOMContentLoaded', function () {
     })(performance.now());
   })();
 
-  /* ── Titel: Auftritt aus Pixeln, dann beim Scrollen Parallax + Zerfall ── */
+  /* ── Titel: steht von Anfang an, beim Scrollen Parallax + Zerfall in Pixel ── */
   if (title && !reduce) {
-    var introDone = !live;
+    var introDone = true;
     var blockOf = function () { return Math.max(14, parseFloat(getComputedStyle(title).fontSize) * 0.07); };
     var scrollTitle = function (e) {
       var y = (e && typeof e.scroll === 'number') ? e.scroll : window.scrollY;
@@ -281,13 +281,7 @@ window.addEventListener('DOMContentLoaded', function () {
       title.style.translate = '0 ' + (y * 0.38).toFixed(1) + 'px';           // bleibt langsamer zurück
       if (introDone && live) pxClip(title, ease(1 - c01(y / (h * 0.7))), 'dissolve');
     };
-    if (live) {
-      title.style.clipPath = 'inset(50%)';
-      /* nach dem Seitenwechsel-Panel (interne Navigation) bzw. kurz nach dem Laden */
-      setTimeout(function () {
-        pxTween(title, 0, 1, 'build', 1000, blockOf()).then(function () { introDone = true; pxMeasure(title, blockOf()); scrollTitle(); });
-      }, (typeof ARRIVED_VIA_INTERNAL_NAV !== 'undefined' && ARRIVED_VIA_INTERNAL_NAV) ? 820 : 200);
-    }
+    if (live) { pxMeasure(title, blockOf()); if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { pxMeasure(title, blockOf()); scrollTitle(); }); }
     onScroll(scrollTitle);
     window.addEventListener('resize', function () { if (introDone && live) { pxMeasure(title, blockOf()); scrollTitle(); } });
   }

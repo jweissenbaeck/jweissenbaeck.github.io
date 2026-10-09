@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jacob Weissenbäck — CV</title>
+  <link rel="icon" type="image/svg+xml" href="assets/jcky-logo-bold-small.svg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js"></script>
@@ -19,6 +20,7 @@
   </script>
 </head>
 <body class="cv-page">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="scribbleRough" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3.2" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
 
 <!-- NAV -->
 <nav class="nav" id="mainNav">
@@ -84,21 +86,23 @@
       <div class="cvs-scene">
         <div class="cvs-inner cvs-tools">
           <h2 class="cvs-title cvs-wide">Tools I work with</h2>
-          <ul class="cvs-cloud">
-            <li class="cvs-i3d" style="--x:31%; --y:53%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/HTML5_logo_and_wordmark.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">HTML5</span></li>
-            <li class="cvs-i3d is-mono" style="--x:8%; --y:76%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/github.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">GitHub</span></li>
-            <li class="cvs-i3d" style="--x:27%; --y:20%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Claude_AI_symbol.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Claude</span></li>
-            <li class="cvs-i3d" style="--x:13%; --y:43%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Adobe_Illustrator_CC_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Illustrator</span></li>
-            <li class="cvs-i3d" style="--x:93%; --y:27%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/CSS3_logo.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">CSS3</span></li>
-            <li class="cvs-i3d" style="--x:9%; --y:14%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Git_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Git</span></li>
-            <li class="cvs-i3d" style="--x:86%; --y:73%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Adobe_Photoshop_CC_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Photoshop</span></li>
-            <li class="cvs-i3d" style="--x:25%; --y:82%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/DaVinci_Resolve_Studio.png" alt="" decoding="async"></div><span class="cvs-i3d-name">DaVinci Resolve Studio</span></li>
-            <li class="cvs-i3d" style="--x:70%; --y:85%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Unofficial_JavaScript_logo_2.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">JavaScript</span></li>
-            <li class="cvs-i3d" style="--x:73%; --y:29%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Adobe_Photoshop_Lightroom_Classic_CC_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Lightroom Classic</span></li>
-            <li class="cvs-i3d" style="--x:42%; --y:84%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/Python-logo-notext.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Python</span></li>
-            <li class="cvs-i3d" style="--x:51%; --y:12%; --d:1.00; --k:0.95"><div class="cvs-i3d-body"><img src="assets/GitLab.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">GitLab</span></li>
-            <li class="cvs-i3d" style="--x:53%; --y:47%; --d:1.00; --k:1.18"><div class="cvs-i3d-body"><img src="assets/Figma-logo.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Figma</span></li>
-          </ul>
+          <div class="cvs-deck">
+            <ul class="cvs-deck-list">
+              <li class="cvs-i3d" data-cat="Design"><div class="cvs-i3d-body"><img src="assets/Figma-logo.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Figma</span></li>
+              <li class="cvs-i3d" data-cat="Design"><div class="cvs-i3d-body"><img src="assets/Adobe_Illustrator_CC_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Illustrator</span></li>
+              <li class="cvs-i3d" data-cat="Design"><div class="cvs-i3d-body"><img src="assets/Adobe_Photoshop_CC_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Photoshop</span></li>
+              <li class="cvs-i3d" data-cat="Photo &amp; Video"><div class="cvs-i3d-body"><img src="assets/Adobe_Photoshop_Lightroom_Classic_CC_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Lightroom Classic</span></li>
+              <li class="cvs-i3d" data-cat="Photo &amp; Video"><div class="cvs-i3d-body"><img src="assets/DaVinci_Resolve_Studio.png" alt="" decoding="async"></div><span class="cvs-i3d-name">DaVinci Resolve Studio</span></li>
+              <li class="cvs-i3d" data-cat="Code"><div class="cvs-i3d-body"><img src="assets/HTML5_logo_and_wordmark.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">HTML5</span></li>
+              <li class="cvs-i3d" data-cat="Code"><div class="cvs-i3d-body"><img src="assets/CSS3_logo.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">CSS3</span></li>
+              <li class="cvs-i3d" data-cat="Code"><div class="cvs-i3d-body"><img src="assets/Unofficial_JavaScript_logo_2.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">JavaScript</span></li>
+              <li class="cvs-i3d" data-cat="Code"><div class="cvs-i3d-body"><img src="assets/Python-logo-notext.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Python</span></li>
+              <li class="cvs-i3d" data-cat="Workflow"><div class="cvs-i3d-body"><img src="assets/Git_icon.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Git</span></li>
+              <li class="cvs-i3d is-mono" data-cat="Workflow"><div class="cvs-i3d-body"><img src="assets/github.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">GitHub</span></li>
+              <li class="cvs-i3d" data-cat="Workflow"><div class="cvs-i3d-body"><img src="assets/GitLab.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">GitLab</span></li>
+              <li class="cvs-i3d" data-cat="Workflow"><div class="cvs-i3d-body"><img src="assets/Claude_AI_symbol.svg" alt="" decoding="async"></div><span class="cvs-i3d-name">Claude</span></li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -106,7 +110,6 @@
         <div class="cvs-inner cvs-love">
           <h2 class="cvs-title cvs-wide">My passions</h2>
           <ul class="cvs-stickers">
-            <li class="cvs-sticker" style="--r:-6deg">Playing music</li>
             <li class="cvs-sticker" style="--r:5deg">Piano</li>
             <li class="cvs-sticker" style="--r:-4deg">Guitar</li>
             <li class="cvs-sticker" style="--r:4deg">Photography</li>
@@ -115,7 +118,8 @@
             <li class="cvs-sticker" style="--r:-3deg">Painting</li>
             <li class="cvs-sticker" style="--r:5deg">History</li>
             <li class="cvs-sticker" style="--r:-5deg">Classical music</li>
-            <li class="cvs-sticker" style="--r:3deg">Sport &amp; the gym</li>
+            <li class="cvs-sticker" style="--r:3deg">Sport</li>
+            <li class="cvs-sticker" style="--r:-6deg">Gym</li>
             <li class="cvs-sticker" style="--r:-8deg">Tennis</li>
             <li class="cvs-sticker" style="--r:6deg">Chess</li>
             <li class="cvs-sticker" style="--r:-4deg">Computers</li>

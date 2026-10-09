@@ -41,7 +41,7 @@ function pxRand(gx, gy) {
 }
 function pxMeasure(el, B) { el._pxW = el.offsetWidth; el._pxH = el.offsetHeight; el._pxB = Math.max(4, Math.round(B)); el._pxKey = null; }
 function pxClip(el, cover, mode) {
-  const key = mode + Math.round(cover * 120);                     // nur bei sichtbarer Änderung neu setzen
+  const key = cover >= 1 ? 'full' : cover <= 0 ? 'none' : mode + Math.round(cover * 120);   // nur bei sichtbarer Änderung neu setzen; voll/leer eigene Schlüssel (sonst bliebe 99,8 % als Endzustand hängen)
   if (el._pxKey === key) return;
   el._pxKey = key;
   if (cover >= 1) { el.style.clipPath = 'none'; return; }
@@ -86,6 +86,42 @@ function typeIn(el, dur) {
     if (k < 1) requestAnimationFrame(loop);
   })(t0);
 }
+/* GRAFFITI-SCRIBBLES (.story-scribble path): Striche haben eine feste Stärke, die Grafik ist je Wort verzerrt →
+   pathLength stimmt dort nicht. Deshalb echte Strichlänge auf dem Bildschirm messen und damit zeichnen.
+   scribbleMeasure(paths) nach Layout-Änderungen · scribbleDraw(paths, q): q 0…1, Strich für Strich nacheinander. */
+function scribbleMeasure(paths) {
+  paths.forEach((p) => {
+    const m = p.getScreenCTM(); if (!m) return;
+    const n = 64, L = p.getTotalLength(); let len = 0, prev = null;
+    for (let k = 0; k <= n; k++) {
+      const q = p.getPointAtLength(L * k / n), x = m.a * q.x + m.c * q.y, y = m.b * q.x + m.d * q.y;
+      if (prev) len += Math.hypot(x - prev[0], y - prev[1]);
+      prev = [x, y];
+    }
+    if (len < 1) return;                                          // (noch) nicht im Layout → später messen
+    p._len = len + 2; p._o = null;
+    p.style.strokeDasharray = p._len + ' ' + p._len;
+    p.removeAttribute('pathLength');
+  });
+}
+function scribbleDraw(paths, q) {
+  const n = paths.length;
+  paths.forEach((p, j) => {
+    const k = Math.min(1, Math.max(0, q * n - j)), v = ((1 - k) * (p._len || 2000)).toFixed(1);
+    if (p._o !== v) { p._o = v; p.style.strokeDashoffset = v; }
+  });
+}
+
+/* BUCHSTABEN-ROLL: Text in einzelne Buchstaben (.wk-l) zerlegen; per CSS rollt beim Hover jeder Buchstabe nach oben,
+   seine Kopie (::after) rollt nach. Der Link bekommt den Klartext als Namen (Screenreader lesen sonst die Kopien mit). */
+function splitRoll(el, text) {
+  if (!el) return;
+  const t = text != null ? text : el.textContent.trim();
+  el.innerHTML = [...t].map((c, i) => '<span class="wk-l" style="--i:' + i + '" data-c="' + c + '">' + (c === ' ' ? '&nbsp;' : c) + '</span>').join('');
+  const a = el.closest('a, button');
+  if (a && !a.hasAttribute('aria-label')) a.setAttribute('aria-label', t);
+}
+
 /* einmal auslösen, sobald el ins untere Bilddrittel kommt */
 function onEnterOnce(el, fn, margin) {
   if (!el) return;
@@ -265,6 +301,7 @@ function onEnterOnce(el, fn, margin) {
   } catch (e) {}
 })();
 
+
 /* ============================
    HERO — Pixel-Partikel bei Mausbewegung
    Quadratische Pixel in Tintenfarbe stieben in Bewegungsrichtung der Maus, bremsen ab,
@@ -345,7 +382,7 @@ function onEnterOnce(el, fn, margin) {
   var rain = null;
   function burstFrom(points, cx, halfW) {
     if (reduce || !points.length) return;
-    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#FFFFFF';
     if (!rain) {
       var cv = document.createElement('canvas');
       cv.className = 'egg-canvas';
@@ -364,7 +401,7 @@ function onEnterOnce(el, fn, margin) {
         vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4,
         s: SIZES[Math.floor(Math.random() * SIZES.length)],
         age: 0, life: 2600 + Math.random() * 1400,
-        c: Math.random() < 0.15 ? 'rgba(240,237,232,0.35)' : ink
+        c: Math.random() < 0.15 ? 'rgba(255,255,255,0.35)' : ink
       });
     });
   }
@@ -601,8 +638,8 @@ function onEnterOnce(el, fn, margin) {
     loader.classList.add('is-splitting');
     const dust = document.createElement('canvas'), dctx = dust.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
     dust.className = 'ld-dust'; dust.width = W * dpr; dust.height = H * dpr; loader.appendChild(dust);
-    const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
-    const dark = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim() || '#0A0A09';
+    const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#FFFFFF';
+    const dark = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim() || '#1A1A1A';
 
     const B = Math.max(16, Math.round(W / 70)), cols = Math.ceil(W / B), DEPTH = 7;   // Blockgröße · max. zerbröselte Reihen
     const kTop = new Array(cols).fill(0), kBot = new Array(cols).fill(0), bits = [];
@@ -681,7 +718,7 @@ function onEnterOnce(el, fn, margin) {
   function metaFor(url) { return PAGE[pageKey(url)] || { name: '', code: '', order: 0 }; }
   function dirBetween(fromU, toU) { return metaFor(toU).order < metaFor(fromU).order ? 'back' : 'forward'; }
 
-  const PANEL_COLOR = '#f5f5f0';
+  const PANEL_COLOR = '#FFFFFF';
   const PX_BLOCK = 72;          // gleiche Blockgröße wie der Scroll-Pixel-Wipe
   const PX_BIAS  = 0.62;        // Anteil "von unten" (wie beim Scroll-Wipe)
   function pxRnd(gx, gy) {
@@ -979,13 +1016,15 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
    (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
 ============================ */
 (function initContactPixels() {
-  const items = document.querySelectorAll('.projects-cta, .cvh-bubble, .nav .nav-cell:not(.nav-brand), .site-footer-bar .sf-link, .site-footer-bar .sf-right');
+  document.querySelectorAll('.nav .nav-cell:not(.nav-brand) .nav-txt, .site-footer-bar .sf-txt').forEach((el) => splitRoll(el));   // Nav + Footer: Hover wie „My work" (CSS)
+  const items = document.querySelectorAll('.projects-cta, .cvh-bubble');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const ROWS = 6;            // feste Zeilenzahl → Blockgröße skaliert mit dem Feld (zoom-stabil)
   const BIAS  = 0.6;         // Anteil "von unten"
   const SMOOTH = 0.11;       // Sekunden – Ein-/Ausblenden
-  const INK = '240, 237, 232';
+  const INK = (() => { const m = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '').trim().match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '208, 242, 94'; })();   // Akzentfarbe (--accent)
 
   function rnd(gx, gy) {
     let h = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
@@ -1399,7 +1438,7 @@ window.__heroInit = heroInit;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   const BLOCK = 72;          // Blockgröße in px (wie in der Referenz)
-  const COLOR = '17, 17, 16';        // nur EINE Farbe: --bg (#111110), Schwarz der Services-Section
+  const COLOR = '35, 35, 35';        // nur EINE Farbe: --bg (#232323), Anthrazit der Sections
 
   const canvas = document.createElement('canvas');
   canvas.id = 'pixelWipe';
@@ -1632,23 +1671,68 @@ window.__heroInit = heroInit;
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureNames(); updateNames(); });
   }
 
-  /* ── Footer (nur Startseite; „Me" teilt den Footer, bleibt aber unverändert) ── */
+  /* ── Footer (auf allen Seiten gleich: JCKY baut sich auf, Schreibmaschine, Leiste baut sich auf) ── */
   const onIndex = !!document.getElementById('hero');
-  const footerBox = onIndex ? document.getElementById('footerWord') : null;
-  const note = onIndex ? document.querySelector('.ftp-note') : null;
-  typePrepare(note);
-  onEnterOnce(footerBox, () => setTimeout(() => typeIn(note, 1100), 250), '-5%');
+  const footerBox = document.getElementById('footerWord');
+  const note = footerBox ? document.querySelector('.ftp-note') : null;
+  /* Dankestext als Schreibmaschine: Satz tippt sich hin, steht, tippt sich zeichenweise weg, der nächste kommt — in Schleife.
+     Läuft nur, solange der Footer zu sehen ist. */
+  if (note) {
+    const PHRASES = [note.textContent.trim(), 'Check out my other stuff'];
+    note.setAttribute('aria-label', PHRASES[0]);
+    if (PX_REDUCE) { /* ohne Bewegung: erster Satz bleibt stehen */ }
+    else {
+      const caret = document.createElement('span');
+      caret.className = 'ftp-caret'; caret.setAttribute('aria-hidden', 'true');
+      const show = (t) => { note.textContent = t; note.appendChild(caret); };
+      show('');
+      let seen = false, idx = 0, waiting = null;
+      const later = (fn, ms) => setTimeout(() => { if (seen) fn(); else waiting = fn; }, ms);   // unsichtbar → warten
+      new IntersectionObserver(([en]) => { seen = en.isIntersecting; if (seen && waiting) { const fn = waiting; waiting = null; fn(); } }).observe(note.parentNode);
+      function typeOut(text, done) {
+        note.classList.add('is-typing');
+        let i = 0;
+        (function step() { show(text.slice(0, i)); if (i++ < text.length) setTimeout(step, 42 + Math.random() * 46); else { note.classList.remove('is-typing'); done(); } })();
+      }
+      function erase(text, done) {
+        note.classList.add('is-typing');
+        let i = text.length;
+        (function step() { show(text.slice(0, i)); if (i-- > 0) setTimeout(step, 24); else { note.classList.remove('is-typing'); done(); } })();
+      }
+      function cycle() {
+        const text = PHRASES[idx];
+        typeOut(text, () => later(() => erase(text, () => { idx = (idx + 1) % PHRASES.length; later(cycle, 450); }), 3600));
+      }
+      onEnterOnce(footerBox, () => setTimeout(() => { seen = true; cycle(); }, 300), '-5%');
+    }
+  }
   if (live && footerBox) {
-    function updateFooter() {
+    /* Aufbau verteilt sich über den ganzen Weg: 0 = Wort taucht unten auf · 1 = ganz unten angekommen.
+       Angezeigt wird mit Nachlauf (≈ 0,6 s) → auch bei schnellem Scrollen baut es sich ruhig auf. */
+    let ftTarget = 0, ftShown = 0, ftRaf = 0, ftLast = 0;
+    function footerTarget() {
+      const r = footerBox.getBoundingClientRect(), vh = window.innerHeight;
+      const maxY = Math.max(0, document.documentElement.scrollHeight - vh);
+      const topAtEnd = r.top - (maxY - window.scrollY);                     // Lage des Worts, wenn ganz unten gescrollt
+      const p = c01((vh - r.top) / Math.max(1, vh - topAtEnd));
+      return p > 0.985 ? 1 : p;                                             // ganz unten: sicher komplett (Rundung)
+    }
+    function drawFooter(now) {
+      ftRaf = 0;
       const spans = footerBox.querySelectorAll('.ftp-ch');
       if (!spans.length) return;
-      const r = footerBox.getBoundingClientRect(), vh = window.innerHeight;
-      if (r.top > vh * 1.1) { spans.forEach(s => { if (s._pxW) pxClip(s, 0, 'build'); }); return; }
-      const p = c01((vh - r.top) / (r.height * 1.05));                      // 0 = Wort unten am Rand · 1 = ganz im Bild
+      const dt = Math.min(50, now - (ftLast || now)) / 1000; ftLast = now;
+      ftShown = smoothTowards(ftShown, ftTarget, 0.6, dt);
+      if (Math.abs(ftTarget - ftShown) < 0.002) ftShown = ftTarget;
       spans.forEach((s, i) => {
         if (s._pxW !== s.offsetWidth || s._pxH !== s.offsetHeight) pxMeasure(s, fontPx(s) * 0.05);   // Größe passt sich an (Fit)
-        pxClip(s, ease(c01((p - i * 0.12) / 0.55)), 'build');
+        pxClip(s, ease(c01((ftShown - i * 0.13) / 0.6)), 'build');
       });
+      if (ftShown !== ftTarget) ftRaf = requestAnimationFrame(drawFooter); else ftLast = 0;
+    }
+    function updateFooter() {
+      ftTarget = footerTarget();
+      if (!ftRaf) ftRaf = requestAnimationFrame(drawFooter);
     }
     updateFooter();
     lenis.on('scroll', updateFooter);
@@ -1658,7 +1742,7 @@ window.__heroInit = heroInit;
   }
 
   /* Footer-Leiste: LinkedIn · Email · Behance · „made with love" bauen sich nacheinander aus Pixeln auf */
-  const barCells = onIndex ? [...document.querySelectorAll('.site-footer-bar .sf-link, .site-footer-bar .sf-right')] : [];
+  const barCells = [...document.querySelectorAll('.site-footer-bar .sf-link, .site-footer-bar .sf-right')];
   if (live && barCells.length) {
     barCells.forEach(c => { c.style.clipPath = 'inset(50%)'; });
     onEnterOnce(barCells[0].parentNode.parentNode, () => barCells.forEach((c, i) =>
@@ -1666,45 +1750,52 @@ window.__heroInit = heroInit;
   }
 
   /* Scroll-Anzeige rechts (die native Scrollbar ist ausgeblendet):
-     · Pixel-Spur: Blöcke füllen sich von oben, gezackter heller Kopf; jeder Block mit dunklem Rand → auch über hellen Bildern lesbar
+     · Pixel-Spur (eigenes Element, invertiert sich gegen den Untergrund): Blöcke füllen sich von oben, gezackter heller Kopf
      · crazy: je schneller gescrollt wird, desto stärker zittert die Spur um den Kopf und sprüht Pixel ab
-     · Label wandert mit dem Kopf: Section-Name (tippt sich bei jedem Wechsel ein) + Prozent
+     · Label = Chip in Akzentfarbe, hängt mit einer Linie am Kopf: nur die Prozentzahl (Ziffern rollen wie ein Zählwerk)
      · erscheint beim Scrollen, blendet sich nach 1,2 s Ruhe wieder aus */
-  if ((onIndex || document.body.classList.contains('projects-page')) && !PX_REDUCE) {   // Startseite + My Work
+  if ((onIndex || document.body.classList.contains('cv-page')) && !PX_REDUCE) {   // alle Seiten (My Work + Me tragen .cv-page)
     const wrap = document.createElement('div');
     wrap.className = 'px-scroll'; wrap.setAttribute('aria-hidden', 'true');
-    wrap.innerHTML = '<canvas></canvas><div class="psl"><span class="psl-name"></span><span class="psl-pct">000%</span></div>';
+    const digit = '<span class="psl-d">' + '0123456789'.split('').map(d => '<span>' + d + '</span>').join('') + '</span>';
+    wrap.innerHTML = '<div class="psl"><span class="psl-pct">' + digit + digit + digit + '<span class="psl-u">%</span></span></div>';
     document.body.appendChild(wrap);
-    const cv = wrap.querySelector('canvas'), g = cv.getContext('2d');
-    const label = wrap.querySelector('.psl'), nameEl = wrap.querySelector('.psl-name'), pctEl = wrap.querySelector('.psl-pct');
-    const SECTIONS = [['hero', 'Start'], ['work', 'What I do'], ['storySection', 'About me'], ['siteFooter', 'Say hi'],
-                      ['pjHero', 'My Work'], ['pjGrid', 'Projects']]
-      .map(([id, name]) => [document.getElementById(id), name]).filter(([el]) => el);
+    const cv = document.createElement('canvas'), g = cv.getContext('2d');
+    cv.className = 'px-track'; cv.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(cv);
+    const digits = [...wrap.querySelectorAll('.psl-d')];
+    const label = wrap.querySelector('.psl');
     const BS = 4, STEP = 7, X0 = 10;                                        // Blockgröße, Abstand, Abstand zum rechten Rand
     let CW = 0, CH = 0, dpr = 1, rows = 0, lim = 1, idle = 0, raf = 0;
-    let p = 0, vel = 0, shownName = '', last = 0;
+    let p = 0, vel = 0, last = 0;
     const bits = [];
+    /* Bereich der Anzeige: unter der Nav. My Work: fester Bereich mit Platz für den Filter oben und unten —
+       der Filter wartet anfangs unten und rastet später oben ein; so liegt die Anzeige nie darüber und springt nicht */
+    const filter = document.getElementById('pjFilter');
+    let bTop = -1, bBot = -1;
+    function bounds() {
+      let top = 52, bot = window.innerHeight;
+      if (filter) { const fh = filter.offsetHeight; top = 52 + fh; bot = window.innerHeight - fh; }
+      if (top === bTop && bot === bBot) return false;
+      bTop = top; bBot = bot;
+      cv.style.top = top + 'px'; cv.style.height = Math.max(40, bot - top) + 'px';
+      wrap.style.top = top + 'px'; wrap.style.bottom = (window.innerHeight - bot) + 'px';
+      return true;
+    }
     function size() {
+      bounds();
       CW = cv.clientWidth; CH = cv.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
       cv.width = Math.round(CW * dpr); cv.height = Math.round(CH * dpr);
       rows = Math.max(1, Math.floor((CH - 24) / STEP));
       lim = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     }
-    function section() {
-      let name = SECTIONS.length ? SECTIONS[0][1] : '';
-      if (SECTIONS.length && window.scrollY >= lim - 4) return SECTIONS[SECTIONS.length - 1][1];   // ganz unten: letzte Section (Footer)
-      for (const [el, n] of SECTIONS) if (el.getBoundingClientRect().top <= window.innerHeight * (el.id === 'siteFooter' ? 0.65 : 0.4)) name = n;   // Footer erreicht nie die Mitte → wie die Nav ab 65 %
-      return name;
-    }
     function draw(now) {
       raf = 0;
+      if (bounds()) size();                                                  // Filter rastet ein / fährt weg → Bereich anpassen
       const dt = Math.min(50, now - (last || now)); last = now;
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, CW, CH);
       const x = CW - X0 - BS, head = p * (rows - 1), speed = Math.min(1, Math.abs(vel) / 60);
-      g.fillStyle = '#F0EDE8';
-      /* dunkler Rand hinter der ganzen Spur → lesbar auf hellem Untergrund (z. B. Vollbild-Showreel) */
-      g.fillStyle = 'rgba(10,10,9,0.55)'; g.fillRect(x - BS - 6, 8, BS * 2 + 10, (rows - 1) * STEP + BS + 8);
-      g.fillStyle = '#F0EDE8';
+      g.fillStyle = '#FFFFFF';
       for (let i = 0; i < rows; i++) {
         const d = head - i, y = 12 + i * STEP;
         let a = d < -0.5 ? 0.16 : d < 1.5 ? 1 : 0.55;                       // Spur · heller Kopf · gefüllt
@@ -1725,7 +1816,8 @@ window.__heroInit = heroInit;
         g.globalAlpha = b.a; g.fillRect(Math.round(b.x), Math.round(b.y), b.s, b.s);
       }
       g.globalAlpha = 1;
-      label.style.transform = 'translate3d(0,' + Math.round(Math.max(0, Math.min(CH - 30, hy - 8))) + 'px,0)';
+      const lh = label.offsetHeight || 28;                                   // Chip mittig auf dem Kopf
+      label.style.transform = 'translate3d(0,' + Math.round(Math.max(0, Math.min(CH - lh, hy + BS / 2 - lh / 2))) + 'px,0)';
       vel *= Math.pow(0.86, f);                                              // Tempo klingt ab → Zittern beruhigt sich
       if (bits.length || Math.abs(vel) > 0.5) raf = requestAnimationFrame(draw);
     }
@@ -1735,12 +1827,11 @@ window.__heroInit = heroInit;
       lim = (e && e.limit) || lim;
       p = c01(((e && typeof e.scroll === 'number') ? e.scroll : window.scrollY) / lim);
       if (e && typeof e.velocity === 'number') vel = e.velocity;
-      pctEl.textContent = String(Math.round(p * 100)).padStart(3, '0') + '%';
-      const n = section();
-      if (n !== shownName) { shownName = n; nameEl._typeOrig = n; nameEl._typed = false; nameEl.textContent = n.replace(/\S/g, ' '); typeIn(nameEl, 300); }
-      wrap.classList.add('is-on');
+      const pc = String(Math.round(p * 100)).padStart(3, '0');
+      digits.forEach((d, k) => d.style.setProperty('--d', pc[k]));             // Ziffern rollen einzeln
+      wrap.classList.add('is-on'); cv.classList.add('is-on');
       clearTimeout(idle);
-      idle = setTimeout(() => wrap.classList.remove('is-on'), 1200);
+      idle = setTimeout(() => { wrap.classList.remove('is-on'); cv.classList.remove('is-on'); }, 1200);
       kick();
     });
     window.addEventListener('resize', () => { size(); kick(); });
@@ -1794,18 +1885,20 @@ window.__heroInit = heroInit;
   const span = (t, w) => c01((t - w[0]) / (w[1] - w[0]));
 
   /* ── Zeitachse: t in Bildschirmhöhen, 0 = Bühne oben angekommen (Pin-Beginn) ── */
-  const C = 0.9;                                         // Scrollweg pro Kapitel
+  const C = 1.5;                                         // Scrollweg pro Kapitel (inkl. Haltestrecke für den Scribble)
+  const DRAWLEN = 0.3, HOLD = 0.7;                       // Scribble zeichnet sich über 0,3 Bildschirmhöhen, steht dann noch 0,7
   const LAST = 2;                                        // Kapitel 0 … 2 (Avatar, Salzburg, Work — Partikel werden wieder Sternenstaub)
   const GRID = 2;                                        // Kapitel der Work-Kacheln
   const ARRIVE = k => 0.75 + k * C;                      // ab hier steht Kapitel k
-  const PIN = ARRIVE(LAST) + 1.0;                        // die Bilder bauen sich auf, dann steht das Raster noch etwas
+  const PIN = ARRIVE(LAST) + 1.2;                        // Scribble + Bilder, dann steht das Raster noch etwas
   const FORM = [-0.2, ARRIVE(0)];                        // Sternenstaub → Avatar: ruhig, erst nach dem Hereinscrollen
-  const MORPH = k => [ARRIVE(k) + 0.3, ARRIVE(k + 1) - 0.05];
-  const LINES = [
-    { inn: [0.15, 0.55], out: [ARRIVE(0) + 0.25, ARRIVE(0) + 0.45] },
-    { inn: [ARRIVE(1) - 0.4, ARRIVE(1) - 0.05], out: [ARRIVE(1) + 0.25, ARRIVE(1) + 0.45] },
-    { inn: [ARRIVE(2) - 0.4, ARRIVE(2) - 0.05], out: null },
-  ];
+  /* je Satz: aufbauen → Scribble zeichnen → halten → (Scribble zurück) zerfallen; der letzte Satz bleibt */
+  const LINES = [0, 1, 2].map((k) => {
+    const inn = k === 0 ? [0.15, 0.55] : [ARRIVE(k) - 0.4, ARRIVE(k) - 0.05];
+    const o = k < LAST ? inn[1] + DRAWLEN + HOLD : null;
+    return { inn, out: o ? [o, o + 0.2] : null };
+  });
+  const MORPH = k => [LINES[k].out[0] + 0.05, ARRIVE(k + 1) - 0.05];   // Grafik wechselt erst, wenn der Satz geht
   /* Kacheln: Bild k blendet sich weich ein, sobald sich Salzburg zu Sternenstaub aufgelöst hat (leicht gestaffelt) */
   const IMG = k => [ARRIVE(GRID) - 0.1 + k * 0.1, ARRIVE(GRID) + 0.45 + k * 0.1];
 
@@ -1819,7 +1912,7 @@ window.__heroInit = heroInit;
   /* ── Work-Collage: vier frei gesetzte Kacheln (Lage/Größe im CSS); je Kachel eigenes Scroll-Tempo und eigene Bild-Parallax-Stärke ── */
   const wk = document.getElementById('wkGrid');
   const cards = wk ? [...wk.querySelectorAll('.wk-item')] : [];
-  const cFrames = cards.map(c => c.querySelector('.wk-frame')), cImgs = cards.map(c => c.querySelector('.wk-frame img'));
+  const cFrames = cards.map(c => c.querySelector('.wk-frame')), cImgs = cards.map(c => [...c.querySelectorAll('.wk-frame img')]);
   const cMetas = cards.map(c => c.querySelector('.wk-meta'));
   const CARD_V = [1.0, 0.8, 0.6, 0.9];                     // Scroll-Tempo: was oben liegt, zieht schneller → Abstände wachsen, nichts überlappt
   const CARD_M = [1.0, 0.7, 0.85, 0.6];                    // Maus: wie weit der Bildinhalt im Rahmen gleitet
@@ -1998,7 +2091,25 @@ window.__heroInit = heroInit;
   /* ── Sätze: Pixel-Aufbau / -Zerfall nach Zeitfenster ── */
   const lines = [...linesWrap.querySelectorAll('.story-line')];
   const measureLines = () => lines.forEach(l => pxMeasure(l, Math.max(8, parseFloat(getComputedStyle(l).fontSize) * 0.16)));
+  /* Graffiti-Scribbles: zeichnen sich direkt nach dem Aufbau des Satzes beim Weiterscrollen (Strich für Strich),
+     kurz bevor der Satz zerfällt, ziehen sie sich zurück */
+  const scribbles = lines.map(l => [...l.querySelectorAll('.story-scribble path')]);
+  const DRAW = i => [LINES[i].inn[1], LINES[i].inn[1] + DRAWLEN];
+  const UNDRAW = i => LINES[i].out ? [LINES[i].out[0] - 0.12, LINES[i].out[0]] : null;
+  const measureScribbles = () => scribbles.forEach(scribbleMeasure);
+  measureScribbles();
+  window.addEventListener('resize', measureScribbles);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureScribbles);
+  if (!animate) scribbles.forEach(ps => ps.forEach(p => { p.style.strokeDashoffset = '0'; }));
+  function renderScribbles(t) {
+    scribbles.forEach((ps, i) => {
+      if (!ps.length) return;
+      const un = UNDRAW(i);
+      scribbleDraw(ps, span(t, DRAW(i)) * (un ? 1 - span(t, un) : 1));
+    });
+  }
   function renderLines(t) {
+    renderScribbles(t);
     lines.forEach((l, i) => {
       const w = LINES[i] || LINES[LINES.length - 1];
       if (w.out && t > w.out[0]) pxClip(l, 1 - span(t, w.out), 'dissolve');
@@ -2033,7 +2144,8 @@ window.__heroInit = heroInit;
       if (!PX_REDUCE) {
         cards[k].style.transform = 'translate3d(0,' + r.dy.toFixed(2) + 'px,0)';
         const f = CARD_M[k] * 0.1, sc = animate ? 1.08 - 0.08 * b : 1;
-        cImgs[k].style.transform = 'translate3d(' + (-rx * r.w * f).toFixed(2) + 'px,' + (-ry * r.h * f).toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
+        const tf = 'translate3d(' + (-rx * r.w * f).toFixed(2) + 'px,' + (-ry * r.h * f).toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
+        cImgs[k].forEach(im => { im.style.transform = tf; });
       }
     }
     wk.classList.toggle('is-on', all > 0.97);                                  // klickbar erst, wenn alle Bilder stehen
@@ -2092,7 +2204,7 @@ window.__heroInit = heroInit;
       groups[sz * BUCK + Math.min(BUCK - 1, Math.floor(al * BUCK))].push(x, y);
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgb(240,237,232)';
+    ctx.fillStyle = 'rgb(255,255,255)';
     for (let g = 0; g < groups.length; g++) {
       const p = groups[g]; if (!p.length) continue;
       const s = Math.floor(g / BUCK) + 1;
@@ -2136,20 +2248,32 @@ window.__heroInit = heroInit;
   const items = [...grid.querySelectorAll('.wk-item')];
   const motion = !PX_REDUCE && typeof gsap !== 'undefined';
 
-  /* Buchstaben für den Hover-Roll (Kachelnamen + große Links) */
-  const splitRoll = (el, text) => {
-    el.innerHTML = [...text].map((c, i) => '<span class="wk-l" style="--i:' + i + '" data-c="' + c + '">' + (c === ' ' ? '&nbsp;' : c) + '</span>').join('');
-  };
+  /* Buchstaben für den Hover-Roll (Kachelnamen + große Links) — splitRoll siehe oben */
   items.forEach((it) => {
     const n = it.querySelector('.wk-name'), name = n.dataset.t || n.textContent.trim();
     splitRoll(n, name);
+    /* Hover: Detailbild zieht von unten auf (wie „My work"), beim Verlassen nach oben weg; danach still zurück nach unten */
+    const det = it.querySelector('.wk-detail'), card = it.querySelector('.wk-card');
+    if (det) {
+      const enter = () => {
+        if (it.classList.contains('is-leave')) { it.classList.add('is-reset'); it.classList.remove('is-leave'); void it.offsetWidth; it.classList.remove('is-reset'); }
+        it.classList.add('is-hover');
+      };
+      const leave = () => { if (!it.classList.contains('is-hover')) return; it.classList.remove('is-hover'); it.classList.add('is-leave'); };
+      card.addEventListener('mouseenter', enter); card.addEventListener('focus', enter);
+      card.addEventListener('mouseleave', leave); card.addEventListener('blur', leave);
+      det.addEventListener('transitionend', (e) => {
+        if (e.propertyName !== 'clip-path' || !it.classList.contains('is-leave')) return;
+        it.classList.add('is-reset'); it.classList.remove('is-leave'); void it.offsetWidth; it.classList.remove('is-reset');
+      });
+    }
     it.querySelector('.wk-card').setAttribute('aria-label', 'Preview project ' + name + ' — ' + (it.dataset.cat || ''));
   });
 
   /* Wege weiter: Wörter gleiten aus der Maske, Label tippt sich ein */
   const next = document.getElementById('storyNext');
   if (next) {
-    next.querySelectorAll('.sn-in').forEach((el) => { const t = el.textContent.trim(); el.parentNode.parentNode.setAttribute('aria-label', t); splitRoll(el, t); });
+    next.querySelectorAll('.sn-in').forEach((el) => splitRoll(el));
     const keys = [...next.querySelectorAll('.sn-k')];
     keys.forEach(typePrepare);
     onEnterOnce(next, () => { next.classList.add('is-in'); keys.forEach((k, i) => setTimeout(() => typeIn(k, 520), 250 + i * 140)); }, '-12%');
@@ -2244,7 +2368,7 @@ window.__heroInit = heroInit;
   function open(item) {
     if (busy || cur) return;
     busy = true; cur = item; chipOff();
-    const frame = item.querySelector('.wk-frame'), src = frame.querySelector('img');
+    const frame = item.querySelector('.wk-frame'), src = item.classList.contains('is-hover') && frame.querySelector('.wk-detail') || frame.querySelector('img');
     img.src = src.currentSrc || src.src; img.alt = src.alt;
     go.href = item.dataset.href || 'projects.html';
     go.setAttribute('aria-label', 'Open project page: ' + (item.querySelector('.wk-name').dataset.t || ''));
