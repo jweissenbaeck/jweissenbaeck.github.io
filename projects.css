@@ -19,7 +19,7 @@
 }
 .pj-hero-title {
   margin: 0;
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Anton', Impact, sans-serif;
   font-weight: 400; letter-spacing: -0.02em; line-height: 1.12;
   font-size: clamp(3.5rem, 17vw, 18rem);
   text-transform: uppercase; color: var(--ink);
@@ -126,8 +126,8 @@
   margin-bottom: clamp(14px, 1.6vw, 24px);
 }
 .pj-project-name {
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 700; letter-spacing: 0.01em; line-height: 1;
+  font-family: 'Anton', Impact, sans-serif;
+  font-weight: 400; letter-spacing: 0.03em; line-height: 1;
   font-size: clamp(1.3rem, 2.4vw, 2.1rem);
   text-transform: uppercase; color: var(--ink);
 }

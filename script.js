@@ -26,36 +26,6 @@ function afterIntro(fn) {
 /* Arbeit in kleinen Häppchen auf Leerlaufzeit verteilen (≈ 8 ms pro Stück) */
 const onIdle = (cb) => (window.requestIdleCallback ? requestIdleCallback(cb, { timeout: 250 }) : setTimeout(cb, 16));
 
-/* ============================
-   UNTERSCHRIFT ZEICHNEN (Intro + Nav-Logo)
-   SVG startet das Strichmuster bei jedem Absetzen („M") neu → J und „cky" würden gleichzeitig wachsen.
-   Darum: Pfad in einzelne Striche teilen und nacheinander zeichnen, mit kurzer Pause fürs Absetzen.
-============================ */
-function sigSplit(svg) {
-  const src = svg && svg.querySelector('path');
-  if (!src) return [];
-  const parts = src.getAttribute('d').trim().split(/(?=M)/).map(s => s.trim()).filter(Boolean);
-  if (parts.length < 2) return [src];
-  parts.forEach(d => { const p = src.cloneNode(); p.setAttribute('d', d); svg.appendChild(p); });
-  src.remove();
-  return [...svg.querySelectorAll('path')];
-}
-/* Fortschritt 0…1 auf die Striche verteilen (nach Länge; dazwischen je 4 % „Luft" für den abgesetzten Stift) */
-function sigPlan(paths) {
-  const lens = paths.map(p => p.getTotalLength()), sum = lens.reduce((a, b) => a + b, 0), lift = sum * 0.04;
-  const total = sum + lift * (paths.length - 1);
-  return { lens, total, lift };
-}
-function sigDraw(paths, plan, p) {
-  let s = p * plan.total;
-  paths.forEach((el, i) => {
-    const L = plan.lens[i], drawn = Math.max(0, Math.min(L, s));
-    el.style.strokeDasharray = L + ' ' + L;
-    el.style.strokeDashoffset = (L - drawn).toFixed(2);
-    el.style.visibility = drawn > 0.5 ? '' : 'hidden';             // sonst zeigt die runde Kappe schon einen Punkt
-    s -= L + plan.lift;
-  });
-}
 
 /* ============================
    PIXEL-BAUSTEINE für Scroll-Einblendungen — gleiche Blockverteilung wie Seitenwechsel und Scroll-Wipe.
@@ -503,24 +473,27 @@ function onEnterOnce(el, fn, margin) {
 })();
 
 /* ============================
-   PAGE LOADER — Unterschrift + Teilung
-   1. „Jcky" wird wie eine Unterschrift gezeichnet (Strich-Animation, ruhig an- und ausschwingend).
-   2. Ist die Seite bereit, zieht sich von der Mitte aus eine feine Linie über den Bildschirm …
-   3. … und der Bildschirm teilt sich entlang der Linie: obere Hälfte nach oben, untere nach unten
-      (beide tragen die Unterschrift → sie wird mittendurch geschnitten). Dabei steigt der Hero-Name auf.
-   Lädt die Seite länger als die Unterschrift dauert, erscheint unten rechts dezent „Loading 64 %".
-   Volle Länge einmal pro Sitzung; bei erneutem Laden eine kurze Version.
+   PAGE LOADER — HUD / Visier
+   1. HUD steht sofort: Eckwinkel, Skalen, Scan-Linie, Live-Zeit Salzburg.
+   2. Zähler 000 → 100 %: „JCKY" baut sich dazu pixelweise auf, der Segmentbalken füllt sich,
+      der Status tippt sich neu ein (Fonts → Assets → Layout → Ready). Echte Bereitschaft (load + Schriften)
+      deckelt den Zähler bei 90 %, bis die Seite wirklich fertig ist.
+   3. Bei 100 % rastet der Fokusrahmen ein, dann teilt sich der Bildschirm: obere Hälfte nach oben, untere nach unten.
+      Die Schnittkante zerbröselt Spalte für Spalte in Pixelblöcke, die davonfliegen; dabei steigt der Hero-Name auf.
+   Volle Länge einmal pro Sitzung; bei erneutem Laden eine kurze Version. Zeit läuft Bild für Bild
+   (max. 1/30 s pro Bild) → hängt der Browser kurz, springt nichts.
 ============================ */
 (function initLoader() {
   const loader = document.getElementById('pageLoader');
-  const pct    = document.getElementById('loaderPercent');
-  if (!loader) return;
+  const hud = document.getElementById('ldHud');
+  if (!loader || !hud) return;
 
-  /* Bei interner Navigation Loader überspringen — die Slide-Transition
+  /* Bei interner Navigation Loader überspringen — die Seitenwechsel-Transition
      sorgt bereits für Kontinuität; Hero danach normal einblenden. */
   if (ARRIVED_VIA_INTERNAL_NAV) {
     loader.style.display = 'none';
     loader.classList.add('is-hidden');
+    window.__introDone = true;
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (typeof window.__heroInit === 'function') window.__heroInit(true);
     }));
@@ -528,120 +501,160 @@ function onEnterOnce(el, fn, margin) {
   }
 
   document.documentElement.style.overflow = 'hidden';
-
-  const top  = loader.querySelector('.ld-top');
-  const line = loader.querySelector('.ld-line');
-  const meta = loader.querySelector('.ld-meta');
-  sigSplit(top.querySelector('.ld-sig'));                             // J und „cky" als eigene Striche (nacheinander)
-  const bot  = top.cloneNode(true);                                   // zweite Hälfte = deckungsgleiche Kopie
-  bot.classList.replace('ld-top', 'ld-bot');
-  top.after(bot);
-  const sigs = [...loader.querySelectorAll('.ld-sig')].map(s => [...s.querySelectorAll('path')]);
-  const stages = [...loader.querySelectorAll('.ld-stage')];
-
   const quick = vtStoreGet('jcky:introSeen') === '1';                 // schon gesehen → kurze Version
   vtStoreSet('jcky:introSeen', '1');
-  const DRAW = PX_REDUCE ? 0 : quick ? 750 : 2300;                    // Unterschrift (ms)
-  const LINE = PX_REDUCE ? 0 : quick ? 320 : 520;                     // Linie wächst (ms)
-  const SPLIT = PX_REDUCE ? 0 : quick ? 900 : 1250;                   // Teilung (ms)
-  const EXPO = 'cubic-bezier(0.76, 0, 0.24, 1)';                      // weich an- und auslaufend
+  const COUNT = PX_REDUCE ? 0 : quick ? 900 : 2300;                   // 000 → 100 (ms)
+  const SPLIT = PX_REDUCE ? 0 : quick ? 850 : 1150;                   // Teilung (ms)
+  const live = !PX_REDUCE && PX_CLIP_OK;
 
-  /* ── 1. Unterschrift zeichnen ── */
-  const plan = sigPlan(sigs[0]);
-  const drawAll = (p) => sigs.forEach(paths => sigDraw(paths, plan, p));
-  drawAll(0);
-  loader.classList.add('is-ready');
-  const penEase = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;   // wie ein Stift: anziehen, gleiten, auslaufen
-  /* Bild für Bild statt nach der Uhr: hängt der Browser kurz, pausiert der Strich (max. 1/30 s pro Bild)
-     statt Teile zu überspringen. Start erst nach dem ersten wirklich gezeichneten Bild + kurzer Ruhe. */
-  const drawn = new Promise((resolve) => {
-    if (!DRAW) { drawAll(1); resolve(); return; }
-    let elapsed = 0, last = 0;
-    function frame(now) {
+  const word = hud.querySelector('.ld-word'), num = hud.querySelector('.ld-num');
+  const status = hud.querySelector('.ld-status-txt'), bar = hud.querySelector('.ld-bar');
+  const clock = hud.querySelector('.ld-clock');
+  const SEG = 32;
+  bar.innerHTML = '<i></i>'.repeat(SEG);
+  const segs = [...bar.children];
+
+  /* Live-Zeit Salzburg */
+  try {
+    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Vienna', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const tick = () => { clock.textContent = fmt.format(new Date()); };
+    tick(); const iv = setInterval(tick, 1000);
+    window.addEventListener('jcky:intro-done', () => clearInterval(iv), { once: true });
+  } catch (e) {}
+
+  /* Status: tippt sich bei jedem Wechsel neu ein */
+  const STEPS = [[0, 'Loading fonts'], [26, 'Loading assets'], [58, 'Building layout'], [88, 'Calibrating'], [100, 'Ready']];
+  let stepShown = -1;
+  function setStatus(p) {
+    let k = 0; STEPS.forEach((s, i) => { if (p >= s[0]) k = i; });
+    if (k === stepShown) return;
+    stepShown = k;
+    status._typeOrig = STEPS[k][1]; status._typed = false;
+    if (PX_REDUCE) status.textContent = STEPS[k][1];
+    else { status.textContent = STEPS[k][1].replace(/\S/g, ' '); typeIn(status, 320); }
+  }
+
+  /* „JCKY" pixelweise: Blockgröße relativ zur Schrift; Messung erst, wenn Anton geladen ist */
+  if (live) loader.classList.add('is-live');
+  let wordReady = !live;
+  const measureWord = () => { pxMeasure(word, Math.max(8, parseFloat(getComputedStyle(word).fontSize) * 0.055)); wordReady = true; };
+  const fontsOk = (document.fonts && document.fonts.load)
+    ? Promise.race([Promise.all([document.fonts.load('400 100px Anton'), document.fonts.load('400 10px "DM Mono"')]), new Promise(r => setTimeout(r, 700))])
+    : Promise.resolve();
+  fontsOk.then(() => { if (live) measureWord(); });
+
+  /* echte Bereitschaft */
+  const ready = new Promise((resolve) => {
+    const go = () => (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(resolve);
+    if (document.readyState === 'complete') go(); else window.addEventListener('load', go, { once: true });
+  });
+  let isReady = false; ready.then(() => { isReady = true; });
+
+  function render(p) {
+    const n = Math.round(p);
+    num.textContent = String(n).padStart(3, '0');
+    const on = Math.round(p / 100 * SEG);
+    segs.forEach((s, i) => s.classList.toggle('is-on', i < on));
+    setStatus(n);
+    if (live && wordReady) pxClip(word, Math.min(1, p / 100), 'build');
+  }
+
+  /* ── Zählen (Bild für Bild) ── */
+  const counted = new Promise((resolve) => {
+    if (!COUNT) { ready.then(() => { render(100); resolve(); }); return; }
+    let elapsed = 0, last = 0, shown = 0;
+    fontsOk.then(() => requestAnimationFrame(function frame(now) {
       if (last) elapsed += Math.min(now - last, 1000 / 30);
       last = now;
-      const k = Math.min(1, elapsed / DRAW);
-      drawAll(penEase(k));
-      if (k < 1) requestAnimationFrame(frame); else resolve();
-    }
-    /* Start nach dem „load"-Ruck (ScrollTrigger vermisst dann alles neu), spätestens nach 0,7 s */
-    const loaded = new Promise(r => { if (document.readyState === 'complete') r(); else window.addEventListener('load', r, { once: true }); });
-    Promise.race([loaded, new Promise(r => setTimeout(r, 700))]).then(() =>
-      requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => requestAnimationFrame(frame), quick ? 40 : 120))));
+      const k = Math.min(1, elapsed / COUNT);
+      const target = (1 - Math.pow(1 - k, 2.2)) * 100;                    // schnell an, ruhig aus
+      shown = Math.min(target, isReady ? 100 : 90);
+      render(shown);
+      if (shown < 100) requestAnimationFrame(frame); else resolve();
+    }));
   });
 
-  /* ── Laden: echte Bereitschaft (load + Schriften); Prozent nur als Fallback-Anzeige ── */
-  let shown = 0, target = 0;
-  const trickle = setInterval(() => { target = Math.min(88, target + Math.random() * 4 + 1.5); }, 120);
-  const ready = new Promise((resolve) => {
-    const go = () => { clearInterval(trickle); target = 100; (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(resolve); };
-    if (document.readyState === 'complete') go(); else window.addEventListener('load', go);
-  });
-  (function count() {
-    shown += (target - shown) * 0.15;
-    if (pct) pct.textContent = Math.floor(shown);
-    if (!loader.classList.contains('is-hidden')) requestAnimationFrame(count);
-  })();
-  drawn.then(() => { setTimeout(() => { if (!loader.classList.contains('is-splitting')) meta.classList.add('is-on'); }, 350); });
-
-  /* ── 2. + 3. Linie, dann Teilung ── */
+  /* ── Teilung: zwei Kopien des HUD gleiten auseinander, die Kante zerbröselt in Pixel ── */
   function finish() {
     loader.classList.add('is-hidden');
     loader.style.display = 'none';
     window.__introDone = true;
     window.dispatchEvent(new Event('jcky:intro-done'));             // jetzt darf die schwere Vorarbeit starten (afterIntro)
   }
-  Promise.all([drawn, ready]).then(() => new Promise(r => setTimeout(r, PX_REDUCE ? 0 : quick ? 120 : 280))).then(() => {
-    loader.classList.add('is-splitting');
-    meta.classList.remove('is-on');
-    if (PX_REDUCE) {                                                  // ohne Bewegung: kurz ausblenden
-      document.documentElement.style.overflow = '';
+  function split() {
+    document.documentElement.style.overflow = '';
+    if (!SPLIT) {
       if (typeof window.__heroInit === 'function') window.__heroInit();
       loader.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.then(finish);
       return;
     }
-    line.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: LINE, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' });
-    setTimeout(() => {
-      document.documentElement.style.overflow = '';
-      line.animate([{ opacity: 1 }, { opacity: 0 }], { duration: SPLIT * 0.35, easing: 'ease-out', fill: 'forwards' });
-      const opts = { duration: SPLIT, easing: EXPO, fill: 'forwards' };
-      top.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-52%)' }], opts);
-      bot.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(52%)' }], opts)
-        .finished.then(finish);
-      stages.forEach(s => s.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.06)' }], opts));   // leichte Tiefe beim Öffnen
-      /* Hero-Name steigt auf, während sich die Hälften öffnen */
-      setTimeout(() => { if (typeof window.__heroInit === 'function') window.__heroInit(); }, SPLIT * 0.22);
-    }, LINE + 60);
+    const W = window.innerWidth, H = window.innerHeight, mid = H / 2;
+    const halves = ['top', 'bot'].map((side) => {
+      const h = document.createElement('div');
+      h.className = 'ld-half';
+      const c = hud.cloneNode(true); c.removeAttribute('id');
+      h.appendChild(c);
+      loader.appendChild(h);
+      return h;
+    });
+    hud.style.visibility = 'hidden';
+    loader.classList.add('is-splitting');
+    const dust = document.createElement('canvas'), dctx = dust.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
+    dust.className = 'ld-dust'; dust.width = W * dpr; dust.height = H * dpr; loader.appendChild(dust);
+    const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
+    const dark = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim() || '#0A0A09';
+
+    const B = Math.max(16, Math.round(W / 70)), cols = Math.ceil(W / B), DEPTH = 7;   // Blockgröße · max. zerbröselte Reihen
+    const kTop = new Array(cols).fill(0), kBot = new Array(cols).fill(0), bits = [];
+    const ease = t => t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;  // weich an + aus
+    function edge(k, side) {                                                         // gezackte Schnittkante als clip-path
+      let d = side === 'top' ? 'M0 0H' + W : 'M0 ' + H + 'H' + W;
+      for (let i = cols - 1; i >= 0; i--) {
+        const y = side === 'top' ? mid - k[i] * B : mid + k[i] * B;
+        d += 'V' + y + 'H' + i * B;
+      }
+      return "path('" + d + 'V' + (side === 'top' ? 0 : H) + "Z')";
+    }
+    let elapsed = 0, last = 0, heroStarted = false;
+    requestAnimationFrame(function frame(now) {
+      const dt = last ? Math.min(now - last, 1000 / 30) : 0; last = now; elapsed += dt;
+      const p = Math.min(1, elapsed / SPLIT), e = ease(p), D = e * (mid + DEPTH * B + 40);
+      /* Spalten zerbröseln nacheinander (zufällig gestaffelt), jeder abgelöste Block fliegt als Pixel davon */
+      for (let i = 0; i < cols; i++) {
+        [[kTop, 'top', 11], [kBot, 'bot', 23]].forEach(([k, side, seed]) => {
+          const target = Math.floor(Math.min(1, Math.max(0, p * 1.7 - pxRand(i, seed) * 0.7)) * DEPTH);
+          while (k[i] < target) {
+            const yRel = side === 'top' ? mid - (k[i] + 1) * B : mid + k[i] * B;
+            bits.push({ x: i * B, y: yRel, side: side, vx: (pxRand(i, k[i] + seed) - 0.5) * 2.4, vy: (side === 'top' ? -1 : 1) * (1.2 + pxRand(k[i], i) * 3.2), a: 1, inkBit: pxRand(i * 3, k[i]) < 0.18 });
+            k[i]++;
+          }
+        });
+      }
+      halves[0].style.clipPath = edge(kTop, 'top'); halves[0].style.transform = 'translate3d(0,' + (-D).toFixed(1) + 'px,0)';
+      halves[1].style.clipPath = edge(kBot, 'bot'); halves[1].style.transform = 'translate3d(0,' + D.toFixed(1) + 'px,0)';
+      /* lose Pixel: folgen ihrer Hälfte, driften auseinander, blenden aus */
+      dctx.setTransform(dpr, 0, 0, dpr, 0, 0); dctx.clearRect(0, 0, W, H);
+      const f = dt / 16.67;
+      for (let j = bits.length - 1; j >= 0; j--) {
+        const b = bits[j];
+        b.x += b.vx * f; b.y += b.vy * f; b.a -= 0.022 * f;
+        if (b.a <= 0) { bits.splice(j, 1); continue; }
+        const off = b.side === 'top' ? -D : D, s = B * (0.35 + 0.65 * b.a);
+        dctx.globalAlpha = b.a; dctx.fillStyle = b.inkBit ? ink : dark;
+        dctx.fillRect(Math.round(b.x + (B - s) / 2), Math.round(b.y + off + (B - s) / 2), Math.ceil(s), Math.ceil(s));
+      }
+      dctx.globalAlpha = 1;
+      if (!heroStarted && p > 0.18) { heroStarted = true; if (typeof window.__heroInit === 'function') window.__heroInit(); }
+      if (p < 1 || bits.length) requestAnimationFrame(frame); else finish();
+    });
+  }
+
+  Promise.all([counted, ready]).then(() => {
+    loader.classList.add('is-locked');                                // Fokusrahmen rastet ein
+    if (live) pxClip(word, 1, 'build');
+    setTimeout(split, PX_REDUCE ? 0 : quick ? 200 : 360);
   });
 })();
-
-/* ============================
-   NAV-LOGO — dieselbe Unterschrift wie in der Intro; zeichnet sich nach der Intro einmal kurz nach
-   (große Unterschrift → kleine oben links). Ohne Intro (interne Navigation, Unterseiten) oder bei
-   Reduced Motion steht sie einfach da.
-============================ */
-(function initNavSignature() {
-  const svg = document.querySelector('.nav-logo-sig');
-  const loader = document.getElementById('pageLoader');
-  if (!svg || !loader || PX_REDUCE || ARRIVED_VIA_INTERNAL_NAV) return;
-  const paths = sigSplit(svg), plan = sigPlan(paths);
-  sigDraw(paths, plan, 0);                                              // versteckt, bis die Intro fertig ist
-  let started = false;
-  function draw() {
-    if (started) return;
-    started = true;
-    const t0 = performance.now(), D = 1100;
-    (function frame(now) {
-      const k = Math.min(1, (now - t0) / D), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-      sigDraw(paths, plan, e);
-      if (k < 1) requestAnimationFrame(frame);
-      else paths.forEach(p => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; });
-    })(t0);
-  }
-  window.addEventListener('jcky:intro-done', draw, { once: true });
-  setTimeout(draw, 9000);                                               // Sicherheitsnetz: Logo nie dauerhaft unsichtbar
-})();
-
 /* ============================
    PAGE TRANSITIONS — EDITORIAL PANEL (Aino-Stil)
    Ruhiges Off-White-Panel wischt über den Seitenwechsel: Zielname (sauberer
@@ -940,12 +953,10 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     let href = link.getAttribute('href');
     if (!href || href === '#') return;
 
-    /* „Find me here" → direkt ins Kontakt-Kapitel der Story (liegt mitten im fixierten Scrollweg) */
+    /* „Find me here" → Footer (dort stehen alle Kontaktwege) */
     if (href === '#contact') {
-      const y = typeof window.__storyContactY === 'function' ? window.__storyContactY() : null;
       e.preventDefault();
-      if (y != null) lenis.scrollTo(y, { duration: 2.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
-      else { const s = document.getElementById('storySection'); if (s) lenis.scrollTo(s, { duration: 2.2 }); }
+      lenis.scrollTo(document.documentElement.scrollHeight, { duration: 2.2, easing: (t) => 1 - Math.pow(1 - t, 4) });
       return;
     }
 
@@ -1048,90 +1059,37 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 })();
 
 /* ============================
-   VIDEO CURSOR — Play-Button aus Pixelblöcken über dem Hero-Video
-   Helle Pixel-Scheibe mit dunklem Play-Dreieck (wie die Nav-Hover-Zellen: Ink-Fläche, dunkles Zeichen);
-   baut sich beim Hovern von der Mitte aus auf und zerfällt beim Verlassen von außen nach innen.
-   Folgt der Maus mit Nachlauf, neigt sich leicht in Bewegungsrichtung, drückt sich beim Klicken ein.
-   Darunter tippt sich „Play reel" ein. Aktiv, sobald das Video sichtbar ist (nicht erst im Vollbild).
+   PLAY REEL — Label folgt dem Cursor über dem Hero-Video
+   Ohne Glättung/Nachziehen: pro Bild genau eine Transform auf die aktuelle Mausposition (läuft auf der GPU)
+   → auf 60 Hz genauso direkt wie auf 144 Hz. Erscheint, sobald der Zeiger über dem sichtbaren Video steht —
+   auch wenn das Video beim Scrollen unter den stillstehenden Zeiger wandert. Optik: style.css → .hero-play.
 ============================ */
-(function initVideoCursor() {
-  const card = document.getElementById('heroImgCard');
-  if (!card) return;
-  const fine = !window.matchMedia || window.matchMedia('(pointer: fine)').matches;
-  if (!fine) return;
-
-  const SIZE = 96, G = 12, B = SIZE / G;                // 12 × 12 Blöcke à 8 px
-  /* Form: Scheibe minus Play-Dreieck (in Block-Einheiten, Mitte = 0) */
-  const tri = [[-1.7, -2.9], [-1.7, 2.9], [3.1, 0]];
-  const side = (p, a, b) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
-  const inTri = (p) => { const d1 = side(p, tri[0], tri[1]), d2 = side(p, tri[1], tri[2]), d3 = side(p, tri[2], tri[0]); return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0)); };
-  const cells = [];
-  for (let gy = 0; gy < G; gy++) for (let gx = 0; gx < G; gx++) {
-    const p = [gx + 0.5 - G / 2, gy + 0.5 - G / 2], r = Math.hypot(p[0], p[1]);
-    if (r > G / 2 - 0.25) continue;
-    cells.push({ x: gx * B, y: gy * B, dark: inTri(p), thr: (r / (G / 2)) * 0.6 + pxRand(gx, gy + 40) * 0.4 });   // innen zuerst
+(function initPlayReel() {
+  const card = document.getElementById('heroImgCard'), play = document.getElementById('heroPlay');
+  if (!card || !play) return;
+  if (window.matchMedia && !window.matchMedia('(pointer: fine)').matches) return;   // Touch: kein Maus-Label
+  let mx = -1, my = -1, on = false, raf = 0;
+  function place() { raf = 0; play.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)'; }
+  function check() {
+    const r = card.getBoundingClientRect();
+    const inside = mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
+    const vis = typeof gsap === 'undefined' || +gsap.getProperty(card, 'opacity') > 0.6;
+    const next = inside && vis;
+    if (next === on) return;
+    on = next;
+    if (on) place();                                           // beim Erscheinen sofort am Zeiger
+    play.classList.toggle('is-on', on);
+    document.documentElement.classList.toggle('play-reel-on', on);
+    window.__playCursorActive = on;                          // Hero-Partikel pausieren über dem Video
   }
-
-  const cur = document.createElement('div');
-  cur.id = 'videoCursor';
-  cur.setAttribute('aria-hidden', 'true');
-  cur.innerHTML = '<div class="vc-inner"><canvas class="vc-px"></canvas><span class="vc-label">Play reel</span></div>';
-  document.body.appendChild(cur);
-  const inner = cur.querySelector('.vc-inner'), cv = cur.querySelector('.vc-px'), ctx = cv.getContext('2d');
-  const label = cur.querySelector('.vc-label');
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  cv.width = SIZE * dpr; cv.height = SIZE * dpr;
-  const css = getComputedStyle(document.documentElement);
-  const ink = css.getPropertyValue('--ink').trim() || '#F0EDE8', dark = css.getPropertyValue('--bg-dark').trim() || '#0A0A09';
-
-  let over = false, down = false, wasOn = false, cover = 0, press = 1, tilt = 0, lastT = 0, lastKey = -1;
-  let cx = window.innerWidth / 2, cy = window.innerHeight / 2, px = cx, py = cy;
-  card.addEventListener('mouseenter', () => { over = true; });
-  card.addEventListener('mouseleave', () => { over = false; down = false; });
-  card.addEventListener('mousedown', () => { down = true; });
-  window.addEventListener('mouseup', () => { down = false; });
-  window.addEventListener('mousemove', (e) => { cx = e.clientX; cy = e.clientY; }, { passive: true });
-
-  function draw(c) {
-    const key = Math.round(c * 60);
-    if (key === lastKey) return;
-    lastKey = key;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, SIZE, SIZE);
-    for (const k of cells) if (c >= k.thr) { ctx.fillStyle = k.dark ? dark : ink; ctx.fillRect(k.x, k.y, B + 0.5, B + 0.5); }
-  }
-
-  (function loop(now) {
-    requestAnimationFrame(loop);
-    const dt = Math.min((now - (lastT || now)) || 16.7, 50) / 1000; lastT = now;
-    const visible = typeof gsap !== 'undefined' ? +gsap.getProperty(card, 'opacity') > 0.6 : true;
-    const on = over && visible;
-    if (on !== wasOn) {
-      document.documentElement.classList.toggle('video-cursor-on', on);
-      window.__playCursorActive = on;                 // Hero-Partikel pausieren, solange der Cursor da ist
-      if (on) {
-        if (cover < 0.05) { px = cx; py = cy; }       // beim Erscheinen direkt am Zeiger starten
-        if (!PX_REDUCE) { label._typeOrig = 'Play reel'; label._typed = false; typeIn(label, 420); }
-      }
-      wasOn = on;
-    }
-    if (!on && cover <= 0.001) { if (cur.style.opacity !== '0') cur.style.opacity = '0'; return; }
-    cur.style.opacity = '1';
-    cover = PX_REDUCE ? (on ? 1 : 0) : smoothTowards(cover, on ? 1 : 0, on ? 0.12 : 0.08, dt);
-    if (Math.abs(cover - (on ? 1 : 0)) < 0.004) cover = on ? 1 : 0;
-    draw(cover);
-    label.style.opacity = c01v(cover * 2 - 1).toFixed(2);
-    const vx = cx - px;
-    px = smoothTowards(px, cx, 0.07, dt); py = smoothTowards(py, cy, 0.07, dt);
-    tilt = smoothTowards(tilt, Math.max(-14, Math.min(14, vx * 0.35)), 0.1, dt);
-    press = smoothTowards(press, down ? 0.86 : 1, 0.06, dt);
-    cur.style.transform = 'translate3d(' + px.toFixed(1) + 'px,' + py.toFixed(1) + 'px,0)';
-    inner.style.transform = 'translate(-50%,-50%) rotate(' + tilt.toFixed(2) + 'deg) scale(' + press.toFixed(3) + ')';
-  })(performance.now());
-
-  function c01v(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  window.addEventListener('pointermove', (e) => {
+    mx = e.clientX; my = e.clientY;
+    check();
+    if (on && !raf) raf = requestAnimationFrame(place);
+  }, { passive: true });
+  if (typeof lenis !== 'undefined' && lenis.on) lenis.on('scroll', check);
+  document.addEventListener('pointerleave', () => { mx = my = -1; check(); });
 })();
-
 /* ============================
    HERO — Reveal
 ============================ */
@@ -1410,7 +1368,7 @@ window.__heroInit = heroInit;
   const links = [...document.querySelectorAll('.nav-sec[data-section]')];
 
   const workEl    = document.getElementById('work');
-  const contactEl = document.getElementById('storySection') || document.getElementById('contact');
+  const contactEl = document.getElementById('siteFooter');            // „Find me here" = Footer mit allen Kontaktwegen
 
   function setActive(sectionId) {
     links.forEach(link => {
@@ -1425,7 +1383,7 @@ window.__heroInit = heroInit;
     const workTop    = workEl    ? workEl.getBoundingClientRect().top    : Infinity;
     const contactTop = contactEl ? contactEl.getBoundingClientRect().top : Infinity;
 
-    if (contactTop <= vh * 0.55)     setActive('contact');
+    if (contactTop <= vh * 0.65)     setActive('contact');
     else if (workTop <= vh * 0.55)   setActive('work');
     else                             setActive('hero');
   });
@@ -1674,12 +1632,6 @@ window.__heroInit = heroInit;
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureNames(); updateNames(); });
   }
 
-  const cta = document.getElementById('svcFlipBtn');
-  if (live && cta) {
-    pxMeasure(cta, 10); pxClip(cta, 0, 'build');
-    onEnterOnce(cta, () => buildOnce(cta, Math.max(8, cta.offsetHeight / 6), 700), '-10%');
-  }
-
   /* ── Footer (nur Startseite; „Me" teilt den Footer, bleibt aber unverändert) ── */
   const onIndex = !!document.getElementById('hero');
   const footerBox = onIndex ? document.getElementById('footerWord') : null;
@@ -1713,42 +1665,87 @@ window.__heroInit = heroInit;
       setTimeout(() => buildOnce(c, Math.max(6, c.offsetHeight / 5), 520), 120 + i * 110)), '-2%');
   }
 
-  /* Pixel-Scrollbar (die native ist ausgeblendet): Spalte aus kleinen Blöcken am rechten Rand,
-     füllt sich mit dem Scrollen von oben – mit ausgefranster Pixelkante –, blendet sich im Ruhezustand aus */
+  /* Scroll-Anzeige rechts (die native Scrollbar ist ausgeblendet):
+     · Pixel-Spur: Blöcke füllen sich von oben, gezackter heller Kopf; jeder Block mit dunklem Rand → auch über hellen Bildern lesbar
+     · crazy: je schneller gescrollt wird, desto stärker zittert die Spur um den Kopf und sprüht Pixel ab
+     · Label wandert mit dem Kopf: Section-Name (tippt sich bei jedem Wechsel ein) + Prozent
+     · erscheint beim Scrollen, blendet sich nach 1,2 s Ruhe wieder aus */
   if ((onIndex || document.body.classList.contains('projects-page')) && !PX_REDUCE) {   // Startseite + My Work
-    const bar = document.createElement('canvas');
-    bar.className = 'px-scrollbar'; bar.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(bar);
-    const bctx = bar.getContext('2d'), BW = 4, STEP = 7, TOP = 64, BOTTOM = 14;
-    let H = 0, rows = 0, dpr = 1, idle = 0;
-    const thr = [];
-    function sizeBar() {
-      H = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
-      bar.width = BW * dpr; bar.height = H * dpr;
-      rows = Math.max(1, Math.floor((H - TOP - BOTTOM) / STEP));
-      thr.length = 0;
-      for (let i = 0; i < rows; i++) thr.push(i / rows * 0.9 + pxRand(i, 77) * 0.1);   // oben zuerst, Kante leicht verstreut
+    const wrap = document.createElement('div');
+    wrap.className = 'px-scroll'; wrap.setAttribute('aria-hidden', 'true');
+    wrap.innerHTML = '<canvas></canvas><div class="psl"><span class="psl-name"></span><span class="psl-pct">000%</span></div>';
+    document.body.appendChild(wrap);
+    const cv = wrap.querySelector('canvas'), g = cv.getContext('2d');
+    const label = wrap.querySelector('.psl'), nameEl = wrap.querySelector('.psl-name'), pctEl = wrap.querySelector('.psl-pct');
+    const SECTIONS = [['hero', 'Start'], ['work', 'What I do'], ['storySection', 'About me'], ['siteFooter', 'Say hi'],
+                      ['pjHero', 'My Work'], ['pjGrid', 'Projects']]
+      .map(([id, name]) => [document.getElementById(id), name]).filter(([el]) => el);
+    const BS = 4, STEP = 7, X0 = 10;                                        // Blockgröße, Abstand, Abstand zum rechten Rand
+    let CW = 0, CH = 0, dpr = 1, rows = 0, lim = 1, idle = 0, raf = 0;
+    let p = 0, vel = 0, shownName = '', last = 0;
+    const bits = [];
+    function size() {
+      CW = cv.clientWidth; CH = cv.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(CW * dpr); cv.height = Math.round(CH * dpr);
+      rows = Math.max(1, Math.floor((CH - 24) / STEP));
+      lim = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     }
-    function drawBar(p) {
-      bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      bctx.clearRect(0, 0, BW, H);
-      bctx.fillStyle = 'rgb(240,237,232)';
+    function section() {
+      let name = SECTIONS.length ? SECTIONS[0][1] : '';
+      if (SECTIONS.length && window.scrollY >= lim - 4) return SECTIONS[SECTIONS.length - 1][1];   // ganz unten: letzte Section (Footer)
+      for (const [el, n] of SECTIONS) if (el.getBoundingClientRect().top <= window.innerHeight * (el.id === 'siteFooter' ? 0.65 : 0.4)) name = n;   // Footer erreicht nie die Mitte → wie die Nav ab 65 %
+      return name;
+    }
+    function draw(now) {
+      raf = 0;
+      const dt = Math.min(50, now - (last || now)); last = now;
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, CW, CH);
+      const x = CW - X0 - BS, head = p * (rows - 1), speed = Math.min(1, Math.abs(vel) / 60);
+      g.fillStyle = '#F0EDE8';
+      /* dunkler Rand hinter der ganzen Spur → lesbar auf hellem Untergrund (z. B. Vollbild-Showreel) */
+      g.fillStyle = 'rgba(10,10,9,0.55)'; g.fillRect(x - BS - 6, 8, BS * 2 + 10, (rows - 1) * STEP + BS + 8);
+      g.fillStyle = '#F0EDE8';
       for (let i = 0; i < rows; i++) {
-        const d = p - thr[i];
-        bctx.globalAlpha = d < 0 ? 0.14 : d < 0.04 ? 1 : 0.62;                   // Spur · heller Kopf · gefüllt
-        bctx.fillRect(0, TOP + i * STEP, BW, BW);
+        const d = head - i, y = 12 + i * STEP;
+        let a = d < -0.5 ? 0.16 : d < 1.5 ? 1 : 0.55;                       // Spur · heller Kopf · gefüllt
+        const near = Math.max(0, 1 - Math.abs(d) / 9);                        // Zittern rund um den Kopf
+        const jit = near * speed * (pxRand(i, Math.floor(now / 60)) - 0.5) * 14;
+        if (Math.abs(d) < 3 && pxRand(i, 9) > 0.4) { g.globalAlpha = 0.9; g.fillRect(Math.round(x - BS - 3 + jit), y, BS, BS); }   // gezackter, breiterer Kopf
+        g.globalAlpha = a;
+        g.fillRect(Math.round(x + jit), y, BS, BS);
       }
-      bctx.globalAlpha = 1;
+      /* abgesprühte Pixel */
+      const hy = 12 + head * STEP;
+      if (speed > 0.15 && bits.length < 140) for (let k = 0; k < Math.ceil(speed * 4); k++)
+        bits.push({ x: x, y: hy + (Math.random() - 0.5) * 18, vx: -(1 + Math.random() * 4) * speed * 2, vy: (Math.random() - 0.5) * 1.6 + vel * 0.02, a: 1, s: Math.random() < 0.3 ? 3 : 2 });
+      const f = dt / 16.67;
+      for (let j = bits.length - 1; j >= 0; j--) {
+        const b = bits[j]; b.x += b.vx * f; b.y += b.vy * f; b.vx *= Math.pow(0.95, f); b.a -= 0.03 * f;
+        if (b.a <= 0 || b.x < 0) { bits.splice(j, 1); continue; }
+        g.globalAlpha = b.a; g.fillRect(Math.round(b.x), Math.round(b.y), b.s, b.s);
+      }
+      g.globalAlpha = 1;
+      label.style.transform = 'translate3d(0,' + Math.round(Math.max(0, Math.min(CH - 30, hy - 8))) + 'px,0)';
+      vel *= Math.pow(0.86, f);                                              // Tempo klingt ab → Zittern beruhigt sich
+      if (bits.length || Math.abs(vel) > 0.5) raf = requestAnimationFrame(draw);
     }
-    sizeBar();
+    function kick() { if (!raf) raf = requestAnimationFrame(draw); }
+    size();
     lenis.on('scroll', (e) => {
-      const lim = (e && e.limit) || (document.documentElement.scrollHeight - window.innerHeight) || 1;
-      drawBar(c01(((e && e.scroll) || window.scrollY) / lim));
-      bar.classList.add('is-on');
+      lim = (e && e.limit) || lim;
+      p = c01(((e && typeof e.scroll === 'number') ? e.scroll : window.scrollY) / lim);
+      if (e && typeof e.velocity === 'number') vel = e.velocity;
+      pctEl.textContent = String(Math.round(p * 100)).padStart(3, '0') + '%';
+      const n = section();
+      if (n !== shownName) { shownName = n; nameEl._typeOrig = n; nameEl._typed = false; nameEl.textContent = n.replace(/\S/g, ' '); typeIn(nameEl, 300); }
+      wrap.classList.add('is-on');
       clearTimeout(idle);
-      idle = setTimeout(() => bar.classList.remove('is-on'), 1200);
+      idle = setTimeout(() => wrap.classList.remove('is-on'), 1200);
+      kick();
     });
-    window.addEventListener('resize', sizeBar);
+    window.addEventListener('resize', () => { size(); kick(); });
+    window.addEventListener('load', size);
+    if (typeof ScrollTrigger !== 'undefined') ScrollTrigger.addEventListener('refresh', size);   // Pins verändern die Seitenlänge
   }
 })();
 
@@ -1757,7 +1754,7 @@ window.__heroInit = heroInit;
    Der gepixelte Übergang läuft, während #work in den Viewport scrollt.
 ============================ */
 (function initPixelTrigger() {
-  const work = document.getElementById('work');
+  const work = document.querySelector('#mainContent > section');   // erste Section im Bottom-Sheet (What I do)
   if (!work) return;
   window.__heroPixel = 0;
   ScrollTrigger.create({
@@ -1773,15 +1770,17 @@ window.__heroInit = heroInit;
 
 /* ============================
    STORY — „Von Pixeln zu Menschen"
-   Fixierte Bühne mit ~5000 Pixel-Partikeln, die beim Scrollen durch drei Kapitel morphen:
-     01 Pixel-Avatar (Mosaik aus assets/jcky-3.jpg)  →  02 Skyline Salzburg (Festung, Dom, Salzach)  →  03 Winkende Hand
-     + „HI!"-Sprechblase und schwebende UI-Karten
+   Fixierte Bühne mit Pixel-Partikeln, die beim Scrollen durch drei Kapitel morphen:
+     01 Pixel-Avatar (Mosaik aus assets/jcky-3.jpg)  →  02 Skyline Salzburg (Festung, Dom, Salzach)
+     →  03 zurück zu Sternenstaub; die vier Projektbilder blenden sich ein (Klick → initWorkGrid)
+   · Aufbau: Grafik mittig, der Satz steht zentriert darüber und baut sich aus Pixeln auf
    · Morph: jeder Partikel startet leicht versetzt, wird auf halbem Weg auseinandergewirbelt und setzt sich neu zusammen
-   · Tiefe: jeder Partikel hat z → Parallax zur Maus (beim Porträt treten helle Partien = Gesicht nach vorne)
-   · Interaktion: Partikel weichen dem Cursor aus, Klick schickt eine Schockwelle durch; die Hand ist anklickbar (E-Mail)
+   · Tiefe: jeder Partikel hat z → Parallax zur Maus
+   · Sterne: wie auf „Me" — 1000 pro Bildschirm, 1–3 px, gleiche Helligkeit + gleiches Funkeln
+   · Interaktion: Partikel weichen dem Cursor aus, Klick schickt eine Schockwelle durch
+   · Übergang aus „What I do": der Sternenstaub blendet von oben weich ein, die Formation baut sich erst nach dem Einrasten auf
    · Läuft im selben Takt wie Lenis + ScrollTrigger (gsap.ticker) → Scroll-Position und Bild nie um ein Frame versetzt
-   · Kein harter Stopp: die Partikel sammeln sich schon, während die Section hereinscrollt (Sternenstaub → Porträt)
-   · Formen werden erst nach der Intro aufgebaut (afterIntro), damit die Unterschrift-Intro flüssig bleibt
+   · Formen werden erst nach der Intro aufgebaut (afterIntro), damit die Intro flüssig bleibt
 ============================ */
 (function initStory() {
   const section = document.getElementById('storySection');
@@ -1790,65 +1789,99 @@ window.__heroInit = heroInit;
   if (!section || !stage || !linesWrap) return;
   const animate = !PX_REDUCE && PX_CLIP_OK && typeof ScrollTrigger !== 'undefined';
   section.classList.add(animate ? 'is-live' : 'is-static');
-  const MAIL = 'mailto:j.weissenbaeck@gmx.at';
   const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
   const eio = v => v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
   const span = (t, w) => c01((t - w[0]) / (w[1] - w[0]));
 
   /* ── Zeitachse: t in Bildschirmhöhen, 0 = Bühne oben angekommen (Pin-Beginn) ── */
-  const C = 0.85;                                        // Scrollweg pro Kapitel
-  const LAST = 2;                                        // Kapitel 0 … 2
-  const PIN = LAST * C + 0.6;                            // zwei Wechsel + das letzte Kapitel steht noch
-  const FORM = [-0.95, 0.05];                            // Sternenstaub → Porträt (Section scrollt noch herein)
-  const MORPH = k => [k * C + 0.3, (k + 1) * C - 0.05];  // Wechsel Kapitel k → k+1
+  const C = 0.9;                                         // Scrollweg pro Kapitel
+  const LAST = 2;                                        // Kapitel 0 … 2 (Avatar, Salzburg, Work — Partikel werden wieder Sternenstaub)
+  const GRID = 2;                                        // Kapitel der Work-Kacheln
+  const ARRIVE = k => 0.75 + k * C;                      // ab hier steht Kapitel k
+  const PIN = ARRIVE(LAST) + 1.0;                        // die Bilder bauen sich auf, dann steht das Raster noch etwas
+  const FORM = [-0.2, ARRIVE(0)];                        // Sternenstaub → Avatar: ruhig, erst nach dem Hereinscrollen
+  const MORPH = k => [ARRIVE(k) + 0.3, ARRIVE(k + 1) - 0.05];
   const LINES = [
-    { inn: [-0.45, -0.1], out: [0.3, 0.5] },
-    { inn: [C - 0.25, C + 0.05], out: [C + 0.3, C + 0.5] },
-    { inn: [2 * C - 0.25, 2 * C + 0.05], out: null },
+    { inn: [0.15, 0.55], out: [ARRIVE(0) + 0.25, ARRIVE(0) + 0.45] },
+    { inn: [ARRIVE(1) - 0.4, ARRIVE(1) - 0.05], out: [ARRIVE(1) + 0.25, ARRIVE(1) + 0.45] },
+    { inn: [ARRIVE(2) - 0.4, ARRIVE(2) - 0.05], out: null },
   ];
-  const NAMES = ['Me', 'Salzburg', 'Say hi'];
+  /* Kacheln: Bild k blendet sich weich ein, sobald sich Salzburg zu Sternenstaub aufgelöst hat (leicht gestaffelt) */
+  const IMG = k => [ARRIVE(GRID) - 0.1 + k * 0.1, ARRIVE(GRID) + 0.45 + k * 0.1];
 
   /* ── Bühne ── */
   const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
   cv.className = 'story-canvas'; cv.setAttribute('role', 'img');
-  cv.setAttribute('aria-label', 'Pixel particles forming a pixel avatar of Jacob, then the Salzburg skyline, then a waving hand with a speech bubble saying Hi');
+  cv.setAttribute('aria-label', 'Pixel particles forming a pixel avatar of Jacob, then the Salzburg skyline');
   stage.insertBefore(cv, stage.firstChild);
   let W = 0, H = 0, dpr = 1;
-  function size() { W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+
+  /* ── Work-Collage: vier frei gesetzte Kacheln (Lage/Größe im CSS); je Kachel eigenes Scroll-Tempo und eigene Bild-Parallax-Stärke ── */
+  const wk = document.getElementById('wkGrid');
+  const cards = wk ? [...wk.querySelectorAll('.wk-item')] : [];
+  const cFrames = cards.map(c => c.querySelector('.wk-frame')), cImgs = cards.map(c => c.querySelector('.wk-frame img'));
+  const cMetas = cards.map(c => c.querySelector('.wk-meta'));
+  const CARD_V = [1.0, 0.8, 0.6, 0.9];                     // Scroll-Tempo: was oben liegt, zieht schneller → Abstände wachsen, nichts überlappt
+  const CARD_M = [1.0, 0.7, 0.85, 0.6];                    // Maus: wie weit der Bildinhalt im Rahmen gleitet
+  const RECTS = cards.map(() => ({ x: 0, y: 0, w: 0, h: 0, dy: 0 }));
+  /* Collage unter den dritten Satz setzen und vermessen */
+  function measureGrid() {
+    if (!wk) return;
+    const l3 = linesWrap.querySelectorAll('.story-line')[2], m = W <= 760;
+    if (animate && l3) {
+      const top = linesWrap.offsetTop + l3.offsetHeight + H * (m ? 0.035 : 0.045);
+      stage.style.setProperty('--wk-top', Math.round(top) + 'px');
+    }
+    cards.forEach((c, k) => {
+      const r = RECTS[k];
+      r.x = wk.offsetLeft + c.offsetLeft; r.y = wk.offsetTop + c.offsetTop;
+      r.w = cFrames[k].offsetWidth; r.h = cFrames[k].offsetHeight;
+    });
+  }
+  /* Scroll-Parallax je Kachel: wandert nach dem Ankommen unterschiedlich schnell nach oben */
+  const cardDY = (k, t) => -(t - ARRIVE(GRID)) * H * 0.035 * CARD_V[k];
+  const lineDY = t => -(t - ARRIVE(GRID)) * H * 0.06;      // der Satz darüber zieht noch schneller davon
+
+  function size() { W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); measureGrid(); }
   size();
   window.addEventListener('resize', size);
-  /* Mitte + Maßstab der Formation je Kapitel (S = Bildschirm-Pixel pro Formbreite) */
-  function layout(k) {
+  /* Formation mittig unter dem Satz (S = Bildschirm-Pixel pro Formbreite) */
+  function layout() {
     const m = W <= 760;
-    const S = (m ? W * 0.94 : Math.min(W * 0.52, H * 1.05)) * (k === LAST ? 1.08 : 1);   // letztes Kapitel etwas größer → „HI!" gut lesbar
-    return { cx: m ? W / 2 : W * 0.66, cy: m ? H * 0.29 : H * 0.47, S: S };
+    return { cx: W / 2, cy: H * (m ? 0.6 : 0.6), S: m ? W * 1.0 : Math.min(W * 0.8, H * 0.98) };
   }
-  /* Drift: jede Form wandert in ihrem Kapitel beim Scrollen leicht nach oben (Parallax zu den Sätzen).
+  /* Drift: jede Form wandert in ihrem Kapitel beim Scrollen leicht nach oben (Parallax zum Satz).
      Je Form berechnet und beim Morph überblendet → nie ein Sprung beim Kapitelwechsel. */
-  const drift = (s, t) => s < 0 ? 0 : -(t - s * C) * H * 0.05;
+  const drift = (s, t) => s < 0 ? 0 : -(t - ARRIVE(s)) * H * 0.04;
 
   /* ============================
      FORMEN
      ============================ */
   /* 01 — Avatar: einmalig aus assets/jcky-3.jpg erzeugt (Kopf + Hals; Wand und T-Shirt freigestellt:
-     Pixel mit Farbe oder dunkel = Person), bewusst abstrakt als Mosaik: 40 Spalten, 4 Helligkeitsstufen
-     („1"–„4", „." = leer), große Blöcke mit Fuge. So muss die Startseite das 4-MB-Foto nicht laden. */
-  const PORTRAIT_COLS = 40;
-  const PORTRAIT = "..............3333223..............................332222222233..........................332221111111223........................322222211111111223.....................32222211111111111123....................222221111111111111123..................3222122211111111111122..................22112222211111111111113................322112232222221111111112................221112333333222222211111................2211233333333322222221113...............2222244444433333322222112...............2222344444433333332332112...............2223444444444333333332112...............3223444444444444433333112..............43224443333333443333333113..............33224443321223332212233124..............34334443222233332122223124..............44344443322234432112233133..............43344444433344432222233233..............4444444444444443322333323................444444444444443333333323................44444444444444333333333..................4344444344444333333333...................44444434433333333333....................44444333333322333334....................4444433333222222333......................444433333333322333......................333333333333323334......................33333444333333223.......................43333443323332223.......................4433333333332222.......................44443333333322223......................4444443333333222334.....................44444443332222233333....................444444444333333333334...................444444444443333333334....................4444444444433333333......................444444444433333334.......................4444444443333334.........................44444444333344............................4444444444..................";
+     Pixel mit Farbe oder dunkel = Person), als feines Mosaik: 64 Spalten, 6 Helligkeitsstufen („1"–„6", „." = leer).
+     Wird über seine belegten Pixel exakt zentriert → steht genau unter dem Satz. Das 4-MB-Foto muss nicht geladen werden. */
+  const PORTRAIT_COLS = 64;
+  const PORTRAIT = ".................................544.......................................................55554333445................................................55444333333333344..............................................544322222222222223445..........................................44332222121122211223344........................................3332322221211211112222334......................................333222222221111111122222234....................................433233222221111111122211112335.................................32333322222111111112222111112345...............................4222332212222211111121111111112345..............................3222322222222111111121111111111234.............................43222222222222111111111111111111223.............................322122222332222222212111111111111123...........................32221122333333222222222111111111111124..........................32222112334443333332222222111111111223..........................22222122344544444432233222222221111113.........................422222123445544444433333223332222211112.........................3222222245455444554344433333332222211124........................3222222345566555554444433343332332211123........................3222223456666666654454444444333333211123........................3232233456666666665554444444433444322122........................3333334566666666665555555555544454321123........................4333335666666666666655555555555554421123.........................323246666666666666655565555555555421124........................6333346666666666666655655555555555421124.......................6533335666665444455555565555555555553122.......................65643335666443321122345555443333345553123.......................65653345666555543222335554321111124553225.......................65664346666554333223455554322123322453125.......................666654566665433222334566542222233444531345......................666545666665555433335566542222122345532435.......................65455666666665544445666543222232345532435.......................6556556666665555556666654333233444553444........................6656556666666655666666655443344455553345........................666555666666666666666665544444455555324..........................66655666666666666666665544455555555335...........................6655666666666666656665544455555555445...........................665566666666655656666554444555555455.............................6555666666655656666655544455555545...............................656666666555665455544444445555545................................5566666555555445544334444555544.................................556666655555444444333344445554..................................556666655555554433333333345554..................................556666655555555433433333344445...................................5665565544555544444444334444....................................5555565555444333333333344444....................................4555555566555444333334344445....................................555455556666554444444434434.....................................655445455665544444444433333.....................................66445544555554434444433333......................................66544444555554444444322223......................................66654444455554444443322235.....................................666665444445555454433222356....................................66666665444445543443322234555..................................6666666666444444434433223455544................................666666666666444444333322345555544...............................6666666666666554333333345555555544..............................6666666666666666554444555555555544..............................6666666666666666655555555555555545...............................66666666666666666555555555555554.................................6666666666666666555555555555555.................................6666666666666665555555555555546..................................66666666666666555555555555546.....................................66666666666655555555555556.......................................666666666665555555555556..........................................66666666655555555556..............................................6666666556555556..................................................666655666666...........................";
   function portraitPoints() {
-    const rows = PORTRAIT.length / PORTRAIT_COLS, WN = 0.46, cell = WN / PORTRAIT_COLS, pts = [];
-    const TONE = [0, 0.2, 0.45, 0.72, 1];
+    const rows = PORTRAIT.length / PORTRAIT_COLS, WN = 0.5, cell = WN / PORTRAIT_COLS, pts = [];
+    const TONE = [0, 0.16, 0.32, 0.5, 0.68, 0.85, 1];
+    let c0 = PORTRAIT_COLS, c1 = 0, r0 = rows, r1 = 0;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < PORTRAIT_COLS; c++) {
+      if (PORTRAIT[r * PORTRAIT_COLS + c] === '.') continue;
+      if (c < c0) c0 = c; if (c > c1) c1 = c; if (r < r0) r0 = r; if (r > r1) r1 = r;
+    }
+    const mc = (c0 + c1) / 2, mr = (r0 + r1) / 2;
     for (let r = 0; r < rows; r++) for (let c = 0; c < PORTRAIT_COLS; c++) {
       const ch = PORTRAIT[r * PORTRAIT_COLS + c];
       if (ch === '.') continue;
       const lv = +ch;
-      pts.push({ x: (c - PORTRAIT_COLS / 2) * cell, y: (r - rows / 2) * cell, a: TONE[lv], z: (lv - 2.5) * 0.18, tag: 0, s: cell * 0.8 });
+      pts.push({ x: (c - mc) * cell, y: (r - mr) * cell, a: TONE[lv], z: (lv - 3.5) * 0.14, tag: 0, s: cell * 0.82 });
     }
     return pts;
   }
 
   /* Formen auf eine 1000 × 520-Leinwand zeichnen und im Pixelraster abtasten.
-     Rotkanal = Helligkeit, Blaukanal = Tiefe (0 hinten … 255 vorne), Grünkanal 0 bei hellem Rot = Hand (winkt). */
+     Rotkanal = Helligkeit, Blaukanal = Tiefe (0 hinten … 255 vorne), */
   const DW = 1000, DH = 520;
   function sample(draw, step) {
     const c = document.createElement('canvas'); c.width = DW; c.height = DH;
@@ -1895,67 +1928,25 @@ window.__heroInit = heroInit;
     g.strokeStyle = col(120, -0.3); g.lineWidth = 5;                     // Salzach
     [454, 474].forEach((y, k) => { g.beginPath(); for (let x = 30; x <= 970; x += 10) { const yy = y + Math.sin(x * 0.02 + k * 2) * 4; x === 30 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); });
   }
-  /* 03 — Winkende Hand + schwebende UI-Karten. Die Hand ist markiert (dreht sich beim Winken ums Handgelenk). */
-  function drawHand(g) {
-    const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
-    const cut = (fn) => { g.globalCompositeOperation = 'destination-out'; fn(); g.globalCompositeOperation = 'source-over'; };
-    /* Finger: abgerundeter Balken, leicht gespreizt (um seinen Ansatz gedreht) */
-    const finger = (bx, by, w, len, ang) => { g.save(); g.translate(bx, by); g.rotate(ang); rr(-w / 2, -len, w, len + 30, w / 2); g.fill(); g.restore(); };
-    g.fillStyle = col(255, 0.2, 1);
-    finger(447, 262, 34, 150, -0.17);                 // Zeigefinger
-    finger(487, 256, 36, 172, -0.05);                 // Mittelfinger
-    finger(527, 260, 34, 158, 0.07);                  // Ringfinger
-    finger(563, 272, 30, 120, 0.2);                   // kleiner Finger
-    finger(440, 340, 38, 88, -0.62);                  // Daumen (schräg nach oben abgespreizt)
-    rr(428, 244, 156, 168, 46); g.fill();             // Handfläche
-    g.fillRect(462, 396, 92, 66);                     // Handgelenk
-    /* Fugen zwischen den Fingern + Lebenslinie, damit die Form als Hand lesbar bleibt */
-    cut(() => {
-      g.lineWidth = 11; g.lineCap = 'round';
-      [[467, 268, 465, 192], [508, 266, 509, 182], [546, 270, 551, 200]].forEach(([x1, y1, x2, y2]) => { g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); });
-      g.beginPath(); g.moveTo(452, 318); g.quadraticCurveTo(486, 342, 482, 392); g.stroke();
-    });
-    /* Ärmel (Umriss) */
-    g.strokeStyle = col(200, 0.2, 1); g.lineWidth = 7; rr(444, 454, 128, 60, 10); g.stroke();
-    /* Karte links oben: Profil */
-    g.strokeStyle = col(255, 0.9); g.lineWidth = 7; rr(130, 80, 220, 128, 16); g.stroke();
-    g.fillStyle = col(255, 0.9); g.beginPath(); g.arc(176, 124, 22, 0, Math.PI * 2); g.fill();
-    g.fillRect(210, 112, 110, 10); g.fillStyle = col(140, 0.9); g.fillRect(210, 130, 76, 8);
-    g.fillStyle = col(255, 0.9); rr(154, 166, 96, 26, 13); g.fill();
-    /* Karte links unten: Farben + Typo */
-    g.strokeStyle = col(200, 0.75); g.lineWidth = 6; rr(170, 300, 180, 92, 14); g.stroke();
-    [255, 205, 160, 115].forEach((l, k) => { g.fillStyle = col(l, 0.75); rr(190 + k * 36, 318, 26, 26, 6); g.fill(); });
-    g.fillStyle = col(140, 0.75); g.fillRect(190, 358, 120, 7); g.fillRect(190, 372, 80, 7);
-    /* rechts oben: Sprechblase „HI!" (Umriss, Schrift positiv) */
-    g.strokeStyle = col(255, 0.95); g.lineWidth = 7; rr(690, 52, 200, 126, 30); g.stroke();
-    g.beginPath(); g.moveTo(716, 174); g.lineTo(694, 214); g.lineTo(750, 176); g.stroke();
-    g.fillStyle = col(255, 0.95); g.font = '400 92px Anton, Impact, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('HI!', 790, 118);
-    /* rechts unten: Toggle + Slider */
-    g.strokeStyle = col(200, 0.85); g.lineWidth = 6; rr(680, 260, 200, 120, 16); g.stroke();
-    g.fillStyle = col(255, 0.85); rr(702, 282, 64, 32, 16); g.fill();
-    cut(() => { g.beginPath(); g.arc(749, 298, 11, 0, Math.PI * 2); g.fill(); });
-    g.fillStyle = col(140, 0.85); g.fillRect(782, 290, 76, 8);
-    g.fillStyle = col(150, 0.85); g.fillRect(702, 348, 156, 5);
-    g.fillStyle = col(255, 0.85); g.fillRect(702, 348, 80, 5); g.beginPath(); g.arc(784, 350, 11, 0, Math.PI * 2); g.fill();
-  }
-  const HAND_BOX = { x0: (380 - DW / 2) / DW, x1: (620 - DW / 2) / DW, y0: (80 - DH / 2) / DW, y1: (515 - DH / 2) / DW };    // Klickfläche (normiert)
-  const HAND = { px: (508 - DW / 2) / DW, py: (470 - DH / 2) / DW, tipY: (130 - DH / 2) / DW };          // Handgelenk (Drehpunkt) + Höhe der Fingerspitzen
 
   /* ============================
      PARTIKEL
      ============================ */
   let N = 0, ready = false;
-  let SX, SY, SA, SZ, SS, AMB, TAG;                // je Form: Ziel (normiert), Helligkeit, Tiefe, Blockgröße, „Staub"-Flag, Vibrier-Flag
-  let AX, AY, AZ, DL, SCA, SCR, PH, SP;            // je Partikel: Staub-Position, Verzögerung, Streuung, Phase
+  let SX, SY, SA, SZ, SS, AMB, TAG;                // je Form: Ziel (normiert), Helligkeit, Tiefe, Blockgröße, „Staub"-Flag, Dreh-Flag
+  let AX, AY, AZ, DL, SCA, SCR, PH, SP, MZ, SK;    // je Partikel: Staub-Position, Verzögerung, Streuung, Phase, Stern-Tiefe, Stern-Los
+  const STARS = 1000;                              // wie der Hintergrund auf „Me" (cv.js: N = 1000)
+  let SHOW = [];                                   // je Form (−1 = reiner Staub → Index 0): Anteil sichtbarer Staub-Partikel
   function build() {
-    const shapes = [portraitPoints(), sample(drawSalzburg, 7), sample(drawHand, 6)];
+    const shapes = [portraitPoints(), sample(drawSalzburg, 7), []];   // 03: leer → alle Partikel zurück in den Sternenstaub
     N = Math.max.apply(null, shapes.map(s => s.length)) + 480;
     const f32 = () => new Float32Array(N);
-    AX = f32(); AY = f32(); AZ = f32(); DL = f32(); SCA = f32(); SCR = f32(); PH = f32(); SP = f32();
+    AX = f32(); AY = f32(); AZ = f32(); DL = f32(); SCA = f32(); SCR = f32(); PH = f32(); SP = f32(); MZ = f32(); SK = f32();
     for (let i = 0; i < N; i++) {
       AX[i] = pxRand(i, 1); AY[i] = pxRand(i, 2); AZ[i] = pxRand(i, 3) * 2 - 1;
       DL[i] = pxRand(i, 4); SCA[i] = pxRand(i, 5) * 6.2832; SCR[i] = 0.4 + pxRand(i, 6) * 0.6;
       PH[i] = pxRand(i, 7) * 6.2832; SP[i] = 0.6 + pxRand(i, 8);
+      MZ[i] = 0.18 + Math.pow(pxRand(i, 9), 2.2) * 0.82; SK[i] = pxRand(i, 61);
     }
     SX = []; SY = []; SA = []; SZ = []; SS = []; AMB = []; TAG = [];
     shapes.forEach((pts, s) => {
@@ -1964,11 +1955,15 @@ window.__heroInit = heroInit;
       const sx = f32(), sy = f32(), sa = f32(), sz = f32(), ss = f32(), amb = new Uint8Array(N), tag = new Uint8Array(N);
       for (let i = 0; i < N; i++) {
         const p = order[i];
-        if (p) { sx[i] = p.x; sy[i] = p.y; sa[i] = p.a; sz[i] = Math.max(-1, Math.min(1, p.z * 0.8 + (pxRand(i, 50 + s) - 0.5) * 0.4)); tag[i] = p.tag; ss[i] = p.s; }
+        if (p) {
+          sx[i] = p.x; sy[i] = p.y; sa[i] = p.a; tag[i] = p.tag || 0; ss[i] = p.s;
+          sz[i] = Math.max(-1, Math.min(1, p.z * 0.8 + (pxRand(i, 50 + s) - 0.5) * 0.4));
+        }
         else amb[i] = 1;
       }
       SX.push(sx); SY.push(sy); SA.push(sa); SZ.push(sz); SS.push(ss); AMB.push(amb); TAG.push(tag);
     });
+    SHOW = [Math.min(1, STARS / N)].concat(AMB.map(a => { let n = 0; for (let i = 0; i < N; i++) n += a[i]; return Math.min(1, STARS / Math.max(1, n)); }));
     ready = true;
   }
 
@@ -1979,8 +1974,9 @@ window.__heroInit = heroInit;
     if (s < 0 || AMB[s][i]) {
       out.x = AX[i] * W + Math.sin(now * 0.00012 * SP[i] + PH[i]) * 18;
       out.y = AY[i] * H + Math.cos(now * 0.0001 * SP[i] + PH[i]) * 14;
-      out.a = 0.1 + 0.22 * (0.5 + 0.5 * Math.sin(now * 0.0016 * SP[i] + PH[i]));
-      out.z = AZ[i]; out.s = zSize(out.z);
+      const shown = SK[i] < SHOW[s + 1];                                    // nur so viele wie auf „Me"
+      out.a = shown ? (0.1 + MZ[i] * 0.55) * (0.72 + 0.28 * Math.sin(now * 0.0016 * SP[i] + PH[i])) : 0;
+      out.z = AZ[i]; out.s = MZ[i] > 0.82 ? 3 : MZ[i] > 0.5 ? 2 : 1;         // 1–3 px wie auf „Me"
       return;
     }
     out.x = L.cx + SX[s][i] * L.S; out.y = L.cy + SY[s][i] * L.S + drift(s, t); out.a = SA[s][i]; out.z = SZ[s][i];
@@ -1989,25 +1985,15 @@ window.__heroInit = heroInit;
 
   /* ── Maus, Klick, Neigung ── */
   const mouse = { x: -9999, y: -9999 }, ripples = [];
-  let tx = 0, ty = 0, rx = 0, ry = 0, handHot = false, lastT = -9;
-  function overHand() {
-    if (lastT < LAST * C - 0.15) return false;                             // erst, wenn das Telefon steht
-    const L = layout(LAST), dy = drift(LAST, lastT);
-    return mouse.x > L.cx + HAND_BOX.x0 * L.S && mouse.x < L.cx + HAND_BOX.x1 * L.S &&
-           mouse.y > L.cy + HAND_BOX.y0 * L.S + dy && mouse.y < L.cy + HAND_BOX.y1 * L.S + dy;
-  }
-  stage.addEventListener('mousemove', e => {
-    const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top;
-    const hot = overHand();
-    if (hot !== handHot) { handHot = hot; stage.classList.toggle('is-hand', hot); }
-  });
-  stage.addEventListener('mouseleave', () => { mouse.x = mouse.y = -9999; handHot = false; stage.classList.remove('is-hand'); });
+  let tx = 0, ty = 0, rx = 0, ry = 0, lastT = -9;
+  stage.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
+  stage.addEventListener('mouseleave', () => { mouse.x = mouse.y = -9999; });
   stage.addEventListener('click', e => {
-    if (e.target.closest('a')) return;
-    if (overHand()) { window.location.href = MAIL; return; }                // zurückwinken → E-Mail
+    if (e.target.closest && e.target.closest('.wk-card')) return;            // Klick auf ein Projekt öffnet es, keine Schockwelle
     const r = cv.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() });
   });
-  window.addEventListener('mousemove', e => { tx = e.clientX / window.innerWidth - 0.5; ty = e.clientY / window.innerHeight - 0.5; }, { passive: true });
+  if (!window.matchMedia || window.matchMedia('(pointer: fine)').matches)     // Touch: kein Maus-Parallax (ein Tipp würde Kacheln dauerhaft verschieben)
+    window.addEventListener('mousemove', e => { tx = e.clientX / window.innerWidth - 0.5; ty = e.clientY / window.innerHeight - 0.5; }, { passive: true });
 
   /* ── Sätze: Pixel-Aufbau / -Zerfall nach Zeitfenster ── */
   const lines = [...linesWrap.querySelectorAll('.story-line')];
@@ -2017,34 +2003,54 @@ window.__heroInit = heroInit;
       const w = LINES[i] || LINES[LINES.length - 1];
       if (w.out && t > w.out[0]) pxClip(l, 1 - span(t, w.out), 'dissolve');
       else pxClip(l, span(t, w.inn), 'build');
+      if (i === GRID) l.style.transform = 'translate3d(0,' + lineDY(t).toFixed(2) + 'px,0)';
     });
   }
 
-  /* ── Kapitel-Anzeige ── */
-  const num = document.getElementById('storyNum'), chapter = document.getElementById('storyChapter');
-  const bars = [...section.querySelectorAll('.story-bars b')];
-  let shownCh = -1;
-  function renderHud(t) {
-    const ch = Math.max(0, Math.min(LAST, Math.round(t / C)));
-    if (ch !== shownCh) {
-      shownCh = ch;
-      if (num) num.textContent = '0' + (ch + 1);
-      if (chapter) { chapter._typeOrig = NAMES[ch]; chapter._typed = false; chapter.textContent = NAMES[ch].replace(/\S/g, ' '); typeIn(chapter, 360); }
+  /* ── Kacheln: Bild blendet sich weich ein (und setzt sich von leicht vergrößert auf), Name gleitet hoch,
+     Kategorie tippt sich ein. Maus: nur der Bildinhalt gleitet im Rahmen — die Kachel selbst bleibt stehen.
+     Scrollen: jede Kachel wandert mit eigenem Tempo (Parallax) ── */
+  if (animate) cMetas.forEach(typePrepare);
+  const caps = cards.map(c => c.querySelector('.wk-cap'));
+  function renderGrid(t) {
+    if (!cards.length) return;
+    let all = 1;
+    for (let k = 0; k < cards.length; k++) {
+      const r = RECTS[k];
+      r.dy = animate ? cardDY(k, t) : 0;
+      const b = animate ? eio(span(t, IMG(k))) : 1;
+      all = Math.min(all, b);
+      if (animate) {
+        cFrames[k].style.opacity = b.toFixed(3);
+        caps[k].style.opacity = b.toFixed(3);
+        caps[k].style.transform = 'translate3d(0,' + ((1 - b) * 14).toFixed(2) + 'px,0)';
+        const m = cMetas[k];
+        if (m && m._typeOrig != null) {
+          if (b > 0.6 && !m._typed) typeIn(m, 520);
+          else if (b <= 0 && m._typed) { m._typed = false; m._typeRun = (m._typeRun || 0) + 1; m.textContent = m._typeOrig.replace(/\S/g, ' '); }   // zurückgescrollt → beim nächsten Mal neu eintippen
+        }
+      }
+      if (!PX_REDUCE) {
+        cards[k].style.transform = 'translate3d(0,' + r.dy.toFixed(2) + 'px,0)';
+        const f = CARD_M[k] * 0.1, sc = animate ? 1.08 - 0.08 * b : 1;
+        cImgs[k].style.transform = 'translate3d(' + (-rx * r.w * f).toFixed(2) + 'px,' + (-ry * r.h * f).toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
+      }
     }
-    bars.forEach((b, j) => { b.style.transform = 'scaleX(' + c01((t + C / 2 - j * C) / C).toFixed(3) + ')'; });
+    wk.classList.toggle('is-on', all > 0.97);                                  // klickbar erst, wenn alle Bilder stehen
   }
 
   /* ── Zeichnen (im gsap-Takt nach Lenis + ScrollTrigger) ── */
-  const BUCK = 8, SIZES = 8, groups = Array.from({ length: BUCK * SIZES }, () => []);   // Helligkeit × Blockgröße (2–9 px)
+  const BUCK = 8, SIZES = 9, groups = Array.from({ length: BUCK * SIZES }, () => []);   // Helligkeit × Blockgröße (1–9 px)
   let story = null, visible = false, last = 0;
   const storyT = () => story ? (window.scrollY - story.start) / window.innerHeight : PIN;
   function frame() {
     const now = performance.now(), dt = Math.min(now - (last || now) || 16.7, 50) / 1000; last = now;
     if (!visible) return;
     const t = storyT(); lastT = t;
-    if (animate) { renderLines(t); renderHud(t); }
-    if (!ready) return;
+    if (animate) renderLines(t);
     rx = smoothTowards(rx, tx, 0.5, dt); ry = smoothTowards(ry, ty, 0.5, dt);
+    renderGrid(t);
+    if (!ready) return;
     for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 1600) ripples.splice(i, 1);
 
     /* welches Kapitel / welcher Wechsel? */
@@ -2055,29 +2061,21 @@ window.__heroInit = heroInit;
       if (t < w[0]) { a = b = k; break; }
       if (t < w[1]) { a = k; b = k + 1; u = span(t, w); break; }
     }
-    const LA = layout(Math.max(0, a)), LB = layout(b);
+    const L = layout();
     const R = 90, swirl = Math.min(W, H) * 0.16;
-    /* Hand winkt: alle 2,4 s zwei Schwünge ums Handgelenk, dann kurze Pause (sobald sie steht) */
-    const handOn = b === LAST ? (a === LAST ? 1 : c01((u - 0.85) / 0.15)) : 0;
-    const wp = (now % 2400) / 2400, wv = wp < 0.62 ? wp / 0.62 : -1;
-    const wave = PX_REDUCE || wv < 0 ? 0 : handOn * 0.22 * Math.sin(wv * Math.PI * 4) * Math.sin(wv * Math.PI);
-    const LH = layout(LAST), pivX = LH.cx + HAND.px * LH.S, pivY = LH.cy + HAND.py * LH.S + drift(LAST, t);
-    const wc = Math.cos(wave), ws = Math.sin(wave);
+    /* Weicher Übergang aus „What I do": solange die Bühne hereinscrollt, blenden die Sterne von oben ein */
+    const entering = c01(-t), fadeTop = H * 0.55;
 
     for (let g = 0; g < groups.length; g++) groups[g].length = 0;
     for (let i = 0; i < N; i++) {
-      target(a, i, LA, t, now, A);
+      target(a, i, L, t, now, A);
       let e = 1;
-      if (a !== b) { target(b, i, LB, t, now, B); e = eio(c01((u - DL[i] * 0.4) / 0.6)); }
+      if (a !== b) { target(b, i, L, t, now, B); e = eio(c01((u - DL[i] * 0.4) / 0.6)); }
       else { B.x = A.x; B.y = A.y; B.a = A.a; B.z = A.z; B.s = A.s; }
       let x = A.x + (B.x - A.x) * e, y = A.y + (B.y - A.y) * e;
-      const al = A.a + (B.a - A.a) * e, z = A.z + (B.z - A.z) * e;
+      let al = A.a + (B.a - A.a) * e, z = A.z + (B.z - A.z) * e;
       if (a !== b) { const sc = Math.sin(Math.PI * e) * SCR[i] * swirl; x += Math.cos(SCA[i]) * sc; y += Math.sin(SCA[i]) * sc; }   // auseinanderwirbeln
-      if (wave && b === LAST && TAG[LAST][i] && !AMB[LAST][i]) {                   // Hand dreht sich ums Handgelenk
-        const dx0 = x - pivX, dy0 = y - pivY, rxp = pivX + dx0 * wc - dy0 * ws, ryp = pivY + dx0 * ws + dy0 * wc;
-        x += (rxp - x) * e; y += (ryp - y) * e;
-      }
-      x += z * rx * 34 + Math.sin(now * 0.0013 * SP[i] + PH[i]) * (0.3 + z * 0.25);  // Parallax + leises Atmen (ruhig → Linien bleiben scharf)
+      x += z * rx * 34 + Math.sin(now * 0.0013 * SP[i] + PH[i]) * (0.3 + z * 0.25);  // Parallax + leises Atmen
       y += z * ry * 24 + Math.cos(now * 0.0011 * SP[i] + PH[i]) * (0.3 + z * 0.25);
       const dx = x - mouse.x, dy = y - mouse.y, d2 = dx * dx + dy * dy;            // dem Cursor ausweichen
       if (d2 < R * R) { const d = Math.sqrt(d2) || 1, f = (1 - d / R); x += dx / d * f * f * 28; y += dy / d * f * f * 28; }
@@ -2085,29 +2083,21 @@ window.__heroInit = heroInit;
         const age = (now - rp.t) / 1600, rad = age * Math.max(W, H) * 0.6, ex = x - rp.x, ey = y - rp.y, dd = Math.hypot(ex, ey) || 1, w = Math.abs(dd - rad);
         if (w < 70) { const k = (1 - age) * (1 - w / 70); x += ex / dd * k * 22; y += ey / dd * k * 22; }
       }
+      if (entering) al *= 1 - entering * (1 - c01(y / fadeTop));                  // oben noch unsichtbar → kein harter Schnitt
       if (al < 0.03) continue;
       let size = A.s + (B.s - A.s) * e;
       if (a !== b) size *= 1 - 0.45 * Math.sin(Math.PI * e);                        // im Flug kleiner, landen als Block
-      const sz = Math.max(0, Math.min(SIZES - 1, Math.round(size) - 2));
+      if (z > 0.45 && size < 4 && !(B.s < 4 && A.s < 4 && (a < 0 || AMB[a][i]) && AMB[b][i])) size = 4;   // Sterne bleiben klein
+      const sz = Math.max(0, Math.min(SIZES - 1, Math.round(size) - 1));
       groups[sz * BUCK + Math.min(BUCK - 1, Math.floor(al * BUCK))].push(x, y);
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = 'rgb(240,237,232)';
     for (let g = 0; g < groups.length; g++) {
       const p = groups[g]; if (!p.length) continue;
-      const s = Math.floor(g / BUCK) + 2;
+      const s = Math.floor(g / BUCK) + 1;
       ctx.globalAlpha = ((g % BUCK) + 0.5) / BUCK;
       for (let k = 0; k < p.length; k += 2) ctx.fillRect(Math.round(p[k] - s / 2), Math.round(p[k + 1] - s / 2), s, s);
-    }
-    /* Bewegungsstriche neben den Fingerspitzen, solange die Hand winkt (aus Pixeln, wie beim 👋) */
-    const swing = Math.abs(wave) / 0.22;
-    if (swing > 0.05) {
-      const tipD = (HAND.tipY - HAND.py) * LH.S, tx0 = pivX - tipD * ws, ty0 = pivY + tipD * wc;   // gedrehte Fingerspitzen-Mitte
-      for (let side = -1; side <= 1; side += 2) for (let k = 0; k < 2; k++) {
-        const rad = LH.S * (0.1 + k * 0.03), al = swing * (1 - k * 0.4);
-        ctx.globalAlpha = al;
-        for (let a2 = -0.5; a2 <= 0.5; a2 += 0.1) ctx.fillRect(Math.round(tx0 + side * Math.cos(a2) * rad), Math.round(ty0 + 10 + Math.sin(a2) * rad * 0.9), 3, 3);
-      }
     }
     ctx.globalAlpha = 1;
   }
@@ -2119,17 +2109,196 @@ window.__heroInit = heroInit;
       trigger: section, start: 'top top', end: '+=' + Math.round(PIN * 100) + '%', pin: true, invalidateOnRefresh: true,
       onRefresh: () => { size(); measureLines(); },
     });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureLines);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureLines(); measureGrid(); });
   }
-  /* Nav „Find me here" → direkt ins letzte Kapitel */
-  window.__storyContactY = () => story ? story.start + (LAST * C + 0.1) * window.innerHeight : null;
   new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0 }).observe(stage);
   afterIntro(() => {
     const go = () => { try { build(); } catch (e) {} };
-    if (document.fonts && document.fonts.load) document.fonts.load('400 92px Anton').then(go, go); else go();
+    if (document.fonts && document.fonts.load) document.fonts.load('400 230px Anton').then(go, go); else go();
   });
   if (typeof gsap !== 'undefined') gsap.ticker.add(frame);                // gleicher Takt wie Lenis + ScrollTrigger
   else (function loop() { requestAnimationFrame(loop); frame(); })();
+})();
+
+/* ============================
+   WORK — Kacheln im dritten Story-Kapitel, Projekt-Vorschau (#wkOpen) und die Wege weiter (#storyNext)
+   · Hover Kachel: Name rollt buchstabenweise um, „View"-Label folgt dem Cursor (direkt, ohne Nachziehen)
+   · Klick: das Bild wächst aus der Kachel in die Bildmitte (kein Vollbild), der Rest dunkelt ab;
+     danach wischt oben rechts ein Pfeil-Feld auf → Projektseite (data-href). Klick daneben, Esc oder Scrollen:
+     das Bild schrumpft zurück in seine Kachel
+   · „My work" / „More about me": Wörter gleiten beim Hereinscrollen aus der Maske, Label tippt sich ein;
+     Hover (CSS): Füllung zieht von unten auf, Buchstaben-Roll, Pfeil schießt raus und kommt nach
+   Einblenden / Parallax der Kacheln selbst: initStory (gleicher Takt wie die Partikel).
+============================ */
+(function initWorkGrid() {
+  const grid = document.getElementById('wkGrid'), box = document.getElementById('wkOpen');
+  if (!grid || !box) return;
+  const items = [...grid.querySelectorAll('.wk-item')];
+  const motion = !PX_REDUCE && typeof gsap !== 'undefined';
+
+  /* Buchstaben für den Hover-Roll (Kachelnamen + große Links) */
+  const splitRoll = (el, text) => {
+    el.innerHTML = [...text].map((c, i) => '<span class="wk-l" style="--i:' + i + '" data-c="' + c + '">' + (c === ' ' ? '&nbsp;' : c) + '</span>').join('');
+  };
+  items.forEach((it) => {
+    const n = it.querySelector('.wk-name'), name = n.dataset.t || n.textContent.trim();
+    splitRoll(n, name);
+    it.querySelector('.wk-card').setAttribute('aria-label', 'Preview project ' + name + ' — ' + (it.dataset.cat || ''));
+  });
+
+  /* Wege weiter: Wörter gleiten aus der Maske, Label tippt sich ein */
+  const next = document.getElementById('storyNext');
+  if (next) {
+    next.querySelectorAll('.sn-in').forEach((el) => { const t = el.textContent.trim(); el.parentNode.parentNode.setAttribute('aria-label', t); splitRoll(el, t); });
+    const keys = [...next.querySelectorAll('.sn-k')];
+    keys.forEach(typePrepare);
+    onEnterOnce(next, () => { next.classList.add('is-in'); keys.forEach((k, i) => setTimeout(() => typeIn(k, 520), 250 + i * 140)); }, '-12%');
+
+    /* Ganz unten blendet sich die Nav ein (initNavScrollHide) → dann soll die obere Linie der beiden Felder
+       genau auf der Unterlinie der Nav liegen (eine Linie). Abstand zum Footer entsprechend ausrechnen;
+       reicht er nicht, werden die Felder etwas niedriger. */
+    const nav = document.getElementById('mainNav'), links = [...next.querySelectorAll('.sn-link')];
+    /* full = alles zurücksetzen und neu rechnen (nur bei echter Fenstergröße). Sonst nur die Differenz korrigieren —
+       ein Zurücksetzen würde die Seite kurz verkürzen, der Browser schöbe die Scrollposition hoch. */
+    function fitToNav(full) {
+      if (full) {
+        next.style.marginTop = next.style.marginBottom = '';
+        links.forEach(l => { l.style.minHeight = l.style.gap = ''; });
+      }
+      const navLine = (nav ? nav.offsetHeight : 52) - 1;                   // Unterlinie liegt innen in der letzten Pixelzeile
+      const top = () => next.getBoundingClientRect().top + window.scrollY;
+      const end = () => document.body.getBoundingClientRect().bottom + window.scrollY;   // exakte Seitenunterkante (scrollHeight wäre gerundet)
+      /* > 0: unten fehlt Platz · < 0: zu viel Inhalt unter der Oberkante */
+      const diff = () => (window.innerHeight - navLine) - (end() - top());
+      const t0 = top();
+      if (Math.abs(t0 - Math.round(t0)) > 0.01) {                          // ganzzahlige Lage → Linie liegt pixelgenau auf
+        const mt = parseFloat(getComputedStyle(next).marginTop) || 0;
+        next.style.marginTop = (mt + Math.ceil(t0) - t0) + 'px';
+      }
+      let d = diff();
+      if (Math.abs(d) < 0.01) return;
+      const mb = parseFloat(getComputedStyle(next).marginBottom) || 0;
+      if (mb + d >= 0) { next.style.marginBottom = (mb + d) + 'px'; return; }
+      /* zu niedriges Fenster: Abstand weg, dann die Felder niedriger, zuletzt der Innenabstand enger */
+      next.style.marginBottom = '0px';
+      const rows = getComputedStyle(next).gridTemplateColumns.split(' ').length > 1 ? 1 : links.length;
+      d = diff();
+      links.forEach(l => { l.style.minHeight = Math.max(0, l.offsetHeight + d / rows) + 'px'; });
+      d = diff();
+      if (d < 0) links.forEach(l => { l.style.gap = Math.max(12, (parseFloat(getComputedStyle(l).rowGap) || 48) + d / rows) + 'px'; });
+      d = diff();
+      if (d > 0) next.style.marginBottom = d + 'px';
+    }
+    let fitRaf = 0, fitFull = false;
+    const fitSoon = (full) => {
+      fitFull = fitFull || full === true;
+      cancelAnimationFrame(fitRaf);
+      fitRaf = requestAnimationFrame(() => { const f = fitFull; fitFull = false; fitToNav(f); });
+    };
+    fitSoon(true);
+    let lastW = window.innerWidth, lastH = window.innerHeight;
+    window.addEventListener('resize', () => {                                // nur echte Größenänderung → komplett neu
+      if (window.innerWidth === lastW && window.innerHeight === lastH) return;
+      lastW = window.innerWidth; lastH = window.innerHeight; fitSoon(true);
+    });
+    window.addEventListener('load', () => fitSoon());
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => fitSoon());
+    const foot = document.getElementById('siteFooter');
+    if ('ResizeObserver' in window && foot) new ResizeObserver(() => fitSoon()).observe(foot);   // Footer-Wort passt sich an → Differenz korrigieren
+  }
+
+  /* „View"-Label folgt dem Cursor */
+  let chipOff = () => {};
+  if (!window.matchMedia || window.matchMedia('(pointer: fine)').matches) {
+    const chip = document.createElement('span');
+    chip.className = 'hero-play'; chip.setAttribute('aria-hidden', 'true');
+    chip.innerHTML = '<span class="hp-chip">View<svg viewBox="0 0 12 12"><path d="M5.25 1h1.5v4.25H11v1.5H6.75V11h-1.5V6.75H1v-1.5h4.25z"/></svg></span>';
+    document.body.appendChild(chip);
+    let mx = 0, my = 0, on = false, raf = 0;
+    const place = () => { raf = 0; chip.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)'; };
+    const set = (v) => {
+      if (v === on) return;
+      on = v; if (on) place();
+      chip.classList.toggle('is-on', on);
+      document.documentElement.classList.toggle('wk-view-on', on);
+    };
+    const check = (el) => set(!!(box.hidden && el && el.closest && el.closest('.wk.is-on .wk-card')));
+    window.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; check(e.target); if (on && !raf) raf = requestAnimationFrame(place); }, { passive: true });
+    lenis.on('scroll', () => check(document.elementFromPoint(mx, my)));   // Kachel fährt unter den stillstehenden Zeiger
+    chipOff = () => set(false);
+  }
+
+  /* ── Vorschau ── */
+  const fig = box.querySelector('.wkl-fig'), img = fig.querySelector('img'), go = box.querySelector('.wkl-go');
+  const bgEl = box.querySelector('.wkl-bg'), closeBtn = box.querySelector('.wkl-close');
+  let cur = null, busy = false;
+  const rectOf = (r) => ({ left: r.left, top: r.top, width: r.width, height: r.height });
+  /* Zielgröße: Bildformat behalten, mittig, etwa zwei Drittel des Bildschirms */
+  function target(src) {
+    const vw = window.innerWidth, vh = window.innerHeight, m = vw <= 760;
+    const ar = src.naturalWidth && src.naturalHeight ? src.naturalWidth / src.naturalHeight : 1.6;
+    const maxW = m ? vw - 32 : Math.min(vw * 0.6, 1100), maxH = vh * (m ? 0.6 : 0.66);
+    const w = Math.min(maxW, maxH * ar), h = w / ar;
+    return { left: (vw - w) / 2, top: (vh - h) / 2, width: w, height: h };
+  }
+  function open(item) {
+    if (busy || cur) return;
+    busy = true; cur = item; chipOff();
+    const frame = item.querySelector('.wk-frame'), src = frame.querySelector('img');
+    img.src = src.currentSrc || src.src; img.alt = src.alt;
+    go.href = item.dataset.href || 'projects.html';
+    go.setAttribute('aria-label', 'Open project page: ' + (item.querySelector('.wk-name').dataset.t || ''));
+    const from = rectOf(frame.getBoundingClientRect()), to = target(src);
+    Object.assign(fig.style, { left: from.left + 'px', top: from.top + 'px', width: from.width + 'px', height: from.height + 'px' });
+    box.classList.remove('is-on', 'is-landed');
+    box.hidden = false;
+    document.documentElement.classList.add('wko-lock');
+    lenis.stop();
+    frame.style.visibility = 'hidden';
+    void box.offsetWidth;
+    box.classList.add('is-on');
+    const landed = () => { box.classList.add('is-landed'); busy = false; go.focus({ preventScroll: true }); };
+    if (!motion) { Object.assign(fig.style, { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px' }); landed(); return; }
+    gsap.fromTo(img, { scale: 1.12 }, { scale: 1, duration: 0.9, ease: 'expo.inOut' });
+    gsap.to(fig, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.9, ease: 'expo.inOut', onComplete: landed });
+  }
+  function close() {
+    if (busy || !cur) return;
+    busy = true;
+    const item = cur, frame = item.querySelector('.wk-frame');
+    const done = () => {
+      box.hidden = true; box.classList.remove('is-on', 'is-landed');
+      frame.style.visibility = '';
+      document.documentElement.classList.remove('wko-lock');
+      lenis.start();
+      cur = null; busy = false;
+      item.querySelector('.wk-card').focus({ preventScroll: true });
+    };
+    box.classList.remove('is-landed', 'is-on');
+    if (!motion) { done(); return; }
+    const to = rectOf(frame.getBoundingClientRect());
+    gsap.to(img, { scale: 1.12, duration: 0.75, ease: 'expo.inOut' });
+    gsap.to(fig, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.75, ease: 'expo.inOut', onComplete: done });
+  }
+
+  items.forEach(it => it.querySelector('.wk-card').addEventListener('click', () => open(it)));
+  bgEl.addEventListener('click', close);
+  closeBtn.addEventListener('click', close);
+  box.addEventListener('wheel', close, { passive: true });                  // Weiterscrollen schließt die Vorschau
+  box.addEventListener('touchmove', close, { passive: true });
+  document.addEventListener('keydown', (e) => {
+    if (box.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    else if (e.key === 'Tab') {                                               // Fokus bleibt in der Vorschau
+      e.preventDefault();
+      (document.activeElement === go ? closeBtn : go).focus();
+    }
+  });
+  window.addEventListener('resize', () => {                                 // offen + Fenstergröße ändert sich → neu mittig
+    if (!cur || busy) return;
+    const to = target(cur.querySelector('.wk-frame img'));
+    Object.assign(fig.style, { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px' });
+  });
 })();
 
 /* ============================

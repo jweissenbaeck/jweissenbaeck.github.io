@@ -12,24 +12,6 @@
   font-display: swap;
 }
 
-/* Barlow Condensed — weight 700 (Nav, Footer-Bar, Titel, Werte) */
-@font-face {
-  font-family: 'Barlow Condensed';
-  src: url('assets/fonts/barlow-condensed-v13-latin-700.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* Barlow Condensed — weight 900 (.svc-name Service-Liste) */
-@font-face {
-  font-family: 'Barlow Condensed';
-  src: url('assets/fonts/barlow-condensed-v13-latin-900.woff2') format('woff2');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 
 /* DM Mono — weight 400 (body, nav, Labels, --font-mono Elemente) */
 @font-face {
@@ -124,8 +106,8 @@ body::before {
   display: flex; align-items: center;
   padding: 0 clamp(16px, 2vw, 30px);
   color: rgba(240,237,232,0.6);
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 700; font-size: 15px; letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  font-weight: 500; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
   text-decoration: none;
   pointer-events: auto;
   transition: color 0.25s ease;
@@ -148,19 +130,14 @@ body::before {
 .ftp-ch.is-gone { opacity: 0; transition: none; }
 @media (prefers-reduced-motion: reduce) {
 }
-/* JCKY-Logo oben links — die Unterschrift aus der Intro als SVG.
-   Strichstärke in Pfad-Einheiten: 15 ≙ ~1,75 px bei 34 px Höhe (so bleibt sie als Strich animierbar). */
-.nav-logo-sig {
-  display: block;
-  height: 34px; width: auto;
-  overflow: visible;
-}
-.nav-logo-sig path {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 15;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+/* JCKY-Logo oben links — Wortmarke in Anton (wie der JCKY-Schriftzug im Footer) */
+.nav-logo-text {
+  font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 /* JCKY im Footer — Textwort in Anton (wie im Hero), per JS randlos über die volle Breite
    gestreckt (transform: scale). Der 28px-Seitenabstand kommt von .site-footer-text. */
@@ -176,7 +153,7 @@ body::before {
   position: absolute;
   left: 0; bottom: 0;
   display: block;
-  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
   font-weight: 400;
   font-size: 28vw;
   line-height: 0.78;
@@ -213,7 +190,7 @@ body::before {
 
 
 /* ── ALL PROJECTS — eigenständiger Section-CTA ──
-   Eigene Font (Barlow Condensed 700, nicht die Service-Namen/Skills);
+   Schrift: DM Mono (wie Navigation + Labels);
    radiale Ink-Füllung, die vom Cursor-Eintritt aufgeht. */
 .projects-cta {
   position: relative;
@@ -231,10 +208,10 @@ body::before {
 .projects-cta-label {
   position: relative;
   z-index: 1;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(1.05rem, 1.7vw, 1.45rem);
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  font-size: clamp(0.78rem, 0.95vw, 0.95rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   line-height: 1;
 }
@@ -256,7 +233,7 @@ body::before {
   display: flex; flex-direction: column; justify-content: center;
   align-items: stretch;
   padding-top: 40px; padding-bottom: 3vh;
-  position: relative; overflow: visible; gap: 0;
+  position: relative; overflow: visible; overflow-x: clip; gap: 0;   /* Reel-Zoom darf nicht seitlich überstehen (Handy zoomt sonst heraus) */
 }
 .hero-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 8; pointer-events: none; mix-blend-mode: difference; }   /* Pixel-Partikel bei Mausbewegung (script.js → initHeroParticles) */
 
@@ -270,36 +247,53 @@ body::before {
 }
 
 /* ============================
-   VIDEO CURSOR — Play-Button aus Pixelblöcken über dem Hero-Video (script.js → initVideoCursor)
-   Label als dunkler Chip wie „Salzburg, AT" am Globus → auf jedem Bild lesbar
+   PLAY REEL — Label folgt dem Cursor über dem Hero-Video (script.js → initPlayReel)
+   Sitzt mittig auf dem Zeiger (der System-Zeiger wird dort ausgeblendet), wischt beim Erscheinen von oben auf.
 ============================ */
-#videoCursor {
-  position: fixed; left: 0; top: 0;
+.hero-play {
+  position: fixed; left: 0; top: 0; z-index: 100000;
   pointer-events: none;
-  z-index: 100000;
-  opacity: 0;
   will-change: transform;
 }
-#videoCursor .vc-inner { position: relative; width: 96px; height: 96px; transform: translate(-50%, -50%); }
-#videoCursor .vc-px { display: block; width: 96px; height: 96px; filter: drop-shadow(0 8px 22px rgba(0,0,0,0.35)); }
-#videoCursor .vc-label {
-  position: absolute; left: 50%; top: calc(100% + 12px); transform: translateX(-50%);
-  padding: 5px 9px;
-  background: var(--bg-dark); border: 1px solid rgba(240,237,232,0.24); border-radius: 3px;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-  white-space: pre; color: var(--ink);
+.hp-chip {
+  position: absolute; left: 0; top: 0;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 11px 16px 11px 14px;
+  background: var(--ink); color: var(--bg-dark);
+  font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap;
+  transform: translate(-50%, -50%);
+  clip-path: inset(0 0 100% 0);                          /* wischt von oben herunter auf */
+  transition: clip-path 0.4s var(--ease-out-expo);
 }
-.video-cursor-on #heroImgCard, .video-cursor-on #heroImgCard * { cursor: none; }   /* nur ein Zeiger sichtbar */
-
-/* Pixel-Scrollbar am rechten Rand (script.js → initScrollReveals); difference → auch über dem Video sichtbar */
-.px-scrollbar {
-  position: fixed; top: 0; right: 6px; z-index: 1001;
-  width: 4px; height: 100vh;
-  pointer-events: none; mix-blend-mode: difference;
-  opacity: 0; transition: opacity 0.5s ease;
+.hp-chip svg { width: 9px; height: 9px; flex: none; }
+.hp-chip path { fill: currentColor; }
+.hero-play.is-on .hp-chip { clip-path: inset(0 0 0 0); }
+.play-reel-on #heroImgCard, .play-reel-on #heroImgCard * { cursor: none; }   /* nur ein Zeiger sichtbar */
+@media (prefers-reduced-motion: reduce) { .hp-chip { transition: none; } }
+/* ============================
+   SCROLL-ANZEIGE rechts (script.js → initScrollReveals)
+   Pixel-Spur mit gezacktem Kopf, bei schnellem Scrollen sprühen Pixel ab; daneben wandert ein Label mit
+   Section-Name + Prozent mit. Dunkler Rand hinter Spur + Label → auch über dem hellen Vollbild-Showreel lesbar.
+============================ */
+.px-scroll {
+  position: fixed; top: 52px; bottom: 0; right: 0; z-index: 1001;
+  width: 220px;
+  pointer-events: none;
+  opacity: 0; transition: opacity 0.6s ease;
 }
-.px-scrollbar.is-on { opacity: 1; transition-duration: 0.15s; }
-
+.px-scroll.is-on { opacity: 1; transition-duration: 0.15s; }
+.px-scroll canvas { position: absolute; top: 0; right: 0; width: 220px; height: 100%; }
+.psl {
+  position: absolute; top: 0; right: 30px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+  padding: 5px 8px 6px;
+  background: rgba(10, 10, 9, 0.72);
+  font-family: var(--font-mono); text-transform: uppercase; color: #F0EDE8; white-space: nowrap;
+  will-change: transform;
+}
+.psl-name { font-size: 9px; letter-spacing: 0.22em; opacity: 0.6; white-space: pre; }
+.psl-pct { font-size: 13px; font-weight: 500; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) { .px-scroll { width: 140px; } .px-scroll canvas { width: 140px; } .psl { right: 22px; } }
 .hero-img-card {
   position: absolute;
   left: 50%;
@@ -364,7 +358,7 @@ body::before {
 }
 
 .hero-word {
-  font-family: 'Anton', 'Barlow Condensed', 'Arial Narrow', Arial, sans-serif;
+  font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
   font-weight: 400; font-style: normal;
   line-height: 0.88; letter-spacing: -0.02em;
   color: var(--ink); text-transform: uppercase;
@@ -377,6 +371,7 @@ body::before {
   mix-blend-mode: difference;
   color: #ffffff;
   font-size: clamp(2rem, 8.5vw, 10rem);
+  padding-inline: 0.08em;               /* Puffer: das schräge Bein des „K" ragt über den Textkasten → sonst schneidet der Clip es ab */
 }
 
 /* ============================
@@ -598,11 +593,11 @@ body::before {
 
 .svc-name {
   display: block;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-size: clamp(2.8rem, 6.5vw, 8.5rem);
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  line-height: 0.80;
+  font-family: 'Anton', Impact, sans-serif;
+  font-size: clamp(2.6rem, 6vw, 7.8rem);
+  font-weight: 400;
+  letter-spacing: 0.005em;
+  line-height: 0.94;
   text-transform: uppercase;
   color: var(--ink);
   transition: color 0.25s ease;
@@ -636,9 +631,8 @@ body::before {
 
 /* ============================
    STORY — „Von Pixeln zu Menschen" (script.js → initStory)
-   Fixierte Bühne: Pixel-Partikel morphen durch drei Kapitel (Pixel-Avatar → Salzburg → winkende Hand mit UI-Karten),
-   links bauen sich die Sätze aus Pixeln auf, unten links die Kapitel-Anzeige.
-   Die Hand ist anklickbar (E-Mail), unter dem letzten Satz steht die Adresse als dezenter Link.
+   Fixierte Bühne: Pixel-Partikel morphen durch drei Kapitel (Pixel-Avatar → Salzburg → Rahmen des Work-Rasters),
+   die Grafik steht mittig, der Satz baut sich zentriert darüber aus Pixeln auf.
 ============================ */
 .story {
   position: relative;
@@ -649,63 +643,197 @@ body::before {
 .story-stage { position: relative; width: 100%; height: 100vh; height: 100svh; }
 .story-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
 
-/* Sätze: links, Anton wie zuvor; bauen sich aus Pixeln auf und zerfallen wieder */
+/* Sätze: zentriert über der Grafik (alle an derselben Stelle), Anton; bauen sich aus Pixeln auf und zerfallen wieder */
 .story-lines {
-  position: absolute; left: var(--edge, 28px); top: 50%; z-index: 3;
-  width: min(40vw, 660px); height: 60vh;
-  transform: translateY(-50%);
+  position: absolute; left: 50%; top: calc(52px + 7vh); z-index: 3;
+  width: min(86vw, 1040px);
+  transform: translateX(-50%);
   pointer-events: none;
 }
 .story-line {
-  position: absolute; left: 0; right: 0; top: 50%; margin: 0;
-  transform: translateY(-50%);
-  font-family: 'Anton', 'Barlow Condensed', Arial, sans-serif; font-weight: 400;
-  font-size: clamp(2rem, 3.6vw, 4.6rem); line-height: 1.04; letter-spacing: 0.01em;
+  position: absolute; left: 0; right: 0; top: 0; margin: 0;
+  text-align: center;
+  font-family: 'Anton', Impact, Arial, sans-serif; font-weight: 400;
+  font-size: clamp(2rem, 3.4vw, 4.4rem); line-height: 1.04; letter-spacing: 0.01em;
   text-transform: uppercase; text-wrap: balance; color: var(--ink);
 }
 .story.is-live .story-line { clip-path: inset(50%); }
 
-/* Kapitel-Anzeige: 01 / 03 · Balken · Kapitelname (Mono, wie die Labels der Seite) */
-.story-hud {
-  position: absolute; left: var(--edge, 28px); bottom: 26px; z-index: 3;
-  display: flex; align-items: center; gap: 16px;
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--ink-muted);
-  pointer-events: none;
-}
-.story-num { color: var(--ink); font-variant-numeric: tabular-nums; }
-.story-bars { display: flex; gap: 4px; }
-.story-bars i { position: relative; overflow: hidden; width: 34px; height: 2px; background: rgba(240,237,232,0.16); }
-.story-bars b { position: absolute; inset: 0; background: var(--ink); transform-origin: 0 50%; transform: scaleX(0); }
-.story-chapter { white-space: pre; }
-
-/* Letzter Satz: „Don't be shy, say hi to me." + dezenter E-Mail-Link darunter (baut sich mit dem Satz auf) */
-.story-line--hi p { margin: 0; }
-.story-mail {
-  display: inline-block; margin-top: 22px;
-  font-family: var(--font-mono); font-size: 13px; line-height: 1.4; letter-spacing: 0.08em; text-transform: none;
-  color: var(--ink-muted); text-decoration: none;
-  border-bottom: 1px solid rgba(240,237,232,0.3); padding-bottom: 3px;
-  pointer-events: auto;
-  transition: color 0.25s ease, border-color 0.25s ease;
-}
-.story-mail:hover, .story-mail:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
-.story-stage.is-hand { cursor: pointer; }                         /* über der winkenden Hand: zurückwinken = E-Mail */
-
 /* Ohne Animation: Sätze untereinander */
-.story.is-static .story-lines { top: 12vh; transform: none; height: auto; }
-.story.is-static .story-line { position: static; transform: none; margin-bottom: 0.5em; font-size: clamp(1.6rem, 2.6vw, 3rem); }
-.story.is-static .story-hud { display: none; }                    /* ohne Scroll-Story keine Kapitel */
+.story.is-static .story-lines { top: 12vh; }
+.story.is-static .story-line { position: static; margin-bottom: 0.5em; font-size: clamp(1.6rem, 2.6vw, 3rem); }
 
 @media (max-width: 760px) {
-  .story-lines { left: 6vw; right: 6vw; width: auto; top: 50vh; height: 18vh; transform: none; }
+  .story-lines { top: calc(52px + 6vh); width: 88vw; }
   .story-line { font-size: clamp(1.5rem, 7vw, 2.4rem); }
-  .story-mail { font-size: 12px; margin-top: 16px; }
-  .story-hud { top: 66px; bottom: auto; left: 6vw; gap: 12px; font-size: 10px; }
-  .story-bars i { width: 22px; }
 }
 
+/* ============================
+   WORK — drittes Story-Kapitel (script.js → initStory + initWorkGrid)
+   Freie Collage aus vier Kacheln unterschiedlicher Größe und Höhe (bewusst nicht symmetrisch).
+   Salzburg zerfällt zu Sternenstaub, dann blenden sich die Bilder weich ein.
+   Maus: nur der Bildinhalt gleitet im Rahmen; Scrollen: jede Kachel wandert mit eigenem Tempo.
+   --wk-top (unter dem Satz) setzt das Skript.
+============================ */
+.wk {
+  position: absolute; z-index: 2; left: 0; right: 0; margin: 0 auto; padding: 0; list-style: none;
+  top: var(--wk-top, calc(52px + 7vh + 9rem)); bottom: 6vh;
+  width: min(calc(100vw - 2 * var(--edge, 28px)), 1280px);
+}
+.story.is-live .wk { pointer-events: none; }
+.story.is-live .wk.is-on { pointer-events: auto; }
+.wk-item { position: absolute; left: calc(var(--x) * 1%); top: calc(var(--y) * 1%); width: calc(var(--w) * 1%); height: calc(var(--h) * 1%); will-change: transform; }
+.wk-item:nth-child(1) { --x: 0;  --y: 0;  --w: 40; --h: 56; }               /* groß, quer */
+.wk-item:nth-child(2) { --x: 46; --y: 10; --w: 21; --h: 64; }               /* schmal, hoch */
+.wk-item:nth-child(3) { --x: 12; --y: 66; --w: 26; --h: 34; }               /* klein, versetzt */
+.wk-item:nth-child(4) { --x: 73; --y: 32; --w: 27; --h: 54; }               /* rechts, tiefer */
+.wk-card {
+  all: unset; box-sizing: border-box;
+  display: flex; flex-direction: column; width: 100%; height: 100%;
+  cursor: pointer;
+}
+.wk-frame { position: relative; display: block; flex: 1; min-height: 0; overflow: hidden; background: #16150f; }
+.wk-frame img {
+  position: absolute; left: -6%; top: -6%; width: 112%; height: 112%;            /* Überstand → Bild gleitet im Rahmen */
+  object-fit: cover; display: block;
+  filter: grayscale(30%);
+  transition: filter 0.6s ease, scale 1.1s var(--ease-out-expo);
+  will-change: transform;
+}
+.wk-card:hover .wk-frame img, .wk-card:focus-visible .wk-frame img { filter: none; scale: 1.05; }
+.wk-card:focus-visible .wk-frame { outline: 1px solid var(--ink); outline-offset: 5px; }
+.wk-cap {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  height: 36px; padding-top: 10px; box-sizing: border-box;
+}
+.wk-name {
+  display: inline-flex; overflow: hidden;
+  font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase; color: var(--ink);
+  font-size: clamp(1.05rem, 1.5vw, 1.5rem); line-height: 1.12; letter-spacing: 0.02em;
+}
+.wk-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); white-space: pre; }
+.wk-view-on .wk-card { cursor: none; }                                         /* Label am Cursor ersetzt den Zeiger */
 
+/* Buchstaben-Roll (Kachelnamen + große Links): beim Hover rollt jeder Buchstabe nach oben, die Kopie rollt nach */
+.wk-l { position: relative; display: inline-block; transition: transform 0.55s var(--ease-out-expo) calc(var(--i, 0) * 22ms); }
+.wk-l::after { content: attr(data-c); position: absolute; left: 0; top: 100%; }
+.wk-card:hover .wk-l, .wk-card:focus-visible .wk-l,
+.sn-link:hover .wk-l, .sn-link:focus-visible .wk-l { transform: translateY(-100%); }
+
+/* Ohne Animation: Sätze oben, Collage darunter */
+.story.is-static .story-stage { height: auto; padding: 14vh 0 0; }
+.story.is-static .story-lines { position: relative; left: auto; top: auto; transform: none; margin: 0 auto; }
+.story.is-static .wk { position: relative; top: auto; bottom: auto; margin-top: 8vh; height: 78vh; }
+
+@media (max-width: 760px) {
+  .wk { bottom: 4vh; width: calc(100vw - 32px); }
+  .wk-item:nth-child(1) { --x: 0;  --y: 0;  --w: 60; --h: 36; }
+  .wk-item:nth-child(2) { --x: 66; --y: 9;  --w: 34; --h: 35; }
+  .wk-item:nth-child(3) { --x: 8;  --y: 46; --w: 44; --h: 27; }
+  .wk-item:nth-child(4) { --x: 57; --y: 54; --w: 43; --h: 46; }
+  .wk-cap { height: 30px; padding-top: 8px; }
+  .wk-meta { display: none; }
+}
+
+/* ============================
+   WEITER — zwei große Wege aus der Story: „My work" · „More about me"
+   Zellen wie Navigation und Footer-Leiste (Haarlinien); Hover: helle Füllung zieht ruhig von unten auf
+   (beim Verlassen nach oben weg), Schrift kippt auf dunkel, Buchstaben rollen um, der Pfeil schießt nach oben rechts raus und kommt nach.
+   Beim Hereinscrollen gleiten die Wörter aus ihrer Maske, das Label tippt sich ein.
+============================ */
+.sn {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 1fr 1fr;
+  margin: 10vh 0 14vh;
+  border-top: 1px solid var(--ink-ghost); border-bottom: 1px solid var(--ink-ghost);
+}
+.sn-link {
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 48px;
+  min-height: clamp(200px, 30vh, 300px); padding: 24px var(--edge, 28px) 26px;
+  color: var(--ink); text-decoration: none;
+  transition: color 0.5s ease;
+}
+.sn-link::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: var(--ink);
+  transform: scaleY(0); transform-origin: 50% 0;
+  transition: transform 0.75s var(--ease-out-expo);
+}
+.sn-link:hover::before, .sn-link:focus-visible::before { transform: scaleY(1); transform-origin: 50% 100%; transition-duration: 0.95s; }
+.sn-link + .sn-link { border-left: 1px solid var(--ink-ghost); }
+.sn-k, .sn-t { position: relative; z-index: 1; }                                   /* über dem Pixel-Canvas */
+.sn-link:hover, .sn-link:focus-visible { color: var(--bg-dark); outline: none; }
+.sn-k { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); white-space: pre; transition: color 0.5s ease; }
+.sn-link:hover .sn-k, .sn-link:focus-visible .sn-k { color: var(--bg-dark); }
+.sn-t {
+  display: block; overflow: hidden; padding-top: 0.04em;
+  font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase;
+  font-size: clamp(2.6rem, 6.2vw, 7rem); line-height: 0.92; letter-spacing: 0.005em; white-space: nowrap;
+}
+.sn-in { display: inline-flex; overflow: hidden; transform: translateY(105%); transition: transform 1.1s var(--ease-out-expo); }
+.sn.is-in .sn-in { transform: none; }
+.sn.is-in .sn-link + .sn-link .sn-in { transition-delay: 0.12s; }
+.sn-arrow { position: absolute; z-index: 1; top: 22px; right: var(--edge, 28px); width: clamp(28px, 2.6vw, 40px); aspect-ratio: 1; overflow: hidden; }
+/* Pfeil (Linie): beim Betreten schießt er nach oben rechts raus, eine Kopie gleitet von unten links nach.
+   Nur Animation beim Betreten — beim Verlassen springt er unsichtbar zurück (beide stehen dann deckungsgleich). */
+.sn-arrow svg, .wkl-arrows svg {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter;
+}
+.sn-arrow svg + svg, .wkl-arrows svg + svg { transform: translate(-105%, 105%); }
+.sn-link:hover .sn-arrow svg:first-child, .sn-link:focus-visible .sn-arrow svg:first-child,
+.wkl-go:hover .wkl-arrows svg:first-child, .wkl-go:focus-visible .wkl-arrows svg:first-child { animation: arrow-out 0.42s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+.sn-link:hover .sn-arrow svg + svg, .sn-link:focus-visible .sn-arrow svg + svg,
+.wkl-go:hover .wkl-arrows svg + svg, .wkl-go:focus-visible .wkl-arrows svg + svg { animation: arrow-in 0.7s var(--ease-out-expo) 0.28s both; }
+@keyframes arrow-out { to { transform: translate(105%, -105%); } }
+@keyframes arrow-in { from { transform: translate(-105%, 105%); } to { transform: none; } }
+
+@media (max-width: 760px) {
+  .sn { grid-template-columns: 1fr; }
+  .sn-link + .sn-link { border-left: 0; border-top: 1px solid var(--ink-ghost); }
+  .sn-link { min-height: 170px; padding-inline: 16px; }
+  .sn-t { font-size: clamp(2.4rem, 12vw, 4rem); }
+  .sn-arrow { right: 16px; }
+}
+
+/* ============================
+   PROJEKT-VORSCHAU (#wkOpen) — script.js → initWorkGrid
+   Das Kachelbild wächst in die Bildmitte (kein Vollbild), der Rest dunkelt ab.
+   Oben rechts am Bild wischt ein Pfeil-Feld auf → Projektseite. Klick daneben, Esc oder Scrollen schließt.
+============================ */
+.wkl { position: fixed; inset: 0; z-index: 5000; }
+.wkl[hidden] { display: none; }
+.wkl-bg { position: absolute; inset: 0; background: rgba(10, 10, 9, 0.86); opacity: 0; transition: opacity 0.55s ease; cursor: pointer; }
+.wkl.is-on .wkl-bg { opacity: 1; }
+.wkl-fig { position: fixed; left: 0; top: 0; margin: 0; overflow: hidden; background: #16150f; }
+.wkl-fig img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.wkl-go {
+  position: absolute; top: 0; right: 0; z-index: 1;
+  width: clamp(56px, 5vw, 76px); aspect-ratio: 1;
+  display: grid; place-items: center;
+  background: var(--ink); color: var(--bg-dark);
+  clip-path: inset(0 0 100% 100%);                                                 /* wischt aus der Ecke auf */
+  transition: clip-path 0.55s var(--ease-out-expo);
+}
+.wkl.is-landed .wkl-go { clip-path: inset(0); }
+.wkl-go:focus-visible { outline: 1px solid var(--ink); outline-offset: 4px; }
+.wkl-arrows { position: relative; display: block; width: 42%; aspect-ratio: 1; overflow: hidden; }
+.wkl-close {                                                                        /* nur für Tastatur sichtbar */
+  position: fixed; top: 0; right: 0; z-index: 2;
+  height: 52px; padding: 0 28px; border: 0;
+  background: var(--ink); color: var(--bg-dark);
+  font-family: var(--font-mono); font-weight: 500; font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase;
+  transform: translateY(-100%);
+}
+.wkl-close:focus-visible { transform: none; outline: none; }
+.wko-lock .px-scroll { visibility: hidden; }
+
+@media (prefers-reduced-motion: reduce) {
+  .wk-l, .sn-in, .sn-link::before, .wkl-go, .wkl-bg { transition: none; }
+  .sn-arrow svg, .wkl-arrows svg { animation: none !important; }
+  .sn-in { transform: none; }
+}
 /* Hover im Pixel-Stil: Ink-Blöcke steigen verstreut von unten auf (Canvas .gc-pixels) */
                /* alten Radial-Fill stilllegen */
 .gc-pixels {
@@ -723,60 +851,121 @@ body::before {
 
 
 /* ============================
-   PAGE LOADER — Unterschrift + Teilung (script.js → initLoader)
-   Zwei deckungsgleiche Hälften (oben / unten per clip-path) mit derselben Unterschrift;
-   beim Teilen gleiten sie auseinander und schneiden die Unterschrift entlang der Linie.
+   PAGE LOADER — HUD / Visier (script.js → initLoader)
+   Eckwinkel, Skalen, Live-Daten; „JCKY" baut sich pixelweise auf, der Fokusrahmen rastet bei 100 % ein.
+   Danach teilt sich der Bildschirm: zwei Kopien des HUD (oben / unten) gleiten auseinander,
+   ihre Schnittkante zerbröselt in Pixelblöcke, die davonfliegen (Canvas .ld-dust).
 ============================ */
 #pageLoader {
   position: fixed;
   inset: 0;
   z-index: 99999;
+  background: var(--bg-dark);
   pointer-events: all;
+  overflow: hidden;
+  --hud-line: rgba(240, 237, 232, 0.22);
+  --hud-pad: clamp(16px, 2.2vw, 30px);
 }
 #pageLoader.is-hidden { pointer-events: none; }
+#pageLoader.is-splitting { background: transparent; }
 
-.ld-half {
+.ld-hud, .ld-half {
   position: absolute; inset: 0;
   background: var(--bg-dark);
-  will-change: transform;
+  font-family: var(--font-mono); text-transform: uppercase; color: var(--ink-muted);
 }
-.ld-top { clip-path: inset(0 0 50% 0); }
-.ld-bot { clip-path: inset(50% 0 0 0); }
-.ld-stage {
-  position: absolute; inset: 0;
-  display: grid; place-items: center;
-  will-change: transform;
-}
-.ld-sig {
-  width: min(74vw, 760px); height: auto;
-  overflow: visible;
-  transform: translateY(-2%);                    /* optische Mitte: die Unterstreichung hängt nach unten */
-}
-.ld-sig path {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 5.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-/* ohne JS bzw. vor dem Start: Unterschrift unsichtbar (JS setzt dasharray) */
-#pageLoader:not(.is-ready) .ld-sig path { opacity: 0; }
+.ld-half { will-change: transform, clip-path; }
+.ld-half .ld-hud { background: transparent; }
+.ld-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
 
-.ld-line {                                        /* Schnittlinie, wächst von der Mitte nach außen */
-  position: absolute; left: 0; right: 0; top: 50%;
-  height: 1px; margin-top: -0.5px;
-  background: var(--ink);
-  transform: scaleX(0); transform-origin: 50% 50%;
-  z-index: 1;
-}
-.ld-meta {                                        /* erscheint nur, wenn das Laden länger dauert als die Unterschrift */
-  position: absolute; right: 28px; bottom: 22px; z-index: 1;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase;
-  color: var(--ink-muted);
-  opacity: 0; transition: opacity 0.4s ease;
-}
-.ld-meta.is-on { opacity: 1; }
+/* Eckwinkel wie in einem Sucher */
+.ld-c { position: absolute; width: 26px; height: 26px; border: 0 solid var(--ink); }
+.ld-c--tl { left: var(--hud-pad); top: var(--hud-pad); border-left-width: 1px; border-top-width: 1px; }
+.ld-c--tr { right: var(--hud-pad); top: var(--hud-pad); border-right-width: 1px; border-top-width: 1px; }
+.ld-c--bl { left: var(--hud-pad); bottom: var(--hud-pad); border-left-width: 1px; border-bottom-width: 1px; }
+.ld-c--br { right: var(--hud-pad); bottom: var(--hud-pad); border-right-width: 1px; border-bottom-width: 1px; }
 
+/* Skalen links + rechts (feine Ticks, jeder fünfte länger) */
+.ld-ruler {
+  position: absolute; top: 22%; bottom: 22%; width: 12px;
+  background:
+    repeating-linear-gradient(to bottom, var(--hud-line) 0 1px, transparent 1px 12px) 0 0 / 6px 100% no-repeat,
+    repeating-linear-gradient(to bottom, rgba(240,237,232,0.45) 0 1px, transparent 1px 60px) 0 0 / 12px 100% no-repeat;
+}
+.ld-ruler--l { left: var(--hud-pad); }
+.ld-ruler--r { right: var(--hud-pad); transform: scaleX(-1); }
+
+/* Scan-Linie, die langsam über das Visier wandert */
+.ld-scan {
+  position: absolute; left: 0; right: 0; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(240,237,232,0.35) 20%, rgba(240,237,232,0.35) 80%, transparent);
+  box-shadow: 0 0 18px rgba(240,237,232,0.12);
+  animation: ld-scan 2.6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes ld-scan { from { transform: translateY(8vh); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } to { transform: translateY(92vh); opacity: 0; } }
+
+/* Zeilen oben + unten */
+.ld-row {
+  position: absolute; left: calc(var(--hud-pad) + 40px); right: calc(var(--hud-pad) + 40px);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px;   /* gleich breite Außenspalten → Mitte exakt mittig */
+  font-size: 10px; letter-spacing: 0.22em;
+}
+.ld-row--top { top: calc(var(--hud-pad) + 6px); }
+.ld-row--bottom { bottom: calc(var(--hud-pad) + 2px); align-items: end; }
+.ld-row > :first-child { justify-self: start; }
+.ld-row > :nth-child(2) { justify-self: center; }
+.ld-row > :last-child { justify-self: end; }
+.ld-tag { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.ld-tag--mid { color: rgba(240,237,232,0.35); text-align: center; padding-left: 0.22em; }   /* gleicht den Sperrabstand nach dem letzten Zeichen aus → optisch mittig */
+.ld-dot { width: 6px; height: 6px; background: var(--ink); animation: ld-blink 1s steps(2, start) infinite; }
+@keyframes ld-blink { to { visibility: hidden; } }
+.ld-clock { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Mitte: Fokusrahmen + Wort */
+.ld-center {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 2vh, 22px);
+}
+.ld-frame { position: relative; display: block; padding: 0.06em 0.16em; font-size: clamp(5.5rem, 19vw, 19rem); line-height: 1; }
+.ld-fc {
+  position: absolute; width: 0.16em; height: 0.16em; border: 0 solid var(--ink);
+  transition: transform 0.6s var(--ease-out-expo), opacity 0.3s ease;
+}
+.ld-fc--tl { left: 0; top: 0; border-left-width: 1px; border-top-width: 1px; transform: translate(-0.22em, -0.18em); }
+.ld-fc--tr { right: 0; top: 0; border-right-width: 1px; border-top-width: 1px; transform: translate(0.22em, -0.18em); }
+.ld-fc--bl { left: 0; bottom: 0; border-left-width: 1px; border-bottom-width: 1px; transform: translate(-0.22em, 0.18em); }
+.ld-fc--br { right: 0; bottom: 0; border-right-width: 1px; border-bottom-width: 1px; transform: translate(0.22em, 0.18em); }
+#pageLoader.is-locked .ld-fc { transform: none; }                    /* Fokus rastet ein */
+.ld-word {
+  display: block;
+  font-family: 'Anton', Impact, sans-serif; font-weight: 400; color: var(--ink);
+  line-height: 0.92; letter-spacing: 0.01em;
+}
+#pageLoader.is-live .ld-word { clip-path: inset(50%); }              /* baut sich per JS aus Pixeln auf */
+.ld-sub { font-size: 10px; letter-spacing: 0.28em; padding-left: 0.28em; color: rgba(240,237,232,0.45); white-space: nowrap; }
+
+/* unten: Status · Segmentbalken · Prozent */
+.ld-status { display: inline-flex; align-items: center; gap: 12px; white-space: pre; padding-bottom: 6px; }
+.ld-status-k { color: var(--bg-dark); background: var(--ink); padding: 3px 6px; letter-spacing: 0.18em; }
+.ld-status-txt { color: var(--ink); }
+.ld-bar { display: flex; gap: 3px; width: min(520px, 34vw); height: 8px; margin-bottom: 10px; }
+.ld-bar i { flex: 1; background: rgba(240,237,232,0.12); }
+.ld-bar i.is-on { background: var(--ink); }
+.ld-pct {
+  font-size: clamp(44px, 6.2vw, 96px); line-height: 0.8; letter-spacing: -0.04em;
+  color: var(--ink); font-variant-numeric: tabular-nums; text-transform: none;
+}
+.ld-pct small { font-size: 0.3em; letter-spacing: 0; margin-left: 4px; color: var(--ink-muted); vertical-align: top; }
+
+@media (max-width: 760px) {
+  .ld-tag--mid, .ld-ruler { display: none; }
+  .ld-row { left: calc(var(--hud-pad) + 10px); right: calc(var(--hud-pad) + 10px); }
+  .ld-bar { display: none; }
+  .ld-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ld-scan, .ld-dot { animation: none; }
+}
 /* ============================
    PAGE TRANSITIONS — Editorial Panel (Aino-Stil)
    Animation läuft per Web Animations API in script.js;
@@ -891,10 +1080,10 @@ html.vt-arriving body { visibility: hidden; }
   margin-top: 0;                                  /* Bar direkt unter JCKY */
   border-top: 1px solid rgba(240,237,232,0.16);   /* durchgezogene Linie über die volle Breite */
   padding: 0;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(240,237,232,0.5);
 }

@@ -26,21 +26,33 @@
 </head>
 <body>
 
-<!-- LOADER — „Jcky" wird wie eine Unterschrift gezeichnet, dann teilt sich der Bildschirm entlang einer Linie
-     (obere Hälfte nach oben, untere nach unten). Die zweite Hälfte entsteht per JS als Kopie (script.js → initLoader). -->
+<!-- LOADER — HUD / Visier: Eckwinkel, Skalen, Live-Daten; „JCKY" baut sich pixelweise auf, Fokusrahmen rastet bei 100 % ein.
+     Danach teilt sich der Bildschirm mit pixelig zerbröselnder Kante nach oben + unten (script.js → initLoader). -->
 <div id="pageLoader" aria-hidden="true">
-  <div class="ld-half ld-top">
-    <div class="ld-stage">
-      <svg class="ld-sig" viewBox="80 30 740 330" focusable="false">
-        <path d="M 128 110 C 170 70, 250 48, 300 62 C 262 120, 236 190, 214 250 C 198 292, 160 322, 128 308 C 98 294, 110 262, 160 262 C 204 262, 246 256, 276 244
-                 M 402 158 C 394 132, 346 128, 320 164 C 296 198, 306 240, 340 238 C 370 236, 392 214, 410 196
-                 C 432 160, 462 110, 486 66 C 464 120, 442 190, 424 248 C 436 212, 456 182, 488 162 C 514 146, 536 152, 524 170 C 510 188, 478 194, 462 190 C 488 202, 502 234, 522 246 C 538 254, 552 232, 566 206
-                 C 578 186, 586 170, 592 162 C 582 192, 578 224, 598 228 C 622 232, 640 198, 654 164 C 636 222, 614 292, 586 320 C 562 342, 526 346, 524 324 C 522 300, 586 286, 666 282 C 716 280, 766 284, 798 294"/>
-      </svg>
+  <div class="ld-hud" id="ldHud">
+    <span class="ld-scan"></span>
+    <span class="ld-c ld-c--tl"></span><span class="ld-c ld-c--tr"></span><span class="ld-c ld-c--bl"></span><span class="ld-c ld-c--br"></span>
+    <span class="ld-ruler ld-ruler--l"></span><span class="ld-ruler ld-ruler--r"></span>
+
+    <div class="ld-row ld-row--top">
+      <span class="ld-tag"><i class="ld-dot"></i>JCKY — Portfolio</span>
+      <span class="ld-tag ld-tag--mid">Salzburg, AT · 47.80° N 13.04° E</span>
+      <span class="ld-tag"><span class="ld-clock">--:--:--</span></span>
+    </div>
+
+    <div class="ld-center">
+      <span class="ld-frame"><span class="ld-fc ld-fc--tl"></span><span class="ld-fc ld-fc--tr"></span><span class="ld-fc ld-fc--bl"></span><span class="ld-fc ld-fc--br"></span>
+        <span class="ld-word">JCKY</span>
+      </span>
+      <span class="ld-sub">Jacob Weissenbäck — UI / UX Designer</span>
+    </div>
+
+    <div class="ld-row ld-row--bottom">
+      <span class="ld-status"><span class="ld-status-k">SYS</span><span class="ld-status-txt">Initialising</span></span>
+      <span class="ld-bar"></span>
+      <span class="ld-pct"><span class="ld-num">000</span><small>%</small></span>
     </div>
   </div>
-  <span class="ld-line"></span>
-  <span class="ld-meta">Loading <span id="loaderPercent">0</span>%</span>
 </div>
 
 <!-- CUSTOM CURSOR -->
@@ -48,15 +60,7 @@
 <!-- NAV -->
 <nav class="nav" id="mainNav">
   <div class="nav-left">
-    <!-- Logo: dieselbe Unterschrift wie in der Intro; zeichnet sich nach der Intro einmal kurz (script.js → initNavSignature) -->
-    <span class="nav-cell nav-brand" id="navLogoName">
-      <svg class="nav-txt nav-logo-sig" viewBox="106 52 698 292" role="img" aria-label="JCKY" focusable="false">
-        <path d="M 128 110 C 170 70, 250 48, 300 62 C 262 120, 236 190, 214 250 C 198 292, 160 322, 128 308 C 98 294, 110 262, 160 262 C 204 262, 246 256, 276 244
-                 M 402 158 C 394 132, 346 128, 320 164 C 296 198, 306 240, 340 238 C 370 236, 392 214, 410 196
-                 C 432 160, 462 110, 486 66 C 464 120, 442 190, 424 248 C 436 212, 456 182, 488 162 C 514 146, 536 152, 524 170 C 510 188, 478 194, 462 190 C 488 202, 502 234, 522 246 C 538 254, 552 232, 566 206
-                 C 578 186, 586 170, 592 162 C 582 192, 578 224, 598 228 C 622 232, 640 198, 654 164 C 636 222, 614 292, 586 320 C 562 342, 526 346, 524 324 C 522 300, 586 286, 666 282 C 716 280, 766 284, 798 294"/>
-      </svg>
-    </span>
+    <span class="nav-cell nav-brand" id="navLogoName"><span class="nav-txt nav-logo-text">JCKY</span></span>
   </div>
   <div class="nav-center">
     <a href="#hero"    class="nav-cell nav-sec" data-section="hero"><span class="nav-txt">Start</span></a>
@@ -80,6 +84,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Play reel: Label folgt dem Cursor über dem Video (script.js → initPlayReel) -->
+  <span class="hero-play" id="heroPlay" aria-hidden="true"><span class="hp-chip"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg>Play reel</span></span>
 
   <div class="hero-center-block" id="heroTitleBlock">
     <div class="hero-title-clip">
@@ -312,39 +319,65 @@
 
   </div>
 
-  <div style="display:flex;justify-content:center;padding:64px 0 0;">
-    <a href="projects.html" class="projects-cta" id="svcFlipBtn" aria-label="My Work">
-      <span class="projects-cta-fill" aria-hidden="true"></span>
-      <span class="projects-cta-label">My Work</span>
-    </a>
-  </div>
-
 </section>
 
 <!-- STORY — „Von Pixeln zu Menschen": Pixel-Partikel morphen beim Scrollen durch drei Kapitel
-     (Pixel-Avatar → Salzburg → winkende Hand + UI-Karten). Links bauen sich die Sätze aus Pixeln auf;
-     die Hand ist anklickbar (E-Mail) (script.js → initStory). -->
-<section class="story" id="storySection" aria-label="About me and contact">
+     (Pixel-Avatar → Salzburg → zurück zu Sternenstaub). Der Satz steht oben und baut sich aus Pixeln auf;
+     im dritten Kapitel blenden sich die Projektbilder ein (script.js → initStory, initWorkGrid).
+     Klick auf ein Bild öffnet eine kleine Vorschau (#wkOpen) mit Pfeil zur Projektseite (data-href). -->
+<section class="story" id="storySection" aria-label="About me and selected work">
   <div class="story-stage">
 
     <div class="story-lines" id="storyLines">
-      <p class="story-line">Hi, I'm Jacob.</p>
+      <p class="story-line">Hi, I'm Jacob — but you can call me JCKY.</p>
       <p class="story-line">Born and raised in Salzburg, still the place I call home.</p>
-      <div class="story-line story-line--hi">
-        <p>Don't be shy, say hi to me.</p>
-        <a class="story-mail" href="mailto:j.weissenbaeck@gmx.at">j.weissenbaeck@gmx.at</a>
-      </div>
+      <p class="story-line">I love designing — some of my work looks like this.</p>
     </div>
 
-    <!-- Kapitel-Anzeige -->
-    <div class="story-hud" aria-hidden="true">
-      <span class="story-num"><span id="storyNum">01</span> / 03</span>
-      <span class="story-bars" id="storyBars"><i><b></b></i><i><b></b></i><i><b></b></i></span>
-      <span class="story-chapter" id="storyChapter">Me</span>
-    </div>
+    <ul class="wk" id="wkGrid" aria-label="Selected work">
+      <li class="wk-item" data-cat="UI / UX Design" data-year="2026" data-href="projects.html">
+        <button class="wk-card" type="button" aria-haspopup="dialog">
+          <span class="wk-frame"><img src="https://picsum.photos/id/1015/1600/1000" alt="Lumina — UI / UX Design" loading="lazy" decoding="async"></span>
+          <span class="wk-cap"><span class="wk-name" data-t="Lumina">Lumina</span><span class="wk-meta">UI / UX Design — 2026</span></span>
+        </button>
+      </li>
+      <li class="wk-item" data-cat="Video Editing" data-year="2026" data-href="projects.html">
+        <button class="wk-card" type="button" aria-haspopup="dialog">
+          <span class="wk-frame"><img src="https://picsum.photos/id/1043/1600/1000" alt="Kane — Video Editing" loading="lazy" decoding="async"></span>
+          <span class="wk-cap"><span class="wk-name" data-t="Kane">Kane</span><span class="wk-meta">Video Editing — 2026</span></span>
+        </button>
+      </li>
+      <li class="wk-item" data-cat="UI / UX Design" data-year="2025" data-href="projects.html">
+        <button class="wk-card" type="button" aria-haspopup="dialog">
+          <span class="wk-frame"><img src="https://picsum.photos/id/1050/1600/1000" alt="Flux — UI / UX Design" loading="lazy" decoding="async"></span>
+          <span class="wk-cap"><span class="wk-name" data-t="Flux">Flux</span><span class="wk-meta">UI / UX Design — 2025</span></span>
+        </button>
+      </li>
+      <li class="wk-item" data-cat="Photography" data-year="2024" data-href="projects.html">
+        <button class="wk-card" type="button" aria-haspopup="dialog">
+          <span class="wk-frame"><img src="https://picsum.photos/id/1074/1600/1000" alt="Vertex — Photography" loading="lazy" decoding="async"></span>
+          <span class="wk-cap"><span class="wk-name" data-t="Vertex">Vertex</span><span class="wk-meta">Photography — 2024</span></span>
+        </button>
+      </li>
+    </ul>
 
   </div>
+
 </section>
+
+<!-- WEITER — zwei große Wege aus der Story (script.js → initWorkGrid; Abstand so, dass sie ganz unten genau an der Nav anliegen) -->
+<nav class="sn" id="storyNext" aria-label="Continue">
+  <a class="sn-link" href="projects.html">
+    <span class="sn-k">All projects</span>
+    <span class="sn-t"><span class="sn-in">My work</span></span>
+    <span class="sn-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
+  </a>
+  <a class="sn-link" href="cv.html">
+    <span class="sn-k">Who I am</span>
+    <span class="sn-t"><span class="sn-in">More about me</span></span>
+    <span class="sn-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
+  </a>
+</nav>
 
 </div><!-- /bottom-sheet -->
 
@@ -363,6 +396,17 @@
     <span class="sf-right"><span class="sf-txt">My Portfolio — made with love</span></span>
   </div>
 </footer>
+
+<!-- PROJEKT-VORSCHAU — das Kachelbild wächst in die Bildmitte, darüber nur ein Pfeil zur Projektseite
+     (script.js → initWorkGrid). Schließen: Klick daneben, Esc oder Scrollen. -->
+<div class="wkl" id="wkOpen" role="dialog" aria-modal="true" aria-label="Project preview" hidden>
+  <div class="wkl-bg" aria-hidden="true"></div>
+  <figure class="wkl-fig">
+    <img alt="">
+    <a class="wkl-go" href="projects.html" aria-label="Open project page"><span class="wkl-arrows" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span></a>
+  </figure>
+  <button class="wkl-close" type="button">Close preview</button>
+</div>
 
 <script src="script.js" defer></script>
 </body>
