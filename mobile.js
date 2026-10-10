@@ -96,6 +96,11 @@
     const show = () => { place(); setTimeout(() => photo.classList.add('is-in'), 420); };
     if (typeof afterIntro === 'function') afterIntro(() => setTimeout(show, 200)); else show();
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+    /* Name oder Rolle ändern ihre Größe (Schrift geladen, Name neu eingepasst) → Foto sofort nachziehen */
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(() => place());
+      [document.getElementById('heroWordFullname'), role, heroBlock].forEach((el) => { if (el) ro.observe(el); });
+    }
     let rt = 0;
     window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(place, 220); });   // nach dem Neu-Einpassen des Namens
   }
@@ -234,10 +239,8 @@
       });
     }
     if (!PX_REDUCE) {
-      const words = [...meStory.querySelectorAll('.cvs-word')];
-      const big = meStory.querySelector('.cvs-big');
-      words.forEach((w, i) => { w.classList.add('m-word'); w.style.transitionDelay = (i * 70) + 'ms'; });
-      if (big) onEnterOnce(big, () => words.forEach((w) => w.classList.add('is-in')), '-12%');
+      /* Überschriften wie „What I do“ auf der Startseite: Mono, tippen sich beim Hereinscrollen ein */
+      meStory.querySelectorAll('.cvs-title').forEach((t) => { typePrepare(t); onEnterOnce(t, () => typeIn(t, 650)); });
       const stickers = [...meStory.querySelectorAll('.cvs-sticker')];
       const list = meStory.querySelector('.cvs-stickers');
       stickers.forEach((s, i) => { s.classList.add('m-pop'); s.style.transitionDelay = (i * 55) + 'ms'; });

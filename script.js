@@ -830,7 +830,24 @@ function onEnterOnce(el, fn, margin) {
         }
       }
     }
-    p._px = { draw, resize };
+    /* Text auf der Fläche mit demselben Blockmuster beschneiden → er verschwindet Pixel für Pixel mit der Fläche */
+    function clipTo(el, cover, mode) {
+      if (cover >= 1) { el.style.clipPath = ''; return; }
+      const r = el.getBoundingClientRect();
+      const g0 = Math.max(0, Math.floor(r.left / PX_BLOCK)), g1 = Math.min(cols - 1, Math.floor(r.right / PX_BLOCK));
+      const h0 = Math.max(0, Math.floor(r.top / PX_BLOCK)), h1 = Math.min(rows - 1, Math.floor(r.bottom / PX_BLOCK));
+      let d = '';
+      for (let gy = h0; gy <= h1; gy++) {
+        const rowBias = rows > 1 ? gy / (rows - 1) : 0;
+        for (let gx = g0; gx <= g1; gx++) {
+          const rn = pxRnd(gx, gy);
+          const thr = (mode === 'dissolve') ? rowBias * PX_BIAS + rn * (1 - PX_BIAS) : (1 - rowBias) * PX_BIAS + rn * (1 - PX_BIAS);
+          if (cover >= thr) d += 'M' + (gx * PX_BLOCK - r.left).toFixed(1) + ' ' + (gy * PX_BLOCK - r.top).toFixed(1) + 'h' + (PX_BLOCK + 1) + 'v' + (PX_BLOCK + 1) + 'h-' + (PX_BLOCK + 1) + 'Z';
+        }
+      }
+      el.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';
+    }
+    p._px = { draw, resize, clipTo };
     window.addEventListener('resize', resize);
     p._pxCleanup = () => window.removeEventListener('resize', resize);
     return p;
@@ -934,8 +951,8 @@ function onEnterOnce(el, fn, margin) {
       if (PHONE) {
         requestAnimationFrame(() => {
           document.documentElement.classList.remove('vt-arriving');
-          anim(p.querySelector('.aino-center'), [{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-out' });
-          setTimeout(() => animateCover(p, 1, 0, 900, 'dissolve').then(() => cleanup(p)), 180);
+          const label = p.querySelector('.aino-center');                   // bleibt stehen, bis die Pixel es mitnehmen
+          setTimeout(() => animateCover(p, 1, 0, 900, 'dissolve', (c) => p._px.clipTo(label, c, 'dissolve')).then(() => cleanup(p)), 180);
         });
         return;
       }
