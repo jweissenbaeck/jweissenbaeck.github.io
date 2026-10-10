@@ -797,15 +797,8 @@ function onEnterOnce(el, fn, margin) {
 
     const center = document.createElement('div');
     center.className = 'aino-center';
-    center.innerHTML =
-      '<span class="aino-code">' + m.code + '</span>' +
-      '<span class="aino-clip"><span class="aino-name-inner">' + m.name + '</span></span>';
+    center.innerHTML = '<span class="aino-clip"><span class="aino-name-inner">' + m.name + '</span></span>';   // nur der Seitenname
     p.appendChild(center);
-
-    const meta = document.createElement('span');
-    meta.className = 'aino-meta aino-br';
-    meta.textContent = 'Salzburg, AT';
-    p.appendChild(meta);
 
     document.documentElement.appendChild(p);
 
@@ -814,7 +807,7 @@ function onEnterOnce(el, fn, margin) {
     const ctx = canvas.getContext('2d');
     let W = 0, H = 0, cols = 0, rows = 0, dpr = 1;
     function resize() {
-      W = window.innerWidth; H = window.innerHeight;
+      W = window.innerWidth; H = PHONE ? phoneVH() : window.innerHeight;     // Handy: bis unter die Browserleiste → kein Streifen, wenn sie ein-/ausfährt
       dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -892,17 +885,14 @@ function onEnterOnce(el, fn, margin) {
     }
 
     const nameInner = p.querySelector('.aino-name-inner');
-    const code = p.querySelector('.aino-code');
     nameInner.style.transform = 'translateY(110%)';
-    code.style.opacity = '0';
 
     /* Panel baut sich aus Pixeln von unten auf, dann navigieren */
     animateCover(p, 0, 1, DUR, 'build').then(() => setTimeout(go, 110));
 
-    /* Name/Code erscheinen, sobald die Fläche großteils aufgebaut ist */
+    /* Name erscheint, sobald die Fläche großteils aufgebaut ist */
     setTimeout(() => {
       anim(nameInner, [{ transform: 'translateY(110%)' }, { transform: 'translateY(0%)' }], { duration: 520, easing: EASE });
-      anim(code, [{ opacity: 0 }, { opacity: 1 }], { duration: 460, easing: 'ease-out' });
     }, DUR * 0.5);
   }, true);
 
@@ -944,7 +934,7 @@ function onEnterOnce(el, fn, margin) {
       if (PHONE) {
         requestAnimationFrame(() => {
           document.documentElement.classList.remove('vt-arriving');
-          [p.querySelector('.aino-center'), p.querySelector('.aino-meta')].forEach((el) => { if (el) anim(el, [{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-out' }); });
+          anim(p.querySelector('.aino-center'), [{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-out' });
           setTimeout(() => animateCover(p, 1, 0, 900, 'dissolve').then(() => cleanup(p)), 180);
         });
         return;

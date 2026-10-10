@@ -13,14 +13,34 @@
   const ease = (v) => 1 - Math.pow(1 - v, 3);
   const onScroll = (fn) => { if (typeof lenis !== 'undefined' && lenis && lenis.on) lenis.on('scroll', fn); else window.addEventListener('scroll', fn, { passive: true }); };
 
-  /* ── Scroll-Anzeige ── */
-  const bar = document.createElement('div');
+  /* ── Scroll-Anzeige: eine Reihe gleich großer Pixel über die ganze Breite; je weiter unten, desto mehr sind blau
+       (springt Pixel für Pixel, nichts wird gestreckt) ── */
+  const bar = document.createElement('canvas');
   bar.className = 'm-progress'; bar.setAttribute('aria-hidden', 'true');
   document.body.appendChild(bar);
-  let idle = 0;
-  onScroll(() => {
+  const bg = bar.getContext('2d');
+  const BPX = 4, BGAP = 2;                                              // Pixelgröße · Abstand (CSS-px)
+  const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8B9DFF';
+  const OFF = getComputedStyle(document.documentElement).getPropertyValue('--ink-ghost').trim() || '#444444';
+  let bw = 0, bdpr = 1, bn = 0, bOn = -1, idle = 0;
+  function sizeBar() {
+    bw = window.innerWidth; bdpr = Math.min(3, window.devicePixelRatio || 1);
+    bar.width = Math.round(bw * bdpr); bar.height = Math.round(BPX * bdpr);
+    bn = Math.floor((bw + BGAP) / (BPX + BGAP)); bOn = -1;
+  }
+  function drawBar() {
     const lim = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    bar.style.setProperty('--p', Math.min(1, Math.max(0, window.scrollY / lim)).toFixed(4));
+    const on = Math.round(Math.min(1, Math.max(0, window.scrollY / lim)) * bn);
+    if (on === bOn) return;
+    bOn = on;
+    const x0 = Math.floor((bw - (bn * (BPX + BGAP) - BGAP)) / 2);   // Reihe mittig
+    bg.setTransform(bdpr, 0, 0, bdpr, 0, 0); bg.clearRect(0, 0, bw, BPX);
+    for (let i = 0; i < bn; i++) { bg.fillStyle = i < on ? ACC : OFF; bg.fillRect(x0 + i * (BPX + BGAP), 0, BPX, BPX); }
+  }
+  sizeBar(); drawBar();
+  window.addEventListener('resize', () => { sizeBar(); drawBar(); });
+  onScroll(() => {
+    drawBar();
     bar.classList.add('is-on');
     clearTimeout(idle);
     idle = setTimeout(() => bar.classList.remove('is-on'), 1200);
@@ -68,9 +88,10 @@
       const right = Math.max(...second.map((b) => b.x + b.w));
       const top = Math.min(...first.map((b) => b.y)) + first[0].h * 0.1;            // Oberkante der Großbuchstaben
       const bottom = role ? box(role).y + role.offsetHeight : Math.max(...second.map((b) => b.y + b.h));
+      /* Höhe: von der Oberkante von „JACOB“ bis zur Unterkante der Rolle; Seitenverhältnis bleibt 4 : 5 */
       const free = right - (Math.max(...first.map((b) => b.x + b.w)) + 16);
-      const w = Math.round(Math.max(90, Math.min(free, right * 0.34))), h = Math.round(w * 1.25);
-      Object.assign(photo.style, { left: (right - w) + 'px', width: w + 'px', top: Math.round((top + bottom) / 2 - h / 2) + 'px', height: h + 'px' });
+      const h = Math.round(Math.min(bottom - top, free * 1.25)), w = Math.round(h / 1.25);
+      Object.assign(photo.style, { left: (right - w) + 'px', width: w + 'px', top: Math.round(bottom - h) + 'px', height: h + 'px' });
     };
     const show = () => { place(); setTimeout(() => photo.classList.add('is-in'), 420); };
     if (typeof afterIntro === 'function') afterIntro(() => setTimeout(show, 200)); else show();
@@ -125,6 +146,58 @@
       skills.forEach((s, i) => setTimeout(() => typeIn(s, 320), 260 + i * 90));
     }, '-8%');
   });
+
+  /* ── Me: Foto antippen → wird groß (aus seiner Lage heraus), X oder Tippen daneben schließt wieder ── */
+  const por = document.getElementById('cvhPortrait');
+  const porImg = por && por.querySelector('.cvh-portrait-img');
+  if (por && porImg) {
+    por.setAttribute('role', 'button'); por.tabIndex = 0; por.setAttribute('aria-label', 'Enlarge photo');
+    const lb = document.createElement('div');
+    lb.className = 'm-lb'; lb.hidden = true;
+    lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', 'Photo');
+    lb.innerHTML = '<div class="m-lb-bg"></div><img class="m-lb-img" alt="' + (porImg.alt || '') + '"><button class="m-lb-x" type="button" aria-label="Close photo"><span></span><span></span></button>';
+    document.body.appendChild(lb);
+    const big = lb.querySelector('.m-lb-img'), x = lb.querySelector('.m-lb-x'), back = lb.querySelector('.m-lb-bg');
+    big.src = porImg.currentSrc || porImg.src;
+    const frame = por.querySelector('.cvh-frame') || por;
+    const from = () => { const r = frame.getBoundingClientRect(); return { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' }; };
+    const to = () => ({ left: '0px', top: '0px', width: window.innerWidth + 'px', height: window.innerHeight + 'px' });   // bildschirmfüllend
+    let isOpen = false, busy = null;
+    const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+    function open() {
+      if (isOpen) return; isOpen = true;
+      lb.hidden = false;
+      try { if (typeof lenis !== 'undefined' && lenis) lenis.stop(); } catch (e) {}
+      const a = from(), b = to();
+      Object.assign(big.style, b);
+      if (busy) busy.cancel();
+      busy = big.animate([a, b], { duration: PX_REDUCE ? 1 : 700, easing: EASE });
+      back.animate([{ opacity: 0 }, { opacity: 1 }], { duration: PX_REDUCE ? 1 : 420, fill: 'both' });
+      lb.classList.add('is-open');
+      por.style.visibility = 'hidden';
+      x.focus({ preventScroll: true });
+    }
+    function close() {
+      if (!isOpen) return; isOpen = false;
+      lb.classList.remove('is-open');
+      const a = from();
+      if (busy) busy.cancel();
+      busy = big.animate([to(), a], { duration: PX_REDUCE ? 1 : 560, easing: 'cubic-bezier(0.65, 0, 0.35, 1)', fill: 'forwards' });
+      back.animate([{ opacity: 1 }, { opacity: 0 }], { duration: PX_REDUCE ? 1 : 460, fill: 'both' });
+      busy.finished.then(() => {
+        if (isOpen) return;
+        lb.hidden = true; busy.cancel(); busy = null;
+        por.style.visibility = '';
+        try { if (typeof lenis !== 'undefined' && lenis) lenis.start(); } catch (e) {}
+        por.focus({ preventScroll: true });
+      }, () => {});
+    }
+    por.addEventListener('click', open);
+    por.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    x.addEventListener('click', close);
+    back.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  }
 
   /* ── Me: eigene Seite (cv.js überspringt auf dem Handy die Story). Satz Wort für Wort, Tools als gruppiertes Raster,
        Sticker poppen auf — jeweils einmal beim Hereinscrollen. Die Pillen-Physik (cv.js) bleibt. ── */
