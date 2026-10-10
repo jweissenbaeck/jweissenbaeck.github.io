@@ -10,6 +10,8 @@
 (function initPhone() {
   if (typeof PHONE === 'undefined' || !PHONE) return;
   const live = !PX_REDUCE && PX_CLIP_OK;
+  /* gleichzeitig mit dem Namen im Hero (script.js → heroInit meldet „jcky:hero-in“) */
+  const onHeroIn = (fn) => { if (window.__heroStarted) fn(); else window.addEventListener('jcky:hero-in', fn, { once: true }); };
   const ease = (v) => 1 - Math.pow(1 - v, 3);
   const onScroll = (fn) => { if (typeof lenis !== 'undefined' && lenis && lenis.on) lenis.on('scroll', fn); else window.addEventListener('scroll', fn, { passive: true }); };
 
@@ -65,8 +67,7 @@
     card.insertAdjacentHTML('beforeend',
       '<span class="m-reel-chip" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg>Play reel</span>');
     card.insertAdjacentHTML('afterend', '<div class="m-reel-meta" aria-hidden="true"><span>Showreel</span><span>' + new Date().getFullYear() + '</span></div>');
-    const open = () => setTimeout(() => wrap && wrap.classList.add('is-revealed'), 650);   // nach dem Namen
-    if (typeof afterIntro === 'function') afterIntro(open); else open();
+    onHeroIn(() => setTimeout(() => wrap && wrap.classList.add('is-revealed'), 120));   // zusammen mit dem Namen
   }
 
   /* ── Start: Porträt hinter dem Namen — rechts neben „JACOB“, unten bündig hinter „…NBACK“.
@@ -76,7 +77,7 @@
   const gapAt = letters.findIndex((l) => l.classList.contains('nl--space'));
   if (heroBlock && gapAt > 0) {
     const photo = document.createElement('img');
-    photo.className = 'm-hero-photo'; photo.src = 'assets/jcky-3.jpg'; photo.alt = ''; photo.decoding = 'async';
+    photo.className = 'm-hero-photo'; photo.src = 'assets/jcky-3-web.jpg'; photo.alt = ''; photo.decoding = 'async';
     photo.setAttribute('aria-hidden', 'true');
     heroBlock.insertBefore(photo, heroBlock.firstChild);
     const box = (el) => { let x = 0, y = 0, n = el; while (n && n !== heroBlock) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; } return { x, y, w: el.offsetWidth, h: el.offsetHeight }; };
@@ -93,8 +94,9 @@
       const h = Math.round(Math.min(bottom - top, free * 1.25)), w = Math.round(h / 1.25);
       Object.assign(photo.style, { left: (right - w) + 'px', width: w + 'px', top: Math.round(bottom - h) + 'px', height: h + 'px' });
     };
-    const show = () => { place(); setTimeout(() => photo.classList.add('is-in'), 420); };
-    if (typeof afterIntro === 'function') afterIntro(() => setTimeout(show, 200)); else show();
+    /* zusammen mit dem Namen; erst wenn das Bild dekodiert ist (kein leerer Rahmen) */
+    const ready = photo.decode ? photo.decode().catch(() => {}) : Promise.resolve();
+    onHeroIn(() => { place(); ready.then(() => { place(); photo.classList.add('is-in'); }); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
     /* Name oder Rolle ändern ihre Größe (Schrift geladen, Name neu eingepasst) → Foto sofort nachziehen */
     if ('ResizeObserver' in window) {

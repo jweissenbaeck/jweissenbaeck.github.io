@@ -1146,6 +1146,9 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 ============================ */
 const heroInit = (instant) => {
   const elName  = document.getElementById('heroWordFullname');
+  /* Start melden: andere Hero-Teile (Handy: Showreel-Karte, Foto — mobile.js) erscheinen gleichzeitig mit dem Namen */
+  window.__heroStarted = true;
+  setTimeout(() => window.dispatchEvent(new CustomEvent('jcky:hero-in', { detail: { instant: !!instant } })), 0);
 
   gsap.set('#heroWordFullname', { y: '110%' });
   gsap.set('#heroImgCard',      { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
