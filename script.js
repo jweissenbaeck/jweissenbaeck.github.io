@@ -34,6 +34,9 @@ const onIdle = (cb) => (window.requestIdleCallback ? requestIdleCallback(cb, { t
 ============================ */
 const PX_REDUCE  = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 const PX_CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "path('M0 0H1V1Z')"));
+/* Handy-Version (eigenes Layout: mobile.css + mobile.js). Gesetzt im <head> jeder Seite; die Desktop-Effekte unten
+   steigen bei PHONE aus, der Desktop-Pfad selbst bleibt unverändert. */
+const PHONE = document.documentElement.classList.contains('is-phone');
 function pxRand(gx, gy) {
   let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
   x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
@@ -110,6 +113,63 @@ function scribbleDraw(paths, q) {
     const k = Math.min(1, Math.max(0, q * n - j)), v = ((1 - k) * (p._len || 2000)).toFixed(1);
     if (p._o !== v) { p._o = v; p.style.strokeDashoffset = v; }
   });
+}
+
+/* HOVER-LINIE: beim Hover zeichnet sich eine Linie in --accent (von links nach rechts), ein zweiter, feiner Strich
+   folgt als Skizze. Nach dem Verlassen wartet sie kurz und zieht sich dann von rechts nach links zurück.
+   opt.trigger: Element für den Hover · opt.host: positioniertes Element, in das die Linie kommt · opt.ref: Bezugsrahmen
+   opt.seg: [[x, y], [c1x, c1y, c2x, c2y, x, y], …] relativ zu ref (Anteile von Breite / Höhe) · opt.z: z-index der Linie
+   opt.hold: Wartezeit nach dem Verlassen (ms). Startet immer vom aktuellen Zustand → kein Sprung, kein Aufblitzen. */
+function hoverLine(opt) {
+  const host = opt.host, ref = opt.ref || host, trigger = opt.trigger || ref;
+  if (!host || PX_REDUCE || !document.documentElement.animate) return;
+  if (window.matchMedia && !window.matchMedia('(hover: hover)').matches) return;
+  const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('class', 'hv-line'); svg.setAttribute('aria-hidden', 'true');
+  if (opt.z != null) svg.style.zIndex = opt.z;
+  const a = document.createElementNS(NS, 'path'), b = document.createElementNS(NS, 'path');
+  a.setAttribute('class', 'hv-line-a'); b.setAttribute('class', 'hv-line-b');
+  svg.appendChild(b); svg.appendChild(a);
+  host.insertBefore(svg, host.firstChild);
+  let len = 1, lenB = 1, runA = null, runB = null, drawn = false, holdT = 0;
+  const build = () => {
+    const hr = host.getBoundingClientRect(), r = ref.getBoundingClientRect();
+    svg.setAttribute('viewBox', '0 0 ' + Math.max(1, hr.width) + ' ' + Math.max(1, hr.height));
+    const path = (dx, dy) => {
+      const P = (fx, fy) => (r.left - hr.left + fx * r.width + dx).toFixed(1) + ' ' + (r.top - hr.top + fy * r.height + dy).toFixed(1);
+      return opt.seg.map((s, i) => i ? 'C' + P(s[0], s[1]) + ' ' + P(s[2], s[3]) + ' ' + P(s[4], s[5]) : 'M' + P(s[0], s[1])).join(' ');
+    };
+    a.setAttribute('d', path(0, 0)); b.setAttribute('d', path(3, 4));
+    len = a.getTotalLength() + 2; lenB = b.getTotalLength() + 2;
+    a.style.strokeDasharray = len + ' ' + len; b.style.strokeDasharray = lenB + ' ' + lenB;
+    if (runA) runA.cancel(); if (runB) runB.cancel(); runA = runB = null;
+    a.style.strokeDashoffset = drawn ? 0 : len; b.style.strokeDashoffset = drawn ? 0 : lenB;
+  };
+  const run = (el, prev, to, o) => {
+    const from = parseFloat(getComputedStyle(el).strokeDashoffset);
+    if (prev) prev.cancel();
+    el.style.strokeDashoffset = from;                          // Ausgangswert festhalten → während einer Verzögerung kein Aufblitzen
+    return el.animate([{ strokeDashoffset: from }, { strokeDashoffset: to }], Object.assign({ fill: 'both' }, o));
+  };
+  const hidden = () => parseFloat(getComputedStyle(a).strokeDashoffset) >= len - 1;
+  trigger.addEventListener('mouseenter', () => {
+    clearTimeout(holdT);
+    if (hidden()) { drawn = false; build(); }                     // Lage neu messen, solange die Linie ganz weg ist
+    drawn = true;
+    runA = run(a, runA, 0, { duration: 1300, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+    runB = run(b, runB, 0, { duration: 1300, delay: 140, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+  });
+  trigger.addEventListener('mouseleave', () => {
+    clearTimeout(holdT);
+    holdT = setTimeout(() => {                                    // erst kurz stehen lassen, dann zurückziehen
+      drawn = false;
+      runB = run(b, runB, lenB, { duration: 900, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+      runA = run(a, runA, len, { duration: 1000, delay: 60, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+    }, opt.hold != null ? opt.hold : 300);
+  });
+  build();
+  window.addEventListener('resize', () => { if (!drawn) build(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (!drawn) build(); });
 }
 
 /* BUCHSTABEN-ROLL: Text in einzelne Buchstaben (.wk-l) zerlegen; per CSS rollt beim Hover jeder Buchstabe nach oben,
@@ -303,73 +363,57 @@ function onEnterOnce(el, fn, margin) {
 
 
 /* ============================
-   HERO — Pixel-Partikel bei Mausbewegung
-   Quadratische Pixel in Tintenfarbe stieben in Bewegungsrichtung der Maus, bremsen ab,
-   schrumpfen und blenden aus. Nur bei Bewegung, Anzahl begrenzt. mix-blend-mode: difference
-   (wie der Hero-Name) → auf hellen Bildern dunkel, auf dunklem Grund hell. Pausiert, solange
-   der Play-Cursor sichtbar ist. Eigenständig + try/catch → läuft unabhängig vom Rest.
+   HERO — Punktraster am Cursor
+   Ein unsichtbares Raster aus kleinen Pixelpunkten; rund um den Zeiger leuchten sie in --accent auf (nach außen
+   schwächer). Sitzt direkt am Zeiger, kein Nachlauf. Liegt unter Name, Bildern und Video. Nicht über der Nav.
 ============================ */
 (function initHeroParticles() {
-  try {
-    var hero = document.getElementById('hero');
-    if (!hero) return;
-    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    if (window.matchMedia && !window.matchMedia('(any-hover: hover)').matches) return;
-    var MAX = 220, LIFE = 1000, SIZES = [3, 4, 4, 5, 6];
-    var cv = document.createElement('canvas');
-    cv.className = 'hero-dust'; cv.setAttribute('aria-hidden', 'true');
-    hero.appendChild(cv);
-    var ctx = cv.getContext('2d');
-    if (!ctx) return;
-    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#F0EDE8';
-    var W = 0, H = 0, dpr = 1, parts = [], raf = 0, last = null, prevT = 0;
-    function size() {
-      W = hero.clientWidth; H = hero.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
-      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-    }
-    size();
-    function frame(now) {
-      raf = 0;
-      var dt = Math.min(48, now - (prevT || now)); prevT = now;
-      var f = dt / 16.67;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = ink;
-      parts = parts.filter(function (p) {
-        p.age += dt;
-        if (p.age >= p.life) return false;
-        var k = Math.pow(0.93, f);                    // Luftwiderstand
-        p.vx *= k; p.vy *= k;
-        p.x += p.vx * f; p.y += p.vy * f;
-        var life = 1 - p.age / p.life;
-        var s = Math.max(1, Math.round(p.s * (0.4 + 0.6 * life)));   // schrumpft
-        ctx.globalAlpha = 0.8 * life * life;
-        ctx.fillRect(Math.round(p.x) - s / 2, Math.round(p.y) - s / 2, s, s);
-        return true;
-      });
-      ctx.globalAlpha = 1;
-      if (parts.length) raf = requestAnimationFrame(frame); else prevT = 0;
-    }
-    window.addEventListener('mousemove', function (e) {
-      var r = hero.getBoundingClientRect();
-      var x = e.clientX - r.left, y = e.clientY - r.top;
-      if (x < 0 || y < 0 || x > r.width || y > r.height || window.__playCursorActive) { last = null; return; }
-      if (r.width !== W || r.height !== H) size();
-      if (last) {
-        var dx = x - last.x, dy = y - last.y, speed = Math.sqrt(dx * dx + dy * dy);
-        var n = Math.min(5, Math.floor(speed / 7));   // mehr Tempo = mehr Pixel
-        for (var i = 0; i < n && parts.length < MAX; i++) {
-          var t = Math.random(), spread = (Math.random() - 0.5) * 0.9;
-          var ca = Math.cos(spread), sa = Math.sin(spread), m = 0.18 + Math.random() * 0.22;
-          parts.push({ x: last.x + dx * t, y: last.y + dy * t, vx: (dx * ca - dy * sa) * m, vy: (dx * sa + dy * ca) * m,
-                       age: 0, life: LIFE * (0.6 + Math.random() * 0.5), s: SIZES[Math.floor(Math.random() * SIZES.length)] });
-        }
-        if (n && !raf) raf = requestAnimationFrame(frame);
+  const hero = document.getElementById('hero');
+  if (!hero || PX_REDUCE || PHONE) return;
+  if (window.matchMedia && !window.matchMedia('(any-hover: hover)').matches) return;
+  const cv = document.createElement('canvas');
+  cv.className = 'hero-dust'; cv.setAttribute('aria-hidden', 'true');
+  hero.insertBefore(cv, hero.firstChild);
+  const ctx = cv.getContext('2d');
+  if (!ctx) return;
+  const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8B9DFF';
+  const G = 22, D = 3, R = 160;                                        // Rasterabstand · Punktgröße · Lichtradius
+  const nav = document.getElementById('mainNav');
+  let W = 0, H = 0, dpr = 1, x = 0, y = 0, a = 0, on = false, raf = 0, last = 0;
+  function size() { W = hero.clientWidth; H = hero.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  size();
+  window.addEventListener('resize', size);
+  function frame(now) {
+    raf = 0;
+    const dt = last ? now - last : 16; last = now;
+    a = on ? 1 : Math.max(0, a - dt / 220);                             // beim Verlassen kurz ausblenden
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+    if (a > 0) {
+      ctx.fillStyle = ACC;
+      const g0 = Math.max(0, Math.floor((x - R) / G)), g1 = Math.ceil((x + R) / G);
+      const h0 = Math.max(0, Math.floor((y - R) / G)), h1 = Math.ceil((y + R) / G);
+      for (let gy = h0; gy <= h1; gy++) for (let gx = g0; gx <= g1; gx++) {
+        const px = gx * G + G / 2, py = gy * G + G / 2, d = Math.hypot(px - x, py - y);
+        if (d >= R) continue;
+        const k = 1 - d / R;
+        ctx.globalAlpha = a * Math.pow(k, 1.4);
+        ctx.fillRect(Math.round(px - D / 2), Math.round(py - D / 2), D, D);
       }
-      last = { x: x, y: y };
-    }, { passive: true });
-    window.addEventListener('resize', size);
-  } catch (e) {}
+      ctx.globalAlpha = 1;
+    }
+    if (on || a > 0) raf = requestAnimationFrame(frame); else last = 0;
+  }
+  function track(e) {
+    const hr = hero.getBoundingClientRect();
+    let ok = e.clientX >= hr.left && e.clientX <= hr.right && e.clientY >= hr.top && e.clientY <= hr.bottom && hr.bottom > 0 && !window.__playCursorActive;
+    if (ok && nav && e.clientY <= nav.getBoundingClientRect().bottom) ok = false;           // nicht über der Nav
+    if (ok) { const hit = document.elementFromPoint(e.clientX, e.clientY); if (hit && !hit.closest('#hero')) ok = false; }
+    if (ok) { if (hero.clientWidth !== W || hero.clientHeight !== H) size(); x = e.clientX - hr.left; y = e.clientY - hr.top; }
+    on = ok;
+    if (!raf && (on || a > 0)) raf = requestAnimationFrame(frame);
+  }
+  window.addEventListener('pointermove', track, { passive: true });
+  document.addEventListener('mouseleave', () => { on = false; });
 })();
 
 /* ============================
@@ -707,7 +751,7 @@ function onEnterOnce(el, fn, margin) {
   };
   const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
-  const DUR = 680;
+  const DUR = 820;
 
   function pageKey(url) {
     try {
@@ -790,7 +834,7 @@ function onEnterOnce(el, fn, margin) {
       const t0 = performance.now();
       (function frame(now) {
         const t = Math.min(1, (now - t0) / dur);
-        const e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        const e = -(Math.cos(Math.PI * t) - 1) / 2;                       // weich an + weich aus (Sinus)
         const cover = from + (to - from) * e;
         p._px.draw(cover, mode);
         if (onFrame) onFrame(cover);
@@ -869,8 +913,7 @@ function onEnterOnce(el, fn, margin) {
       try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
     };
 
-    /* Ankommen: das weiße Panel (mit Seitenname) teilt sich in der Mitte entlang einer gezackten Pixel-Naht —
-       obere Hälfte fährt nach oben, untere nach unten, dazwischen wird die Seite frei (wie bei der Intro). */
+    /* Ankommen: das weiße Panel (mit Seitenname) wird mit weicher Kurve nach rechts aus dem Bild gezogen. */
     const start = () => {
       const p = buildPanel(metaFor(location.href));
       p._px.draw(1, 'build');               // deckt bereits (volle Pixel-Fläche)
@@ -882,33 +925,13 @@ function onEnterOnce(el, fn, margin) {
         setTimeout(() => cleanup(p), 240);
         return;
       }
-      /* zwei Hälften: je eine vollflächige Kopie des Panels, auf ihre Seite der Naht beschnitten */
-      const W = window.innerWidth, H = window.innerHeight, B = Math.max(16, Math.round(W / 70)), cols = Math.ceil(W / B);
-      const seam = [];
-      for (let i = 0; i < cols; i++) seam.push(Math.round(H / 2 + (pxRnd(i, 7) < 0.5 ? -B / 2 : B / 2)));
-      let topPts = '0px 0px, ' + W + 'px 0px', botPts = '';
-      for (let i = cols - 1; i >= 0; i--) topPts += ', ' + Math.min(W, (i + 1) * B) + 'px ' + seam[i] + 'px, ' + (i * B) + 'px ' + seam[i] + 'px';
-      for (let i = 0; i < cols; i++) botPts += (i ? ', ' : '') + (i * B) + 'px ' + seam[i] + 'px, ' + Math.min(W, (i + 1) * B) + 'px ' + seam[i] + 'px';
-      botPts += ', ' + W + 'px ' + H + 'px, 0px ' + H + 'px';
-      const content = [...p.children].filter(c => !c.classList.contains('aino-px'));
-      const halves = ['polygon(' + topPts + ')', 'polygon(' + botPts + ')'].map((clip) => {
-        const h = document.createElement('div');
-        h.className = 'aino-half';
-        h.style.clipPath = clip;
-        content.forEach(c => h.appendChild(c.cloneNode(true)));
-        p.appendChild(h);
-        return h;
-      });
-      content.forEach(c => c.remove());
-      p.querySelector('.aino-px').style.visibility = 'hidden';
+      /* die ganze weiße Fläche (samt Seitenname) wird weich nach rechts weggezogen */
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('vt-arriving');
         setTimeout(() => {
-          const ease = 'cubic-bezier(0.76, 0, 0.24, 1)', D = 1000;
-          anim(halves[0], [{ transform: 'translateY(0)' }, { transform: 'translateY(-' + (H / 2 + B) + 'px)' }], { duration: D, easing: ease });
-          anim(halves[1], [{ transform: 'translateY(0)' }, { transform: 'translateY(' + (H / 2 + B) + 'px)' }], { duration: D, easing: ease })
+          anim(p, [{ transform: 'translateX(0)' }, { transform: 'translateX(100%)' }], { duration: 1300, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' })
             .finished.then(() => cleanup(p), () => cleanup(p));
-        }, 260);
+        }, 220);
       });
     };
 
@@ -1034,7 +1057,27 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
    (überträgt den Pixel-Wipe-Stil auf die "Find me here"-Links). Canvas je Link.
 ============================ */
 (function initContactPixels() {
-  document.querySelectorAll('.nav .nav-cell:not(.nav-brand) .nav-txt, .site-footer-bar .sf-txt').forEach((el) => splitRoll(el));   // Nav + Footer: Hover wie „My work" (CSS)
+  document.querySelectorAll('.nav .nav-cell:not(.nav-brand) .nav-txt, .site-footer-bar .sf-link .sf-txt').forEach((el) => splitRoll(el));   // Nav + Footer-Links: Hover wie „My work" (CSS)
+  /* „My Portfolio — made with love": statt Fläche zeichnet sich ein Schwung unter dem Text, der in einem kleinen Herz endet */
+  const sfRight = document.querySelector('.site-footer-bar .sf-right'), sfFoot = document.getElementById('siteFooter');
+  if (sfRight && sfFoot) hoverLine({ trigger: sfRight, host: sfFoot, ref: sfRight.querySelector('.sf-txt'), z: 0, seg: [
+    [-0.04, 1.30],
+    [0.30, 1.12, 0.62, 1.40, 0.96, 1.18],
+    [1.02, 1.12, 1.06, 1.02, 1.075, 0.92],
+    [1.040, 0.64, 1.034, 0.12, 1.062, 0.12],
+    [1.074, 0.12, 1.078, 0.30, 1.078, 0.36],
+    [1.078, 0.30, 1.084, 0.12, 1.096, 0.12],
+    [1.124, 0.12, 1.118, 0.64, 1.075, 0.92]
+  ] });
+  /* JCKY oben links: Linie zieht sich hinter dem Logo durch */
+  const brand = document.getElementById('navLogoName');
+  if (brand) hoverLine({ trigger: brand, host: document.getElementById('mainNav'), ref: brand.querySelector('.nav-txt'), z: 0, seg: [
+    [-0.30, 1.15],
+    [0.05, 1.02, 0.22, 0.30, 0.45, 0.46],
+    [0.62, 0.58, 0.76, 0.06, 0.95, 0.16],
+    [1.08, 0.22, 1.10, 0.56, 1.22, 0.42],
+    [1.30, 0.32, 1.34, 0.08, 1.44, 0.02]
+  ] });
   const items = document.querySelectorAll('.projects-cta, .cvh-bubble');
   if (!items.length) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -1042,7 +1085,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   const BIAS  = 0.6;         // Anteil "von unten"
   const SMOOTH = 0.11;       // Sekunden – Ein-/Ausblenden
   const INK = (() => { const m = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '').trim().match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '163, 168, 107'; })();   // Akzentfarbe (--accent)
+    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '139, 157, 255'; })();   // Akzentfarbe (--accent)
 
   function rnd(gx, gy) {
     let h = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
@@ -1123,13 +1166,20 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 ============================ */
 (function initPlayReel() {
   const card = document.getElementById('heroImgCard'), play = document.getElementById('heroPlay');
-  if (!card || !play) return;
+  if (!card || !play || PHONE) return;
   if (window.matchMedia && !window.matchMedia('(pointer: fine)').matches) return;   // Touch: kein Maus-Label
   let mx = -1, my = -1, on = false, raf = 0;
   function place() { raf = 0; play.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)'; }
   function check() {
     const r = card.getBoundingClientRect();
-    const inside = mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
+    let inside = mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
+    /* nicht über der Navigation (ihre freien Flächen lassen die Maus durch) und nicht über Inhalten, die sich über das Video schieben */
+    if (inside) {
+      const nav = document.getElementById('mainNav');
+      if (nav && my <= nav.getBoundingClientRect().bottom) inside = false;
+      const hit = document.elementFromPoint(mx, my);
+      if (hit && !hit.closest('#hero')) inside = false;
+    }
     const vis = typeof gsap === 'undefined' || +gsap.getProperty(card, 'opacity') > 0.6;
     const next = inside && vis;
     if (next === on) return;
@@ -1157,15 +1207,22 @@ const heroInit = (instant) => {
   gsap.set('#heroImgCard',      { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
   gsap.set('.hero-subtitle',    { y: '-110%' });
 
+  /* Handy: Name bricht in zwei Zeilen (mobile.css) → gemessen wird die breiteste Zeile; bricht ein Wort selbst um, ist es zu groß */
+  const lineW = () => {
+    let a = Infinity, b = -Infinity; const tops = new Set();
+    elName.querySelectorAll('.nl:not(.nl--space)').forEach(l => { const r = l.getBoundingClientRect(); tops.add(Math.round(r.top)); if (r.left < a) a = r.left; if (r.right > b) b = r.right; });
+    return tops.size > 2 ? Infinity : b - a;
+  };
   const fitFullname = () => {
     if (!elName) return;
-    const targetW = document.documentElement.clientWidth / 2.2;
+    const vw = document.documentElement.clientWidth;
+    const targetW = PHONE ? (window.innerWidth > window.innerHeight ? vw * 0.42 : vw - 32) : vw / 2.2;   // Handy quer: Name links, Reel rechts
     let lo = 10, hi = targetW * 2;
     elName.style.visibility = 'hidden';
     for (let i = 0; i < 40; i++) {
       const mid = (lo + hi) / 2;
       elName.style.fontSize = mid + 'px';
-      if (elName.scrollWidth <= targetW) lo = mid;
+      if ((PHONE ? lineW() : elName.scrollWidth) <= targetW) lo = mid;
       else hi = mid;
     }
     elName.style.fontSize = lo + 'px';
@@ -1239,6 +1296,7 @@ window.__heroInit = heroInit;
   const zpItems    = zpStage ? [...zpStage.querySelectorAll('.hero-parallax-item')] : [];
 
   if (!hero || !roleEl || !panel || !imgCard || !nameEl) return;
+  if (PHONE) return;                                    // Handy: Hero steht ohne Pin, Reel als Karte (mobile.js)
 
   /* Statische Referenzen EINMALIG cachen — update() läuft pro Scroll-Frame,
      querySelector/parseFloat dort waren teuer und unnötig. */
@@ -1453,6 +1511,7 @@ window.__heroInit = heroInit;
    Scrollen hochwächst. Reines Canvas-Overlay; liest window.__heroPixel (0..1).
 ============================ */
 (function initPixelWipe() {
+  if (PHONE) return;
   const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   const BLOCK = 72;          // Blockgröße in px (wie in der Referenz)
@@ -1518,6 +1577,7 @@ window.__heroInit = heroInit;
 (function initServices() {
   const imgPanel = document.getElementById('svcImgPanel');
   const section  = document.querySelector('.services-section');
+  if (PHONE) return;                                    // Handy: Liste mit Werkzeugen, ohne Hover-Vorschau (mobile.js)
 
   if (imgPanel) gsap.set(imgPanel, { opacity: 0 });
 
@@ -1684,7 +1744,7 @@ window.__heroInit = heroInit;
 
   const items = [...document.querySelectorAll('.svc-item')];
   const names = items.map(it => it.querySelector('.svc-name'));
-  if (live && names.length) {
+  if (live && names.length && !PHONE) {
     const measureNames = () => names.forEach(n => pxMeasure(n, fontPx(n) * 0.09));
     function updateNames() {
       const vh = window.innerHeight, amp = Math.min(70, window.innerWidth * 0.05);
@@ -1787,7 +1847,7 @@ window.__heroInit = heroInit;
      · crazy: je schneller gescrollt wird, desto stärker zittert die Spur um den Kopf und sprüht Pixel ab
      · Label = Chip in Akzentfarbe, hängt mit einer Linie am Kopf: nur die Prozentzahl (Ziffern rollen wie ein Zählwerk)
      · erscheint beim Scrollen, blendet sich nach 1,2 s Ruhe wieder aus */
-  if ((onIndex || document.body.classList.contains('cv-page')) && !PX_REDUCE) {   // alle Seiten (My Work + Me tragen .cv-page)
+  if ((onIndex || document.body.classList.contains('cv-page')) && !PX_REDUCE && !PHONE) {   // Handy: schmale Leiste oben (mobile.js)   // alle Seiten (My Work + Me tragen .cv-page)
     const wrap = document.createElement('div');
     wrap.className = 'px-scroll'; wrap.setAttribute('aria-hidden', 'true');
     const digit = '<span class="psl-d">' + '0123456789'.split('').map(d => '<span>' + d + '</span>').join('') + '</span>';
@@ -1796,8 +1856,21 @@ window.__heroInit = heroInit;
     const cv = document.createElement('canvas'), g = cv.getContext('2d');
     cv.className = 'px-track'; cv.setAttribute('aria-hidden', 'true');
     document.body.appendChild(cv);
-    const digits = [...wrap.querySelectorAll('.psl-d')];
     const label = wrap.querySelector('.psl');
+    /* zweite, dunkle Lage des Chips: wird auf Akzent-Flächen beschnitten (wie das View-project-Label) */
+    const alt = document.createElement('span');
+    alt.className = 'psl-alt';
+    alt.appendChild(label.querySelector('.psl-pct').cloneNode(true));
+    label.appendChild(alt);
+    const digits = [...wrap.querySelectorAll('.psl-d')];
+    const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8B9DFF';
+    /* Akzent-Flächen (Projekte: window.__accentRegions, Startseite: gehoverte große Links) als Polygone */
+    const regions = () => {
+      const out = typeof window.__accentRegions === 'function' ? window.__accentRegions() : [];
+      document.querySelectorAll('.sn-link:hover').forEach((a) => { const r = a.getBoundingClientRect(); out.push([[r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom]]); });
+      return out;
+    };
+    const inPoly = (x, y, pts) => { let c = false; for (let i = 0, k = pts.length - 1; i < pts.length; k = i++) { const [xi, yi] = pts[i], [xk, yk] = pts[k]; if ((yi > y) !== (yk > y) && x < (xk - xi) * (y - yi) / (yk - yi) + xi) c = !c; } return c; };
     const BS = 4, STEP = 7, X0 = 10;                                        // Blockgröße, Abstand, Abstand zum rechten Rand
     let CW = 0, CH = 0, dpr = 1, rows = 0, lim = 1, idle = 0, raf = 0;
     let p = 0, vel = 0, last = 0;
@@ -1828,16 +1901,21 @@ window.__heroInit = heroInit;
       const dt = Math.min(50, now - (last || now)); last = now;
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, CW, CH);
       const x = CW - X0 - BS, head = p * (rows - 1), speed = Math.min(1, Math.abs(vel) / 60);
-      g.fillStyle = '#FFFFFF';
+      /* Farben: noch nicht gefüllt = Dunkelgrau · gefüllt / Kopf = Akzentfarbe; über einer Akzent-Fläche gefüllt = dunkel */
+      const regs = regions(), cvR = cv.getBoundingClientRect();
+      const onAcc = (bx, by) => regs.length && regs.some(pts => inPoly(cvR.left + bx, cvR.top + by, pts));
       for (let i = 0; i < rows; i++) {
         const d = head - i, y = 12 + i * STEP;
-        let a = d < -0.5 ? 0.16 : d < 1.5 ? 1 : 0.55;                       // Spur · heller Kopf · gefüllt
+        const filled = d >= -0.5;
         const near = Math.max(0, 1 - Math.abs(d) / 9);                        // Zittern rund um den Kopf
         const jit = near * speed * (pxRand(i, Math.floor(now / 60)) - 0.5) * 14;
-        if (Math.abs(d) < 3 && pxRand(i, 9) > 0.4) { g.globalAlpha = 0.9; g.fillRect(Math.round(x - BS - 3 + jit), y, BS, BS); }   // gezackter, breiterer Kopf
-        g.globalAlpha = a;
+        const acc = onAcc(x + BS / 2, y + BS / 2);
+        g.fillStyle = filled ? (acc ? '#1A1A1A' : ACC) : (acc ? 'rgba(26,26,26,0.35)' : '#4A4A4A');
+        g.globalAlpha = filled ? (d < 1.5 ? 1 : 0.8) : 1;
+        if (Math.abs(d) < 3 && pxRand(i, 9) > 0.4) g.fillRect(Math.round(x - BS - 3 + jit), y, BS, BS);   // gezackter, breiterer Kopf
         g.fillRect(Math.round(x + jit), y, BS, BS);
       }
+      g.fillStyle = ACC;
       /* abgesprühte Pixel */
       const hy = 12 + head * STEP;
       if (speed > 0.15 && bits.length < 140) for (let k = 0; k < Math.ceil(speed * 4); k++)
@@ -1851,8 +1929,13 @@ window.__heroInit = heroInit;
       g.globalAlpha = 1;
       const lh = label.offsetHeight || 28;                                   // Chip mittig auf dem Kopf
       label.style.transform = 'translate3d(0,' + Math.round(Math.max(0, Math.min(CH - lh, hy + BS / 2 - lh / 2))) + 'px,0)';
+      /* dunkle Lage genau dort zeigen, wo das Chip über einer Akzent-Fläche liegt */
+      const lr = label.getBoundingClientRect();
+      let dpath = '';
+      regs.forEach((pts) => { dpath += 'M' + pts.map(([px, py]) => (px - lr.left).toFixed(1) + ' ' + (py - lr.top).toFixed(1)).join('L') + 'Z'; });
+      alt.style.clipPath = dpath ? "path('" + dpath + "')" : 'inset(50%)';
       vel *= Math.pow(0.86, f);                                              // Tempo klingt ab → Zittern beruhigt sich
-      if (bits.length || Math.abs(vel) > 0.5) raf = requestAnimationFrame(draw);
+      if (bits.length || Math.abs(vel) > 0.5 || wrap.classList.contains('is-on')) raf = requestAnimationFrame(draw);   // solange sichtbar: Flächen bewegen sich evtl. noch
     }
     function kick() { if (!raf) raf = requestAnimationFrame(draw); }
     size();
@@ -1861,7 +1944,7 @@ window.__heroInit = heroInit;
       p = c01(((e && typeof e.scroll === 'number') ? e.scroll : window.scrollY) / lim);
       if (e && typeof e.velocity === 'number') vel = e.velocity;
       const pc = String(Math.round(p * 100)).padStart(3, '0');
-      digits.forEach((d, k) => d.style.setProperty('--d', pc[k]));             // Ziffern rollen einzeln
+      digits.forEach((d, k) => d.style.setProperty('--d', pc[k % 3]));   // beide Lagen (hell + dunkel) je 3 Ziffern             // Ziffern rollen einzeln
       wrap.classList.add('is-on'); cv.classList.add('is-on');
       clearTimeout(idle);
       idle = setTimeout(() => { wrap.classList.remove('is-on'); cv.classList.remove('is-on'); }, 1200);
@@ -1879,7 +1962,7 @@ window.__heroInit = heroInit;
 ============================ */
 (function initPixelTrigger() {
   const work = document.querySelector('#mainContent > section');   // erste Section im Bottom-Sheet (What I do)
-  if (!work) return;
+  if (!work || PHONE) return;
   window.__heroPixel = 0;
   ScrollTrigger.create({
     trigger: work,
@@ -2303,6 +2386,7 @@ window.__heroInit = heroInit;
     it.querySelector('.wk-card').setAttribute('aria-label', 'Preview project ' + name + ' — ' + (it.dataset.cat || ''));
   });
 
+
   /* Wege weiter: Wörter gleiten aus der Maske, Label tippt sich ein */
   const next = document.getElementById('storyNext');
   if (next) {
@@ -2472,15 +2556,20 @@ window.__heroInit = heroInit;
   document.documentElement.classList.add('nav-shown');
   if (pjFilter) gsap.set(pjFilter, { top: NAV_H });        // startet unter der Nav
 
-  function show() {
-    if (!hidden) return; hidden = false;
+  /* overFilter: Nav fährt nur über den Filter (ganz unten) — der Filter bleibt oben stehen und wird verdeckt */
+  let covered = false;
+  function show(overFilter) {
+    overFilter = !!overFilter;
+    if (!hidden && covered === overFilter) return;                 // schon so sichtbar (Filter verdeckt oder darunter)
+    hidden = false; covered = overFilter;
     document.documentElement.classList.add('nav-shown');
-    if (reduce) { gsap.set(nav, { yPercent: 0 }); if (pjFilter) gsap.set(pjFilter, { top: NAV_H }); return; }
+    const fTop = overFilter && pjFilter ? Math.min(0, NAV_H - pjFilter.offsetHeight) : NAV_H;   // verdeckt: Filter so weit hoch, dass er ganz unter der Nav liegt
+    if (reduce) { gsap.set(nav, { yPercent: 0 }); if (pjFilter) gsap.set(pjFilter, { top: fTop }); return; }
     gsap.to(nav, { yPercent: 0, duration: 0.28, ease: 'power2.out', overwrite: true });
-    if (pjFilter) gsap.to(pjFilter, { top: NAV_H, duration: 0.28, ease: 'power2.out', overwrite: true });
+    if (pjFilter) gsap.to(pjFilter, { top: fTop, duration: 0.28, ease: 'power2.out', overwrite: true });
   }
   function hide() {
-    if (hidden) return; hidden = true;
+    if (hidden) return; hidden = true; covered = false;
     document.documentElement.classList.remove('nav-shown');
     if (reduce) { gsap.set(nav, { yPercent: -100 }); if (pjFilter) gsap.set(pjFilter, { top: 0 }); return; }
     gsap.to(nav, { yPercent: -100, duration: 0.24, ease: 'power2.in', overwrite: true });
@@ -2488,9 +2577,10 @@ window.__heroInit = heroInit;
   }
 
   function handle(y, dir) {
-    if (y < 48) { show(); return; }   // ganz oben immer sichtbar
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    if (y >= max - 24) { show(); return; }   // ganz unten angekommen → ebenfalls einblenden
+    document.documentElement.classList.toggle('at-page-end', y >= max - 24);   // ganz unten (CSS: Filter aus, kein View-Label)
+    if (y < 48) { show(); return; }   // ganz oben immer sichtbar
+    if (y >= max - 24) { show(true); return; }   // ganz unten angekommen → Nav einblenden, verdeckt den Filter
     if (dir > 0) hide();              // runter → smooth nach oben
     else if (dir < 0) show();         // hoch → einblenden
   }

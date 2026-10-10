@@ -12,6 +12,14 @@
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
 
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="mobile.css" media="(max-width: 760px), (hover: none) and (pointer: coarse) and (max-height: 500px)">
+<script>
+  /* Handy-Version: eigenes Layout (mobile.css + mobile.js). Wechselt das Fenster über die Grenze, lädt die Seite neu. */
+  (function () { try { var mq = window.matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse) and (max-height: 500px)');
+    if (mq.matches) document.documentElement.classList.add('is-phone');
+    (mq.addEventListener ? mq.addEventListener.bind(mq, 'change') : mq.addListener.bind(mq))(function () { location.reload(); });
+  } catch (e) {} })();
+</script>
 
 <script>
   /* Flash-Schutz: Inhalt bei interner Navigation verbergen, bis das ASCII-Overlay übernimmt. */
@@ -332,7 +340,7 @@
     <div class="story-lines" id="storyLines">
       <p class="story-line">Hi, I'm Jacob — but you can call me <span class="story-nb"><span class="story-mark">JACKY<svg class="story-scribble story-scribble--jcky" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" pathLength="1" d="M14 33L19 10L33 27L47 4L60 26L76 8L83 33C62 29 38 35 12 31"/><path class="s-thick" pathLength="1" d="M4 92C28 86 58 97 97 88L8 98C40 95 70 100 92 97"/><path class="s-thin" pathLength="1" d="M93 44L103 37M95 58L106 58M93 72L103 79"/></g></svg></span>.</span></p>
       <p class="story-line">Born and raised in <span class="story-nb"><span class="story-mark">Salzburg<svg class="story-scribble story-scribble--salzburg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" pathLength="1" d="M2 90C20 84 45 95 70 87C82 83 92 86 99 84"/><path class="s-thin" pathLength="1" d="M97 92L6 96L92 99"/><path class="s-thick" pathLength="1" d="M100 24C93 17 86.5 10 87 1C87.5 -7 97 -8 100 0C103 -8 112.5 -7 113 1C113.5 10 107 17 100 24L97.5 28.5"/><path class="s-thin" pathLength="1" d="M98.5 20.5C92.5 14.5 89.5 8.5 90 2.5"/><path class="s-thin" pathLength="1" d="M117.5 -5L122 -10M119 3.5L125 3"/></g></svg></span>,</span> still the place I call home.</p>
-      <p class="story-line">I love designing — some of <span class="story-mark story-mark--work">my work<svg class="story-scribble story-scribble--work" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" d="M4 66C28 61 62 70 95 63"/><path class="s-thin" d="M12 73C38 70 64 76 86 71"/><path class="s-thick" d="M95 63C106 70 104 84 94 90C86 95 84 101 88 108"/><path class="s-thick" d="M81 101L88 109L97 101"/></g></svg></span> looks like this.</p>
+      <p class="story-line">I love designing — some of <span class="story-mark story-mark--work">my work<svg class="story-scribble story-scribble--work" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" d="M4 66C28 61 62 70 95 63"/><path class="s-thin" d="M12 73C38 70 64 76 86 71"/></g></svg></span> looks like this.</p>
     </div>
 
     <ul class="wk" id="wkGrid" aria-label="Selected work">
@@ -410,5 +418,6 @@
 </div>
 
 <script src="script.js" defer></script>
+<script src="mobile.js" defer></script>
 </body>
 </html>

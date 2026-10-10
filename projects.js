@@ -103,7 +103,7 @@ window.addEventListener('DOMContentLoaded', function () {
     proj.innerHTML =
       '<div class="pj-project-head">' +
         '<span class="pj-project-name">' + p.name + '</span>' +
-        '<span class="pj-project-meta">' + p.cat + ' — ' + p.year + '</span>' +
+        '<span class="pj-project-meta"><span class="pj-tag">' + p.cat + '</span><span class="pj-year">' + p.year + '</span></span>' +
         '<a class="pj-view" href="' + href + '" aria-label="View project ' + p.name + '"><span class="pj-view-t">View project</span><span class="pj-view-a" aria-hidden="true">' + ARROW + ARROW + '</span></a>' +
       '</div>' +
       '<div class="pj-project-row">' + row + '</div>';
@@ -114,22 +114,24 @@ window.addEventListener('DOMContentLoaded', function () {
   var projects = Array.prototype.slice.call(grid.querySelectorAll('.pj-project'));
   var allShots = Array.prototype.slice.call(grid.querySelectorAll('.pj-shot'));
 
-  /* ── Projekte erscheinen: Name dekodiert, Meta tippt, Bilder bauen sich nacheinander aus Pixeln auf ── */
+  /* ── Projekte erscheinen: Name dekodiert, Meta tippt, Bilder wischen nacheinander von unten herein (CSS .is-in).
+     Startet schon kurz bevor das Projekt ins Bild kommt; hovert man vorher darüber, erscheint alles sofort. ── */
   projects.forEach(function (proj) {
     var name = proj.querySelector('.pj-project-name');
-    var meta = proj.querySelector('.pj-project-meta');
-    var row = Array.prototype.slice.call(proj.querySelectorAll('.pj-shot'));
-    if (reduce) return;
+    var metaParts = Array.prototype.slice.call(proj.querySelectorAll('.pj-tag, .pj-year'));
+    if (reduce) { proj.classList.add('is-in'); return; }
     name.style.visibility = 'hidden';
-    typePrepare(meta);
-    if (live) row.forEach(function (s) { s.style.clipPath = 'inset(50%)'; });
-    onEnterOnce(proj, function () {
+    metaParts.forEach(typePrepare);
+    var shown = false;
+    var show = function () {
+      if (shown) return; shown = true;
+      proj.classList.add('is-in');
       decodeIn(name, 600);
-      setTimeout(function () { typeIn(meta, 650); }, 180);
-      if (live) row.forEach(function (s, i) {
-        setTimeout(function () { pxTween(s, 0, 1, 'build', 820, Math.max(14, s.offsetWidth / 18)); }, 140 + i * 130);
-      });
-    }, '-12%');
+      metaParts.forEach(function (m, i) { setTimeout(function () { typeIn(m, 520); }, 120 + i * 160); });
+    };
+    onEnterOnce(proj, show, '15%');
+    proj.addEventListener('mouseenter', show);
+    proj.addEventListener('pj:show', show);
   });
 
   /* ── „View project ↗"-Label folgt dem Cursor überall im Projekt-Frame (Titel, Tag, Bilder); Klick öffnet das Projekt ── */
@@ -153,7 +155,11 @@ window.addEventListener('DOMContentLoaded', function () {
     };
     var cplace = function () { craf = 0; chip.style.transform = 'translate3d(' + cmx + 'px,' + cmy + 'px,0)'; cclip(); };
     var ccheck = function (el) {
-      var proj = el && el.closest ? el.closest('.pj-project') : null, hit = !!proj;
+      var proj = el && el.closest ? el.closest('.pj-project') : null;
+      var navB = document.getElementById('mainNav').getBoundingClientRect().bottom;
+      var fil = document.getElementById('pjFilter'), filB = fil && getComputedStyle(fil).opacity !== '0' ? fil.getBoundingClientRect().bottom : 0;
+      if (cmy <= Math.max(navB, filB) || document.documentElement.classList.contains('at-page-end')) proj = null;   // über Nav/Filter oder ganz unten: kein Label
+      var hit = !!proj;
       curProj = proj;
       if (hit === con) return;
       con = hit; if (con) cplace();
@@ -163,41 +169,133 @@ window.addEventListener('DOMContentLoaded', function () {
     window.addEventListener('pointermove', function (e) { cmx = e.clientX; cmy = e.clientY; ccheck(e.target); if (con && !craf) craf = requestAnimationFrame(cplace); }, { passive: true });
     onScroll(function () { ccheck(document.elementFromPoint(cmx, cmy)); if (con) cclip(); });   // Bilder wandern mit (Parallax)
   }
-  /* Hover-Fläche: steigt von unten auf, eine Seite schneller als die andere (pro Projekt zufällig) → schräge Kante;
-     beim Verlassen zieht sie sich ebenso nach oben zurück (Unterkante wandert schräg nach oben weg).
-     Startet immer vom aktuellen Zustand → auch schnelles Rein/Raus läuft ohne Sprung. */
+  /* Fläche des aktiven Projekts: aktiv ist das Projekt, das die Bildschirmmitte kreuzt (Scrollposition, nicht Hover).
+     Sie steigt von unten auf, eine Seite schneller als die andere (pro Projekt zufällig) → schräge Kante;
+     das vorige Projekt zieht seine Fläche gleichzeitig nach oben zurück → die Frames grenzen ohne Lücke aneinander,
+     beide Kanten treffen sich an der Grenze. Startet immer vom aktuellen Zustand → auch schnelles Scrollen ohne Sprung. */
+  var ctrls = [];
   var FULL = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
   projects.forEach(function (proj) {
     var fill = document.createElement('span');
     fill.className = 'pj-fill'; fill.setAttribute('aria-hidden', 'true');
     proj.insertBefore(fill, proj.firstChild);
-    if (reduce || !fill.animate || (window.matchMedia && !window.matchMedia('(hover: hover)').matches)) return;
-    var run = null, out = true, hotT = 0;
+    /* dunkle Kopie von Titel + Tag, gleich beschnitten wie die Fläche */
+    var ink = document.createElement('span');
+    ink.className = 'pj-ink'; ink.setAttribute('aria-hidden', 'true');
+    var head = proj.querySelector('.pj-project-head').cloneNode(true);
+    head.querySelectorAll('.pj-view').forEach(function (v) { v.remove(); });
+    head.querySelectorAll('[style]').forEach(function (el) { el.removeAttribute('style'); });
+    ['.pj-tag', '.pj-year'].forEach(function (sel) {                      // Original ist evtl. fürs Eintippen geleert
+      var src = proj.querySelector(sel); if (src && src._typeOrig != null) head.querySelector(sel).textContent = src._typeOrig;
+    });
+    ink.appendChild(head);
+    proj.appendChild(ink);
+    var still = reduce || !fill.animate;
+    var run = null, runInk = null, out = true, hotT = 0;
     var BOTTOM = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)', TOP = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
     var lead = Math.random() < 0.5;                                    // true: links schneller · false: rechts schneller
-    var MID_IN  = lead ? 'polygon(0% 38%, 100% 82%, 100% 100%, 0% 100%)' : 'polygon(0% 82%, 100% 38%, 100% 100%, 0% 100%)';
-    var MID_OUT = lead ? 'polygon(0% 0%, 100% 0%, 100% 62%, 0% 18%)' : 'polygon(0% 0%, 100% 0%, 100% 18%, 0% 62%)';
-    var go = function (frames, opts) {
+    /* Zwischenformen (schräge Kante); a = schnelle Seite, b = langsame Seite */
+    var slant = function (edgeTop, aPct, bPct) {               // edgeTop: Kante ist die Oberkante (Fläche unten) · sonst Unterkante (Fläche oben)
+      var l = lead ? aPct : bPct, r = lead ? bPct : aPct;
+      return edgeTop ? 'polygon(0% ' + l + '%, 100% ' + r + '%, 100% 100%, 0% 100%)' : 'polygon(0% 0%, 100% 0%, 100% ' + r + '%, 0% ' + l + '%)';
+    };
+    /* anchor: Kante, die an das Nachbarprojekt grenzt ('top' | 'bottom') — sie bleibt während der ganzen Bewegung fest an
+       der Grenze, auch wenn eine laufende Bewegung unterbrochen wird → dort scheint nie Hintergrund durch.
+       Punkte der Polygone: 1–2 = Oberkante, 3–4 = Unterkante (in Prozent der Fläche). */
+    var parse = function (cp) {
+      var m = /polygon\((.*)\)/.exec(cp || '');
+      if (!m) return null;
+      var pts = m[1].split(',').map(function (q) { return q.trim().split(/\s+/).map(parseFloat); });
+      return pts.length === 4 ? pts : null;
+    };
+    var poly = function (pts) { return 'polygon(' + pts.map(function (q) { return q[0] + '% ' + q[1] + '%'; }).join(', ') + ')'; };
+    var go = function (frames, opts, anchor) {
       var rest = !run || run.playState === 'finished';
-      var from = out && rest ? BOTTOM : getComputedStyle(fill).clipPath;   // ganz zurückgezogen → wieder unten starten
+      var from = out && rest ? (anchor === 'top' ? TOP : BOTTOM) : getComputedStyle(fill).clipPath;   // ganz zurückgezogen → an der Grenze starten
+      var pts = parse(from);
+      if (pts) {
+        var empty = Math.abs((pts[3][1] + pts[2][1]) - (pts[0][1] + pts[1][1])) < 0.5;
+        if (empty) pts = parse(anchor === 'top' ? TOP : BOTTOM);                 // leer → an der Grenze beginnen
+        else if (anchor === 'top') { pts[0][1] = 0; pts[1][1] = 0; }              // Oberkante an die Grenze
+        else { pts[2][1] = 100; pts[3][1] = 100; }                                  // Unterkante an die Grenze
+        from = poly(pts);
+      }
       if (!rest) frames = [frames[0], frames[frames.length - 1]];            // unterbrochen → direkt zum Ziel, ohne Schräge
-      if (run) run.cancel();
+      if (run) { run.cancel(); runInk.cancel(); }
       frames[0].clipPath = from;
       run = fill.animate(frames, Object.assign({ fill: 'forwards' }, opts));
+      runInk = ink.animate(frames, Object.assign({ fill: 'forwards' }, opts));
     };
-    proj.addEventListener('mouseenter', function () {
-      clearTimeout(hotT); proj.classList.add('is-hot');
-      go([{}, { clipPath: MID_IN, offset: 0.42 }, { clipPath: FULL }],
-         { duration: 1150, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' });
-      out = false;
-    });
-    proj.addEventListener('mouseleave', function () {
-      hotT = setTimeout(function () { proj.classList.remove('is-hot'); }, 650);   // Schrift wird erst hell, wenn die Fläche großteils weg ist
-      go([{}, { clipPath: MID_OUT, offset: 0.5 }, { clipPath: TOP }],
-         { duration: 1200, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
-      out = true;
+    ctrls.push({
+      proj: proj,
+      /* dir: 1 = das neue Projekt liegt unter dem vorigen (Fläche kommt von oben) · −1 = darüber (kommt von unten) */
+      enter: function (dir) {
+        clearTimeout(hotT); proj.classList.add('is-hot');
+        proj.dispatchEvent(new Event('pj:show'));                       // Bilder sicher vor der Fläche da
+        if (still) { fill.style.clipPath = ink.style.clipPath = FULL; return; }
+        /* wächst von der Grenze mit dem vorigen Projekt aus: von oben nach unten bzw. von unten nach oben */
+        go([{}, { clipPath: dir > 0 ? slant(false, 62, 18) : slant(true, 38, 82), offset: 0.42 }, { clipPath: FULL }],
+           { duration: fastScroll ? 520 : 1150, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' }, dir > 0 ? 'top' : 'bottom');
+        out = false;
+      },
+      leave: function (dir) {
+        if (still) { proj.classList.remove('is-hot'); fill.style.clipPath = ink.style.clipPath = ''; return; }
+        hotT = setTimeout(function () { proj.classList.remove('is-hot'); }, 650);
+        /* zieht sich zur Grenze mit dem neuen Projekt zurück: nach unten bzw. nach oben */
+        go([{}, { clipPath: dir > 0 ? slant(true, 82, 38) : slant(false, 18, 62), offset: 0.5 }, { clipPath: dir > 0 ? BOTTOM : TOP }],
+           { duration: fastScroll ? 560 : 1200, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' }, dir > 0 ? 'bottom' : 'top');
+        out = true;
+      },
+      hurry: function () {                                                 // laufende Bewegung beschleunigt zu Ende bringen
+        [run, runInk].forEach(function (a) { if (a && a.playState === 'running') a.updatePlaybackRate(3.5); });
+      },
+      fill: fill
     });
   });
+
+  var activeCtrl = null, scrollDir = 1, lastY = window.scrollY, fastScroll = false, idleT = 0;
+  function updateActive(e) {
+    var yNow = window.scrollY;
+    if (yNow !== lastY) { scrollDir = yNow > lastY ? 1 : -1; lastY = yNow; }
+    fastScroll = !!(e && typeof e.velocity === 'number' && Math.abs(e.velocity) > 18);
+    clearTimeout(idleT);                                                   // angehalten → alles sofort fertig füllen / leeren
+    idleT = setTimeout(function () { ctrls.forEach(function (c) { c.hurry(); }); }, 140);
+    var mid = window.innerHeight * 0.5, next = null;
+    for (var i = 0; i < ctrls.length; i++) {
+      var p = ctrls[i].proj;
+      if (p.classList.contains('is-hidden')) continue;
+      var r = p.getBoundingClientRect();
+      if (r.top <= mid && r.bottom > mid) { next = ctrls[i]; break; }
+    }
+    if (next === activeCtrl) return;
+    /* Richtung aus der Lage der beiden Projekte (nicht aus der Scrollrichtung → kein Spalt, wenn sie kurz umkehrt) */
+    var dir = next && activeCtrl ? (ctrls.indexOf(next) > ctrls.indexOf(activeCtrl) ? 1 : -1)
+            : next ? (next.proj.getBoundingClientRect().top > mid - next.proj.offsetHeight / 2 ? 1 : -1)   // Mitte nahe der Oberkante: kommt aus dem Hero (oben) · sonst aus dem Footer (unten)
+            : (activeCtrl.proj.getBoundingClientRect().top > mid ? -1 : 1);                               // Mitte jetzt im Hero bzw. Footer
+    if (activeCtrl) activeCtrl.leave(dir);
+    activeCtrl = next;
+    if (activeCtrl) activeCtrl.enter(dir);
+  }
+  onScroll(updateActive);
+  window.addEventListener('resize', updateActive);
+  window.__accentRegions = function () {
+    var out = [];
+    ctrls.forEach(function (c) {
+      if (c.proj.classList.contains('is-hidden')) return;
+      var r = c.fill.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) return;
+      var m = getComputedStyle(c.fill).clipPath.match(/polygon\((.*)\)/);
+      if (!m) return;
+      var pts = m[1].split(',').map(function (pair) {
+        var v = pair.trim().split(/\s+/).map(function (t, k) { var n = parseFloat(t); return /%$/.test(t) ? n / 100 * (k ? r.height : r.width) : n; });
+        return [r.left + v[0], r.top + v[1]];
+      });
+      out.push(pts);
+    });
+    return out;
+  };
+  window.addEventListener('load', updateActive);
+  updateActive();
 
   /* Klick irgendwo im Frame → Projekt öffnen (über den Link, damit der Seitenwechsel greift) */
   projects.forEach(function (proj) {
@@ -210,7 +308,7 @@ window.addEventListener('DOMContentLoaded', function () {
   /* ── Parallax: Bilder wandern je nach Größe unterschiedlich, jedes Bild gleitet in seinem Rahmen ── */
   if (!reduce) {
     var updateParallax = function () {
-      var vh = window.innerHeight, stacked = window.innerWidth <= 720;      // Handy: Bilder untereinander → nicht gegeneinander verschieben
+      var vh = window.innerHeight, stacked = window.innerWidth <= 720 || (typeof PHONE !== 'undefined' && PHONE);   // Handy: Bilder untereinander bzw. als Galerie → nicht gegeneinander verschieben
       for (var i = 0; i < allShots.length; i++) {
         var s = allShots[i];
         if (s.offsetParent === null) continue;                              // ausgefiltert

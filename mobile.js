@@ -1,0 +1,90 @@
+/* ============================================================
+   HANDY-VERSION — Verhalten zum eigenen Layout (mobile.css)
+   Läuft nur bei PHONE (html.is-phone, im <head> gesetzt); nutzt die Bausteine aus script.js
+   (lenis, pxMeasure/pxClip, typePrepare/typeIn, onEnterOnce, afterIntro).
+   · Scroll-Anzeige: Pixel-Leiste oben, nur während gescrollt wird
+   · Start: Showreel-Karte öffnet sich nach der Intro, „Play reel" wischt auf; What-I-do-Zeilen bauen sich
+     beim Hereinkommen einmal aus Pixeln auf, die Werkzeuge tippen sich ein
+   · My Work: Zähler + Pixel-Punkte unter jeder Wisch-Galerie
+============================================================ */
+(function initPhone() {
+  if (typeof PHONE === 'undefined' || !PHONE) return;
+  const live = !PX_REDUCE && PX_CLIP_OK;
+  const ease = (v) => 1 - Math.pow(1 - v, 3);
+  const onScroll = (fn) => { if (typeof lenis !== 'undefined' && lenis && lenis.on) lenis.on('scroll', fn); else window.addEventListener('scroll', fn, { passive: true }); };
+
+  /* ── Scroll-Anzeige ── */
+  const bar = document.createElement('div');
+  bar.className = 'm-progress'; bar.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(bar);
+  let idle = 0;
+  onScroll(() => {
+    const lim = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    bar.style.setProperty('--p', Math.min(1, Math.max(0, window.scrollY / lim)).toFixed(4));
+    bar.classList.add('is-on');
+    clearTimeout(idle);
+    idle = setTimeout(() => bar.classList.remove('is-on'), 1200);
+  });
+
+  /* Pixel-Aufbau über die Zeit */
+  function build(el, B, dur) {
+    if (!live) return;
+    pxMeasure(el, B);
+    const t0 = performance.now();
+    (function frame(now) {
+      const k = Math.min(1, (now - t0) / dur);
+      pxClip(el, ease(k), 'build');
+      if (k < 1) requestAnimationFrame(frame); else el.style.clipPath = '';
+    })(t0);
+  }
+
+  /* ── Start: Showreel-Karte ── */
+  const card = document.getElementById('heroImgCard');
+  if (card) {
+    const wrap = card.querySelector('.hero-img-wrap');
+    card.insertAdjacentHTML('beforeend',
+      '<span class="m-reel-chip" aria-hidden="true"><svg viewBox="0 0 12 12"><path d="M3 2v8l7-4z"/></svg>Play reel</span>');
+    card.insertAdjacentHTML('afterend', '<div class="m-reel-meta" aria-hidden="true"><span>Showreel</span><span>' + new Date().getFullYear() + '</span></div>');
+    const open = () => setTimeout(() => wrap && wrap.classList.add('is-revealed'), 650);   // nach dem Namen
+    if (typeof afterIntro === 'function') afterIntro(open); else open();
+  }
+
+  /* ── Start: What I do ── */
+  document.querySelectorAll('.svc-item').forEach((item) => {
+    const name = item.querySelector('.svc-name');
+    const skills = [...item.querySelectorAll('.svc-skill')];
+    if (!live) return;
+    name.style.clipPath = 'inset(50%)';
+    skills.forEach(typePrepare);
+    onEnterOnce(item, () => {
+      build(name, Math.max(5, parseFloat(getComputedStyle(name).fontSize) * 0.09), 700);
+      skills.forEach((s, i) => setTimeout(() => typeIn(s, 320), 260 + i * 90));
+    }, '-8%');
+  });
+
+  /* ── My Work: Zähler unter jeder Galerie (nach projects.js, das die Projekte ebenfalls auf window baut) ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.pj-project').forEach((proj) => {
+      const row = proj.querySelector('.pj-project-row');
+      const shots = row ? [...row.querySelectorAll('.pj-shot')] : [];
+      if (shots.length < 2) return;
+      const n = String(shots.length).padStart(2, '0');
+      const count = document.createElement('div');
+      count.className = 'm-count'; count.setAttribute('aria-hidden', 'true');
+      count.innerHTML = '<span class="m-count-n">01 / ' + n + '</span><span class="m-count-dots">' + shots.map(() => '<i></i>').join('') + '</span>';
+      row.after(count);
+      const num = count.querySelector('.m-count-n'), dots = [...count.querySelectorAll('i')];
+      let cur = -1;
+      const update = () => {
+        const step = shots[1].offsetLeft - shots[0].offsetLeft || 1;
+        const i = Math.max(0, Math.min(shots.length - 1, Math.round(row.scrollLeft / step)));
+        if (i === cur) return;
+        cur = i;
+        num.textContent = String(i + 1).padStart(2, '0') + ' / ' + n;
+        dots.forEach((d, k) => d.classList.toggle('is-on', k === i));
+      };
+      row.addEventListener('scroll', update, { passive: true });
+      update();
+    });
+  });
+})();

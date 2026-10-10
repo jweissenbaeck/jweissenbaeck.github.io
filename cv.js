@@ -136,6 +136,35 @@
   })();
 
   /* ============================
+     HOVER-LINIEN (Baustein hoverLine aus script.js):
+     · Porträt: links mit Zacke ins Foto, dahinter durch, rechts mit Zacke und Bogen wieder heraus
+     · „Junior UI / UX Designer": Schwung unter der Rolle mit kleiner Schleife
+     ============================ */
+  if (typeof hoverLine === 'function') {
+    var por = document.getElementById('cvhPortrait');
+    if (por) hoverLine({ trigger: por, host: document.getElementById('cvHero'), ref: por, z: 2, seg: [
+      [-0.66, 0.29],
+      [-0.52, 0.19, -0.36, 0.10, -0.25, 0.08],
+      [-0.24, 0.18, -0.255, 0.29, -0.235, 0.32],
+      [-0.17, 0.33, -0.08, 0.24, 0.0, 0.23],
+      [0.35, 0.30, 0.70, 0.44, 1.01, 0.50],
+      [1.11, 0.47, 1.22, 0.43, 1.31, 0.43],
+      [1.30, 0.53, 1.29, 0.65, 1.35, 0.70],
+      [1.47, 0.62, 1.62, 0.57, 1.70, 0.61],
+      [1.80, 0.66, 1.88, 0.76, 1.95, 0.84]
+    ] });
+    /* „Junior UI / UX Designer": Schwung unter der Rolle, endet in einer kleinen Schleife */
+    var now = document.getElementById('cvhNow'), role = now && now.querySelector('.cvh-now-role');
+    if (role) hoverLine({ trigger: now, host: now, ref: role, z: -1, seg: [
+      [-0.02, 1.18],
+      [0.30, 1.06, 0.62, 1.30, 0.96, 1.12],
+      [1.10, 1.05, 1.16, 0.86, 1.09, 0.80],
+      [1.02, 0.76, 1.00, 0.96, 1.14, 1.02],
+      [1.24, 1.06, 1.32, 1.00, 1.40, 0.90]
+    ] });
+  }
+
+  /* ============================
      STORY
      ============================ */
   var story = document.getElementById('cvStory');
@@ -199,6 +228,7 @@
     timeline.push({ el: s, inn: [a, a + 0.2], out: null });
   });
   var Q = L0 + stickers.length * LS + 0.4;           // Ende: letzter Sticker steht noch kurz
+  var STEP = (typeof PHONE !== 'undefined' && PHONE) ? 0.42 : 0.6;   // Scrollweg je Schritt (Bildschirmhöhen); Handy wischt schneller
   function spanQ(q, a, b) { return clamp01((q - a) / (b - a)); }
   function renderScribbles(q) {
     if (!hasScrib) return;
@@ -580,6 +610,12 @@
       if (!fraf) fraf = requestAnimationFrame(fly);
       var until = now + Math.max(0, flights.length - 1) * 40 + 820 + 380;   // alle gelandet + kurze Pause
       holdStickers = until;
+      /* Scrollen festhalten: sanft zu „My passions" (alle Sticker stehen) und dort bleiben, bis die Pillen gelandet sind */
+      if (typeof lenis !== 'undefined' && lenis && stInst) {
+        var target = stInst.start + (Q - 0.25) * STEP * window.innerHeight;
+        lenis.scrollTo(target, { duration: 0.6, lock: true, force: true, easing: function (t) { return 1 - Math.pow(1 - t, 3); },
+          onComplete: function () { lenis.stop(); setTimeout(function () { lenis.start(); }, Math.max(0, until - performance.now())); } });
+      }
       render(lastQ);                                  // sofort: Sticker stehen wieder voll, auch bei schnellem Scrollen
       setTimeout(function () { render(lastQ); }, until - performance.now() + 20);   // danach dem Scroll folgen
     }
@@ -639,7 +675,7 @@
   stInst = ScrollTrigger.create({
     trigger: story,
     start: 'top top',
-    end: '+=' + Math.round(Q * 60) + '%',            // 60 % Bildschirmhöhe Scrollweg pro Schritt
+    end: '+=' + Math.round(Q * STEP * 100) + '%',     // 60 % Bildschirmhöhe Scrollweg pro Schritt (Handy: 42 %)
     pin: true,
     anticipatePin: 1,
     invalidateOnRefresh: true,

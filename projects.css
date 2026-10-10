@@ -54,9 +54,10 @@
   display: flex; align-items: stretch;
   padding: 0 28px;              /* bündig zur Nav → Einheit */
   background: var(--bg);
-  border-top: 1px solid rgba(255,255,255,0.16);
-  border-bottom: 1px solid rgba(255,255,255,0.16);
+  border-top: 1px solid #3D3D3D;                 /* deckend: bleibt sichtbar, auch wenn der Titel dahinter vorbeizieht */
+  border-bottom: 1px solid #3D3D3D;
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  transition: opacity 0.35s ease;
 }
 .filter-stuck:not(.nav-shown) .pj-filter { border-top-color: transparent; }   /* Nav weg, Filter ganz oben: keine helle Linie am Bildschirmrand */
 /* „Filter“ als eingefasste Zelle mit rechtem Stroke (volle Höhe) */
@@ -67,7 +68,7 @@
 }
 /* Filter-Top-Stroke ist immer sichtbar. Sitzt die Nav direkt auf dem oben
    geklemmten Filter, wird stattdessen die Nav-Unterkante ausgeblendet → nur EINE Linie. */
-.nav-shown.filter-stuck .nav { box-shadow: none; }
+.nav-shown.filter-stuck:not(.at-page-end) .nav { box-shadow: none; }   /* ganz unten ist der Filter aus → Nav behält ihre Unterlinie */
 
 .pj-filter-field { position: relative; align-self: stretch; display: flex; align-items: center; }
 .pj-filter-btn {
@@ -117,26 +118,32 @@
   display: block;
   padding: clamp(28px, 3.5vw, 52px) 28px 140px;
 }
-.pj-project { position: relative; isolation: isolate; margin-bottom: clamp(56px, 7vw, 120px); }
-/* Hover über das ganze Projekt (projects.js setzt .is-hot und animiert .pj-fill):
+.pj-project { position: relative; isolation: isolate; padding: var(--pad-y) 0; }   /* Frames stoßen ohne Lücke aneinander */
+/* Aktives Projekt nach Scrollposition (das, das die Bildschirmmitte kreuzt; projects.js setzt .is-hot und animiert .pj-fill):
    Fläche in --accent über die volle Seitenbreite steigt von unten auf, eine Seite schneller (zufällig, schräge Kante);
-   beim Verlassen zieht sie sich nach oben zurück. Titel + Tag werden darauf dunkel (statt Difference). */
-.pj-fill {
-  position: absolute; z-index: -1; pointer-events: none;
-  left: -28px; right: -28px; top: calc(clamp(18px, 2.2vw, 34px) * -1); bottom: calc(clamp(18px, 2.2vw, 34px) * -1);
-  background: var(--accent);
+   beim Verlassen zieht sie sich nach oben zurück. Titel + Tag: eine dunkle Kopie (.pj-ink) liegt darüber und wird genau
+   wie die Fläche beschnitten → wo die Fläche den Text berührt, ist er dunkel; Übergang exakt an der Kante. */
+.pj-project { --pad-y: clamp(30px, 3.8vw, 64px); }
+.pj-fill, .pj-ink {
+  position: absolute; pointer-events: none;
+  left: -28px; right: -28px; top: -8px; bottom: -8px;            /* 8px Überlappung → an der Grenze zum Nachbarn scheint nie Hintergrund durch */
   clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
 }
-.pj-project .pj-project-name, .pj-project .pj-project-meta { transition: color 0.7s ease; }
-.pj-project.is-hot .pj-project-name, .pj-project.is-hot .pj-project-meta { mix-blend-mode: normal; color: var(--bg-dark); }
-.pj-project.is-hot .pj-project-meta { color: rgba(26, 26, 26, 0.62); }
+.pj-fill { z-index: -1; }
+.pj-ink { z-index: 3; }
+.pj-ink .pj-project-head { position: absolute; left: 28px; right: 28px; top: calc(var(--pad-y) + 8px); }
+.pj-ink .pj-project-name { mix-blend-mode: normal; color: var(--bg-dark); -webkit-text-stroke: 0.6px var(--bg-dark); }   /* Rand deckt das helle Original exakt ab */
+.pj-ink .pj-tag { background: var(--accent); color: var(--bg-dark); border-color: rgba(26, 26, 26, 0.55); }
+.pj-ink .pj-year { background: var(--accent); color: rgba(26, 26, 26, 0.7); }
+.pj-fill {
+  background: var(--accent);
+}
 .pj-project.is-hot .pj-view { color: var(--bg-dark); border-color: rgba(26, 26, 26, 0.4); }
 .pj-project.is-hot .pj-view::before { background: var(--bg-dark); }
 .pj-project.is-hot .pj-view:hover, .pj-project.is-hot .pj-view:focus-visible { color: var(--accent); border-color: var(--bg-dark); }
 /* Label am Cursor baut sich von links nach rechts auf */
 .pj-chip .hp-chip { clip-path: inset(0 100% 0 0); transition: clip-path 0.7s var(--ease-out-expo); }
 .pj-chip.is-on .hp-chip { clip-path: inset(0); }
-.pj-project:last-child { margin-bottom: 0; }
 .pj-project.is-hidden { display: none; }
 
 /* Kopf — einmal oben links */
@@ -145,17 +152,19 @@
   margin-bottom: clamp(14px, 1.6vw, 24px);
 }
 /* Name + Meta liegen über den Bildern (Parallax schiebt sie teils darunter) und invertieren sich gegen sie */
-.pj-project-name, .pj-project-meta { position: relative; z-index: 2; mix-blend-mode: difference; }
+.pj-project-name, .pj-project-meta { position: relative; z-index: 2; }
+.pj-project-name { mix-blend-mode: difference; }
 .pj-project-name {
   font-family: 'Anton', Impact, sans-serif;
   font-weight: 400; letter-spacing: 0.03em; line-height: 1;
   font-size: clamp(1.3rem, 2.4vw, 2.1rem);
   text-transform: uppercase; color: #ffffff;
 }
-.pj-project-meta {
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em;
-  text-transform: uppercase; color: rgba(255,255,255,0.45);
-}
+/* Tag als Chip (Kategorie) + Jahr daneben; beide hinterlegt → auch über Bildern lesbar */
+.pj-project-meta { display: inline-flex; align-items: center; gap: 8px; align-self: center; }
+.pj-tag, .pj-year { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; white-space: pre; }
+.pj-tag { padding: 5px 10px 4px; border: 1px solid rgba(255,255,255,0.38); border-radius: 999px; background: var(--bg); color: var(--ink); }
+.pj-year { padding: 5px 4px 4px; background: var(--bg); color: rgba(255,255,255,0.55); }
 
 /* „View project": Zelle wie Nav/Footer; Hover wie „My work": Fläche in Akzentfarbe zieht von unten auf, Pfeil schießt raus und kommt nach */
 .pj-view {
@@ -191,6 +200,8 @@
 }
 .pj-shot {
   display: block; flex-basis: 0; min-width: 0;
+  clip-path: inset(100% 0 0 0);                    /* Auftritt: wischt von unten herein (projects.js setzt .is-in am Projekt) */
+  transition: clip-path 0.65s var(--ease-out-expo);
   overflow: hidden; background: #2C2C2C;
   will-change: translate;                          /* Parallax: projects.js setzt translate je nach Bildgröße */
 }
@@ -202,8 +213,12 @@
   transition: scale 1s var(--ease-out-expo), filter 0.5s ease;
 }
 .pj-shot:hover img { scale: 1.18; filter: none; }  /* Hover: sanft hinein, volle Farbe */
+.pj-project.is-in .pj-shot { clip-path: inset(0); }
+.pj-project.is-in .pj-shot:nth-child(2) { transition-delay: 0.08s; }
+.pj-project.is-in .pj-shot:nth-child(3) { transition-delay: 0.16s; }
 @media (prefers-reduced-motion: reduce) {
   .pj-shot img { scale: 1; transition: none; }
+  .pj-shot { clip-path: none; transition: none; }
 }
 
 /* ── MOBILE ── */

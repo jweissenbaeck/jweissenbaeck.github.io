@@ -1,0 +1,190 @@
+/* ============================================================
+   HANDY-VERSION — eigenes Layout statt geschrumpftem Desktop
+   Wird nur geladen, wenn <link media> greift (Handy hochkant, oder Handy quer mit wenig Höhe); die Skripte kennen
+   denselben Zustand als PHONE (html.is-phone, im <head> gesetzt). Der Desktop bleibt davon unberührt.
+   Prinzip: eine Spalte, 16 px Rand, alles per Daumen erreichbar; was Hover oder viel Fläche braucht, wird
+   weggelassen oder anders erzählt:
+   · Start: Name groß in zwei Zeilen, Showreel als Karte mit „Play reel" (statt Zoom-Parallax mit Pin)
+   · What I do: nummerierte Liste, Werkzeuge stehen direkt darunter (statt Hover-Vorschau)
+   · My Work: Bilder je Projekt als Wisch-Galerie mit Zähler, sichtbarer Pfeil-Button (statt Cursor-Label)
+   · Me: Tools als Raster auf einen Blick (statt Streuung), kürzerer Scrollweg
+   · Scroll-Anzeige: schmale Pixel-Leiste oben (statt Spur mit Prozent-Chip rechts)
+   ============================================================ */
+
+:root { --m-pad: 16px; }
+
+/* ── Scroll-Anzeige: Pixel-Leiste oben am Bildschirmrand (mobile.js) ── */
+.px-scroll, .px-track { display: none !important; }
+.m-progress {
+  position: fixed; left: 0; top: 0; z-index: 100001;
+  width: 100%; height: 3px;
+  pointer-events: none;
+  background: var(--accent);
+  transform-origin: 0 50%; transform: scaleX(var(--p, 0));
+  -webkit-mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);   /* Pixel-Segmente */
+          mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);
+  opacity: 0; transition: opacity 0.5s ease;
+}
+.m-progress.is-on { opacity: 1; transition-duration: 0.15s; }
+
+/* ── Nav: Ränder auf Handy-Maß ── */
+.nav-left .nav-cell:first-child { padding-left: var(--m-pad); }
+.nav-right .nav-cell:last-child { padding-right: var(--m-pad); }
+
+/* ============================
+   START — Hero
+   ============================ */
+.hero {
+  height: 100vh; height: 100svh; min-height: 560px;
+  padding: 52px var(--m-pad) var(--m-pad);
+  justify-content: flex-end; gap: 28px;
+}
+.hero-center-block {                                  /* Name + Rolle: links, groß, im oberen Teil */
+  position: relative; inset: auto; order: 1; flex: 1;
+  align-items: flex-start; justify-content: center; text-align: left;
+  gap: 16px; padding-top: 4vh;
+}
+.hero-word--fullname { padding-inline: 0 0.08em; line-height: 0.9; }
+.name-letter-wrap { display: flex; flex-wrap: wrap; align-items: baseline; }
+.nl--space { flex: 0 0 100%; width: auto; height: 0; }   /* zweite Zeile: WEISSENBÄCK */
+.hero-subtitle { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
+.hero-subtitle-row { display: flex; align-items: center; gap: 10px; }
+.hero-subtitle-row::before {                          /* kleines Pixel in Akzentfarbe vor der Rolle */
+  content: ''; width: 6px; height: 6px; flex: none; background: var(--accent);
+}
+
+.hero-middle-row { order: 2; flex: none; display: block; }
+.main-content { clip-path: none; will-change: auto; }          /* kein Aufziehen durch den Hero-Pin: Inhalt steht direkt darunter */
+.hero-name-row, .hero-parallax-stage, .hero-play, .hero-dust { display: none; }
+.hero-img-card {                                      /* Showreel als Karte, volle Breite */
+  position: relative; left: auto; top: auto;
+  width: 100%;
+  opacity: 1 !important; transform: none !important;   /* Desktop-Startwerte (unsichtbar, zentriert) gelten hier nicht */
+}
+.hero-img-wrap { aspect-ratio: 16 / 10; box-shadow: none; }
+.m-reel-chip {                                        /* „Play reel" sitzt fest auf der Karte (kein Cursor auf dem Handy) */
+  position: absolute; left: 12px; bottom: 12px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 14px 10px 12px;
+  background: var(--accent); color: var(--bg-dark);
+  font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  clip-path: inset(0 100% 0 0); transition: clip-path 0.7s var(--ease-out-expo) 0.35s;
+}
+.m-reel-chip svg { width: 9px; height: 9px; fill: currentColor; }
+.hero-img-wrap.is-revealed ~ .m-reel-chip, .m-reel-chip.is-on { clip-path: inset(0); }
+.m-reel-meta {                                        /* Bildunterschrift unter der Karte */
+  display: flex; justify-content: space-between; margin-top: 10px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-muted);
+}
+
+/* Handy quer: Name links, Reel rechts — sonst füllt die Karte den ganzen Bildschirm */
+@media (orientation: landscape) {
+  .hero { min-height: 340px; flex-direction: row; align-items: center; justify-content: space-between; gap: 28px; padding-top: 64px; padding-bottom: 20px; }
+  .hero-center-block { flex: 1; padding-top: 0; }
+  .hero-middle-row { width: 44%; }
+}
+
+/* ============================
+   START — What I do
+   ============================ */
+.main-content .services-section { padding: 72px var(--m-pad) 88px; }
+.svc-preview-panel { display: none; }
+.svc-eyebrow { justify-content: flex-start; padding-bottom: 24px; }
+.services-list { align-items: stretch; text-align: left; border-top: 1px solid var(--ink-ghost); counter-reset: svc; }
+.services-list .svc-name:hover { color: var(--ink); }
+.svc-item {
+  display: grid; grid-template-columns: 34px 1fr; align-items: start;
+  padding: 18px 0 16px; border-bottom: 1px solid var(--ink-ghost);
+  counter-increment: svc;
+}
+.svc-item::before {                                   /* Nummer in Mono */
+  content: counter(svc, decimal-leading-zero);
+  padding-top: 0.5em;
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--accent);
+}
+.svc-name { font-size: clamp(2rem, 10.4vw, 3.2rem); line-height: 0.96; white-space: normal; }
+.svc-skills {
+  grid-column: 2;
+  position: static; transform: none; opacity: 1;
+  flex-direction: row; flex-wrap: wrap; gap: 4px 14px;
+  margin-top: 10px; white-space: normal;
+}
+.svc-skill { font-size: 10.5px; letter-spacing: 0.14em; }
+
+/* ============================
+   START — Weiter-Links + Footer
+   ============================ */
+.sn-link { min-height: 150px; }
+.site-footer-text { padding: 20px var(--m-pad) 16px; }
+.site-footer-bar { display: block; min-height: 0; }
+.sf-links { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid rgba(255,255,255,0.16); }
+.sf-link, .sf-links .sf-link:first-child { justify-content: center; height: 52px; padding: 0 6px; }
+.sf-links .sf-link:last-child { border-right: none; }
+.sf-right { justify-content: center; height: 46px; padding: 0 var(--m-pad); border-left: none; font-size: 10px; letter-spacing: 0.14em; }
+
+/* ============================
+   MY WORK
+   ============================ */
+.pj { --filter-h: 52px; }
+.pj-hero { height: 58vh; height: 58svh; min-height: 340px; align-items: flex-end; padding-bottom: 5vh; }
+.pj-hero-title { font-size: clamp(4.4rem, 30vw, 12rem); }
+.pj-filter { padding: 0 var(--m-pad); }
+.pj-filter-menu { min-width: min(260px, calc(100vw - 2 * var(--m-pad))); }
+.pj-filter-menu li { padding: 13px 22px; }            /* größere Tippfläche */
+.pj-grid { padding: 8px var(--m-pad) 96px; }
+.pj-project { --pad-y: 30px; }
+.pj-fill, .pj-ink { left: calc(-1 * var(--m-pad)); right: calc(-1 * var(--m-pad)); }
+.pj-ink .pj-project-head { left: var(--m-pad); right: var(--m-pad); }
+.pj-project-head { position: relative; flex-wrap: wrap; align-items: center; row-gap: 8px; column-gap: 12px; padding-right: 52px; margin-bottom: 16px; }
+.pj-ink .pj-project-head { padding-right: 52px; }
+.pj-project-name { font-size: 1.85rem; }
+/* „View project": auf dem Handy immer sichtbar, als Pfeil-Quadrat rechts im Kopf (statt Label am Cursor) */
+.pj-view, .pj-view:not(:focus-visible) {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 42px; height: 42px; padding: 0; margin: 0;
+  clip: auto; overflow: hidden; white-space: nowrap;
+  justify-content: center; border: 1px solid rgba(255,255,255,0.3);
+}
+.pj-view-t { display: none; }
+.pj-view-a { width: 14px; height: 14px; }
+.pj-project.is-hot .pj-view { color: var(--bg-dark); border-color: rgba(26, 26, 26, 0.45); }
+/* Bilder: Wisch-Galerie, das nächste Bild schaut rechts herein */
+.pj-project-row {
+  flex-direction: row; align-items: stretch; gap: 10px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scroll-padding-inline: var(--m-pad);
+  margin: 0 calc(-1 * var(--m-pad)); padding: 0 var(--m-pad);
+  scrollbar-width: none;
+}
+.pj-project-row::-webkit-scrollbar { display: none; }
+.pj-shot { flex: 0 0 86% !important; width: auto; scroll-snap-align: start; }
+.pj-shot img { aspect-ratio: 4 / 3; }
+.pj-shot:hover img { scale: 1.12; filter: grayscale(12%); }   /* kein Hover-Zoom bei Berührung */
+.m-count {                                            /* Zähler unter der Galerie: 01 / 03 + Pixel-Punkte */
+  display: flex; align-items: center; justify-content: space-between; margin-top: 12px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; color: var(--ink-muted);
+  transition: color 0.5s ease;
+}
+.m-count-dots { display: flex; gap: 6px; }
+.m-count-dots i { width: 6px; height: 6px; border: 1px solid currentColor; box-sizing: border-box; transition: background-color 0.3s ease; }
+.m-count-dots i.is-on { background: currentColor; }
+.pj-project.is-hot .m-count { color: var(--bg-dark); }
+
+/* ============================
+   ME
+   ============================ */
+.cv { --pad: var(--m-pad); }
+.cvs-scene { inset: var(--nav) var(--m-pad) var(--m-pad); }
+/* Tools: Raster, alles auf einen Blick (statt Streuung) — Aufpoppen + Münzwurf bleiben */
+.cvs-cloud {
+  display: flex; flex-wrap: wrap; justify-content: center; row-gap: 26px;   /* letzte Reihe mittig */
+  width: calc(100vw - 2 * var(--m-pad)); height: auto;
+}
+.cvs-i3d { --w: 42px; position: relative; left: auto; top: auto; flex: 0 0 25%; width: auto; margin: 0; padding: 0 3px; box-sizing: border-box; gap: 9px; }
+.cvs-i3d-name { font-size: 9px; letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.cvs-title { margin-bottom: 30px; }
+.cvp { height: 62vh; height: 62svh; min-height: 380px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .m-progress, .m-reel-chip { transition: none; }
+}
