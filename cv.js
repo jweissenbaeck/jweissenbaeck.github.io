@@ -5,7 +5,7 @@
    · Story (GSAP ScrollTrigger, pin): Szenen bauen sich aus Pixelblöcken auf
      und zerfallen nach oben – gleiche Blockverteilung wie der Seitenwechsel.
      Einstieg: Überschrift erscheint beim Scrollen Wort für Wort.
-     Tools: 3D-Icons ploppen nacheinander auf und flippen dabei herein; beim Hover heben sie sich leicht an;
+     Tools: 3D-Icons ploppen nacheinander auf und flippen dabei herein; beim Hover Münzwurf (eine Drehung);
      danach fährt die Szene leicht hoch und blendet aus.
      Hintergrund (ab dem Hero): Universum → Funke → Spiralgalaxie → schwingende Linien (scrollgesteuert).
      Interessen: Sticker kleben sich nacheinander dazu.
@@ -160,21 +160,24 @@
      „Design" + „world" im ersten Satz — zeichnen sich beim Scrollen, stehen, ziehen sich zurück */
   var SCRIB = {
     design: [['M2 16C20 4 40 18 58 8C72 1 86 12 99 4', 's-thick'], ['M8 21C26 12 46 23 62 15', 's-thin'], ['M-2 30L-11 24M-4 42L-15 42M-2 54L-11 60', 's-thin']],   // Schwung über dem Wort + Funken links
-    world: [['M40 14C12 16 2 40 8 60C16 84 60 92 86 80C102 70 100 36 82 22C66 10 34 10 18 22', 's-thick'], ['M84 26C96 40 96 64 80 78', 's-thin']]
+    world: [['M50 4C76 4 96 24 96 50C96 76 76 96 50 96C24 96 4 76 4 50C4 27 21 7 44 4L58 6', 's-thick'],   // Globus hinter dem Wort: Umriss …
+            ['M50 5C33 19 29 36 29 50C29 66 35 82 50 95C65 82 71 66 71 50C71 36 65 19 50 5', 's-thin'],      // … Meridian
+            ['M5 50C30 57 70 57 95 50', 's-thin'], ['M13 28C36 33 64 33 87 28', 's-thin'], ['M13 72C36 67 64 67 87 72', 's-thin']]   // … Äquator + Breitengrade
   };
   function scribbleSvg(mod) {
-    return '<svg class="story-scribble story-scribble--' + mod + '" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)">' +
+    var globe = mod === 'world';                    // Globus: rund (nicht verzerrt), liegt hinter dem Wort
+    return '<svg class="story-scribble story-scribble--' + (globe ? 'globe' : mod) + '" viewBox="0 0 100 100" preserveAspectRatio="' + (globe ? 'xMidYMid meet' : 'none') + '" aria-hidden="true"><g filter="url(#scribbleRough)">' +
       SCRIB[mod].map(function (p) { return '<path class="' + p[1] + '" d="' + p[0] + '"/>'; }).join('') + '</g></svg>';
   }
   var marked = {};
   words.forEach(function (w) {
     var t = w.textContent.toLowerCase().replace(/[^a-z]/g, '');
-    if ((t === 'design' || t === 'world') && !marked[t]) { marked[t] = true; w.classList.add('story-mark'); w.insertAdjacentHTML('beforeend', scribbleSvg(t)); }
+    if ((t === 'design' || t === 'world') && !marked[t]) { marked[t] = true; w.classList.add('story-mark', 'story-mark--' + t); w.insertAdjacentHTML('beforeend', scribbleSvg(t)); }
   });
   var hasScrib = typeof scribbleMeasure === 'function';
   var scr = {
     design: Array.prototype.slice.call(intro.querySelectorAll('.story-scribble--design path')),
-    world: Array.prototype.slice.call(intro.querySelectorAll('.story-scribble--world path'))
+    world: Array.prototype.slice.call(intro.querySelectorAll('.story-scribble--globe path'))
   };
   function measureScribbles() { if (hasScrib) Object.keys(scr).forEach(function (k) { scribbleMeasure(scr[k]); }); }
 
@@ -182,8 +185,8 @@
   var W0 = 0.06, WS = 0.09, WD = 0.32;              // Einstieg: Wörter erscheinen nacheinander (Start, Abstand, Dauer)
   var WEND = W0 + (words.length - 1) * WS + WD;
   var IOUT = [WEND + 1.6, WEND + 1.9];               // Einstieg bleibt länger stehen (Zeit für die Scribbles), dann zerfällt er in Pixel
-  var C0 = IOUT[1] + 1.8, CS = 0.12;                // Tools: Start (davor langer, ruhiger Übergang Sterne → Kugel) + Abstand beim Hereinflippen
-  var CEND = C0 + icons.length * CS + 1.0;           // alle stehen, dann bleibt die Übersicht noch eine Weile
+  var C0 = IOUT[1] + 1.8, CS = 0.14;                // 3D-Icons: Start (davor langer, ruhiger Übergang Sterne → Kugel) + Abstand
+  var CEND = C0 + icons.length * CS + 1.6;           // alle stehen, dann bleibt die Szene noch deutlich länger
   var TOUT = [CEND + 0.35, CEND + 0.75];             // Tools: leicht hochfahren + ausblenden (wie der Name auf der Startseite)
   var L0 = TOUT[1] + 0.4, LS = 0.2;                 // Interessen: Start + Abstand
   var timeline = [
@@ -305,8 +308,13 @@
         /* → Saiten (von links nach rechts) */
         if (tW > 0) {
           var kw = ease(clamp01((tW - (p.wx / W) * 0.5) / 0.5));
-          x = x + (p.wx - x) * kw; y = y + (wave(p, now) - y) * kw;
-          a = a + (0.4 - a) * kw;
+          var wy = wave(p, now);
+          /* ganz leicht: Saite in Cursornähe neigt sich ein paar Pixel zum Cursor und leuchtet etwas auf */
+          var mdx = p.wx - (mouse.x + 0.5) * W, mdy = (mouse.y + 0.5) * H - wy;
+          var pull = Math.exp(-mdx * mdx / 16200) * Math.max(0, 1 - Math.abs(mdy) / 90);
+          wy += mdy * pull * 0.22;
+          x = x + (p.wx - x) * kw; y = y + (wy - y) * kw;
+          a = a + (0.4 + pull * 0.35 - a) * kw;
         }
         ctx.globalAlpha = a * fade;
         ctx.fillRect(Math.round(x), Math.round(y), s, s);
@@ -340,7 +348,7 @@
   }
 
   var lastQ = 0, holdStickers = 0;                  // bis zu diesem Zeitpunkt bleiben die Sticker stehen (Pillen-Rückflug)
-  /* ── Übersicht: alle Tools auf einen Blick, sie flippen beim Scrollen nacheinander wie Münzen herein ── */
+  /* ── Tools: verstreut, flippen beim Scrollen nacheinander wie Münzen herein ── */
   function renderDeck(q) {
     icons.forEach(function (ic, i) {                // nacheinander hereinflippen (leichtes Überschwingen)
       var k = clamp01((q - (C0 + i * CS)) / 0.26);
@@ -368,7 +376,6 @@
     tools.style.transform = e ? 'translateY(' + (-70 * e).toFixed(1) + 'px)' : '';
     tools.style.opacity = e ? (1 - e).toFixed(3) : '';
     scenes[1].classList.toggle('is-active', q >= C0 - 0.25 && e < 0.5);
-    if (scenes[1].classList.contains('is-active')) kickRing();
     words.forEach(function (w, i) {                 // Einstieg: Wort für Wort von unten herein
       var k = ease(clamp01((q - (W0 + i * WS)) / WD));
       w.style.opacity = k.toFixed(3);
@@ -391,30 +398,10 @@
       body.insertBefore(c, img);
     }
   });
-  /* Blick zum Cursor: jedes Icon dreht sich leicht zur Maus (je nach Lage auf der Werkbank anders) → man sieht die
-     Materialstärke der gestapelten Ebenen. Weich nachgeführt; läuft nur, solange die Tools-Szene aktiv ist. */
-  var look = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 }, lookRaf = 0, lookLast = 0;
-  icons.forEach(function (ic, i) { ic.style.setProperty('--fd', (-i * 0.73).toFixed(2) + 's'); });   // Schweben versetzt
-  if (fine && !reduce) window.addEventListener('mousemove', function (e) {
-    look.tx = e.clientX / window.innerWidth; look.ty = e.clientY / window.innerHeight;
-    if (scenes[1].classList.contains('is-active')) kickRing();
-  }, { passive: true });
-  function ring(now) {
-    lookRaf = 0;
-    var dt = Math.min(50, now - (lookLast || now)) / 1000; lookLast = now;
-    var k = 1 - Math.exp(-dt / 0.18);
-    look.x += (look.tx - look.x) * k; look.y += (look.ty - look.y) * k;
-    var W = window.innerWidth, H = window.innerHeight, mx = look.x * W, my = look.y * H;
-    icons.forEach(function (ic) {
-      var b = ic.querySelector('.cvs-i3d-body').getBoundingClientRect();
-      var dx = (mx - (b.left + b.width / 2)) / W, dy = (my - (b.top + b.height / 2)) / H;
-      ic.style.setProperty('--ry', Math.max(-10, Math.min(10, dx * 18)).toFixed(2) + 'deg');   // dezent
-      ic.style.setProperty('--rx', Math.max(-7, Math.min(7, -dy * 14)).toFixed(2) + 'deg');
-    });
-    var moving = Math.abs(look.tx - look.x) + Math.abs(look.ty - look.y) > 0.0005;
-    if (moving && scenes[1].classList.contains('is-active')) lookRaf = requestAnimationFrame(ring); else lookLast = 0;
-  }
-  function kickRing() { if (!lookRaf && fine && !reduce) lookRaf = requestAnimationFrame(ring); }
+  icons.forEach(function (ic) {                     // Münzwurf: startet beim Hover, läuft immer ganz zu Ende
+    ic.addEventListener('mouseenter', function () { if (!reduce && !ic.classList.contains('is-spin')) ic.classList.add('is-spin'); });
+    ic.addEventListener('animationend', function (e) { if (e.animationName === 'cvs-spin') ic.classList.remove('is-spin'); });
+  });
 
 
   measureAll(); measureScribbles(); render(0);

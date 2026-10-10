@@ -84,22 +84,27 @@ window.addEventListener('DOMContentLoaded', function () {
     return arr;
   }
 
-  PROJECTS.forEach(function (p) {
+  var ARROW = '<svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg>';
+  PROJECTS.forEach(function (p, idx) {
     var proj = document.createElement('div');
+    var slug = p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    var href = p.href || '#' + slug;                     // Detailseite, sobald es sie gibt (p.href); bis dahin Anker aufs Projekt
     proj.className = 'pj-project';
+    proj.id = slug;
     proj.setAttribute('data-cat', p.cat);
 
     var weights = shuffle(SIZE_W);   // Reihenfolge klein/mittel/groß je Projekt zufällig
     var row = p.imgs.map(function (src, k) {
-      return '<span class="pj-shot" data-depth="' + DEPTH[String(weights[k])] + '" style="flex-grow:' + weights[k] + '">' +
-               '<img src="' + src + '" alt="' + p.name + '" loading="lazy" decoding="async">' +
-             '</span>';
+      return '<a class="pj-shot" href="' + href + '" tabindex="-1" aria-hidden="true" data-depth="' + DEPTH[String(weights[k])] + '" style="flex-grow:' + weights[k] + '">' +
+               '<img src="' + src + '" alt="" loading="lazy" decoding="async">' +
+             '</a>';
     }).join('');
 
     proj.innerHTML =
       '<div class="pj-project-head">' +
         '<span class="pj-project-name">' + p.name + '</span>' +
         '<span class="pj-project-meta">' + p.cat + ' — ' + p.year + '</span>' +
+        '<a class="pj-view" href="' + href + '" aria-label="View project ' + p.name + '"><span class="pj-view-t">View project</span><span class="pj-view-a" aria-hidden="true">' + ARROW + ARROW + '</span></a>' +
       '</div>' +
       '<div class="pj-project-row">' + row + '</div>';
 
@@ -125,6 +130,81 @@ window.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () { pxTween(s, 0, 1, 'build', 820, Math.max(14, s.offsetWidth / 18)); }, 140 + i * 130);
       });
     }, '-12%');
+  });
+
+  /* ── „View project ↗"-Label folgt dem Cursor überall im Projekt-Frame (Titel, Tag, Bilder); Klick öffnet das Projekt ── */
+  if (!reduce && (!window.matchMedia || window.matchMedia('(pointer: fine)').matches)) {
+    var chip = document.createElement('span');
+    /* Zwei Lagen: unten dunkel (für die Akzent-Fläche), darüber in Akzentfarbe — die obere wird pixelgenau auf die
+       Bildflächen des Projekts beschnitten. Rutscht das Label über eine Bildkante, wechselt die Farbe genau an der Kante. */
+    chip.className = 'hero-play pj-chip'; chip.setAttribute('aria-hidden', 'true');
+    chip.innerHTML = '<span class="hp-chip pj-chip-dark">View project<svg viewBox="0 0 12 12"><path d="M3.5 2h6.5v6.5H8.5V4.56L3.06 10 2 8.94 7.44 3.5H3.5z"/></svg></span><span class="pj-chip-img"><span class="hp-chip">View project<svg viewBox="0 0 12 12"><path d="M3.5 2h6.5v6.5H8.5V4.56L3.06 10 2 8.94 7.44 3.5H3.5z"/></svg></span></span>';
+    document.body.appendChild(chip);
+    var imgLayer = chip.querySelector('.pj-chip-img');
+    var cmx = 0, cmy = 0, con = false, craf = 0, curProj = null;
+    var cclip = function () {                          // Bildflächen relativ zum Cursor (= Ursprung des Labels)
+      var d = '';
+      if (curProj) curProj.querySelectorAll('.pj-shot').forEach(function (s) {
+        var r = s.getBoundingClientRect();
+        if (r.bottom < cmy - 40 || r.top > cmy + 40 || r.right < cmx - 160 || r.left > cmx + 160) return;   // weit weg vom Label
+        d += 'M' + (r.left - cmx).toFixed(1) + ' ' + (r.top - cmy).toFixed(1) + 'h' + r.width.toFixed(1) + 'v' + r.height.toFixed(1) + 'h' + (-r.width).toFixed(1) + 'Z';
+      });
+      imgLayer.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';
+    };
+    var cplace = function () { craf = 0; chip.style.transform = 'translate3d(' + cmx + 'px,' + cmy + 'px,0)'; cclip(); };
+    var ccheck = function (el) {
+      var proj = el && el.closest ? el.closest('.pj-project') : null, hit = !!proj;
+      curProj = proj;
+      if (hit === con) return;
+      con = hit; if (con) cplace();
+      chip.classList.toggle('is-on', con);
+      document.documentElement.classList.toggle('pj-view-on', con);
+    };
+    window.addEventListener('pointermove', function (e) { cmx = e.clientX; cmy = e.clientY; ccheck(e.target); if (con && !craf) craf = requestAnimationFrame(cplace); }, { passive: true });
+    onScroll(function () { ccheck(document.elementFromPoint(cmx, cmy)); if (con) cclip(); });   // Bilder wandern mit (Parallax)
+  }
+  /* Hover-Fläche: steigt von unten auf, eine Seite schneller als die andere (pro Projekt zufällig) → schräge Kante;
+     beim Verlassen zieht sie sich ebenso nach oben zurück (Unterkante wandert schräg nach oben weg).
+     Startet immer vom aktuellen Zustand → auch schnelles Rein/Raus läuft ohne Sprung. */
+  var FULL = 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)';
+  projects.forEach(function (proj) {
+    var fill = document.createElement('span');
+    fill.className = 'pj-fill'; fill.setAttribute('aria-hidden', 'true');
+    proj.insertBefore(fill, proj.firstChild);
+    if (reduce || !fill.animate || (window.matchMedia && !window.matchMedia('(hover: hover)').matches)) return;
+    var run = null, out = true, hotT = 0;
+    var BOTTOM = 'polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%)', TOP = 'polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%)';
+    var lead = Math.random() < 0.5;                                    // true: links schneller · false: rechts schneller
+    var MID_IN  = lead ? 'polygon(0% 38%, 100% 82%, 100% 100%, 0% 100%)' : 'polygon(0% 82%, 100% 38%, 100% 100%, 0% 100%)';
+    var MID_OUT = lead ? 'polygon(0% 0%, 100% 0%, 100% 62%, 0% 18%)' : 'polygon(0% 0%, 100% 0%, 100% 18%, 0% 62%)';
+    var go = function (frames, opts) {
+      var rest = !run || run.playState === 'finished';
+      var from = out && rest ? BOTTOM : getComputedStyle(fill).clipPath;   // ganz zurückgezogen → wieder unten starten
+      if (!rest) frames = [frames[0], frames[frames.length - 1]];            // unterbrochen → direkt zum Ziel, ohne Schräge
+      if (run) run.cancel();
+      frames[0].clipPath = from;
+      run = fill.animate(frames, Object.assign({ fill: 'forwards' }, opts));
+    };
+    proj.addEventListener('mouseenter', function () {
+      clearTimeout(hotT); proj.classList.add('is-hot');
+      go([{}, { clipPath: MID_IN, offset: 0.42 }, { clipPath: FULL }],
+         { duration: 1150, easing: 'cubic-bezier(0.33, 1, 0.68, 1)' });
+      out = false;
+    });
+    proj.addEventListener('mouseleave', function () {
+      hotT = setTimeout(function () { proj.classList.remove('is-hot'); }, 650);   // Schrift wird erst hell, wenn die Fläche großteils weg ist
+      go([{}, { clipPath: MID_OUT, offset: 0.5 }, { clipPath: TOP }],
+         { duration: 1200, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+      out = true;
+    });
+  });
+
+  /* Klick irgendwo im Frame → Projekt öffnen (über den Link, damit der Seitenwechsel greift) */
+  projects.forEach(function (proj) {
+    proj.addEventListener('click', function (e) {
+      if (e.target.closest('a')) return;
+      var link = proj.querySelector('.pj-view'); if (link) link.click();
+    });
   });
 
   /* ── Parallax: Bilder wandern je nach Größe unterschiedlich, jedes Bild gleitet in seinem Rahmen ── */
@@ -186,9 +266,10 @@ window.addEventListener('DOMContentLoaded', function () {
     Promise.all(leaving.map(function (it) { return pxTween(it, 1, 0, 'dissolve', 380, 36); })).then(function () {
       leaving.forEach(function (it) { it.classList.add('is-hidden'); it.style.clipPath = ''; });
       entering.forEach(function (it) { it.classList.remove('is-hidden'); it.style.clipPath = 'inset(50%)'; });
-      var gTop = grid.getBoundingClientRect().top;
-      if (gTop < 0 && hasLenis) lenis.scrollTo(grid, { offset: -120, duration: 0.9 });   // nach oben zur Liste
       done();
+      /* nach oben zur Liste: so weit, dass der Filter genau unter der Nav einrastet */
+      var gTop = grid.getBoundingClientRect().top, fh = document.getElementById('pjFilter').offsetHeight;
+      if (gTop < 0 && hasLenis) lenis.scrollTo(Math.round(window.scrollY + gTop - 52 - fh), { duration: 0.9, force: true });
       return Promise.all(entering.map(function (it, i) {
         return new Promise(function (r) { setTimeout(r, i * 90); }).then(function () { return pxTween(it, 0, 1, 'build', 560, 36); });
       }));
@@ -271,7 +352,7 @@ window.addEventListener('DOMContentLoaded', function () {
     })(performance.now());
   })();
 
-  /* ── Titel: steht von Anfang an, beim Scrollen Parallax + Zerfall in Pixel ── */
+  /* ── Titel: steht von Anfang an, beim Scrollen nur Parallax (bleibt langsamer zurück) ── */
   if (title && !reduce) {
     var introDone = true;
     var blockOf = function () { return Math.max(14, parseFloat(getComputedStyle(title).fontSize) * 0.07); };
@@ -279,7 +360,6 @@ window.addEventListener('DOMContentLoaded', function () {
       var y = (e && typeof e.scroll === 'number') ? e.scroll : window.scrollY;
       var h = hero.offsetHeight || window.innerHeight;
       title.style.translate = '0 ' + (y * 0.38).toFixed(1) + 'px';           // bleibt langsamer zurück
-      if (introDone && live) pxClip(title, ease(1 - c01(y / (h * 0.7))), 'dissolve');
     };
     if (live) { pxMeasure(title, blockOf()); if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { pxMeasure(title, blockOf()); scrollTitle(); }); }
     onScroll(scrollTitle);

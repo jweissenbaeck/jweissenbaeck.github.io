@@ -94,9 +94,9 @@
   padding: 4px 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 999px;
   font-size: 11px; letter-spacing: 0.03em; color: var(--ink);
 }
-.cvh-chip i { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--ink); }
+.cvh-chip i { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }   /* „aktuell": Punkt in Akzentfarbe */
 .cvh-chip i::after {                                         /* leiser Puls = „aktuell“ */
-  content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--ink);
+  content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--accent);
   animation: cvh-live 2.2s ease-out infinite;
 }
 @keyframes cvh-live { from { transform: scale(0.6); opacity: 0.8; } to { transform: scale(2); opacity: 0; } }
@@ -148,53 +148,43 @@
 
 /* 1 — Einstieg: erscheint beim Scrollen Wort für Wort */
 .cvs-word { display: inline-block; will-change: transform, opacity; }
+.cvs-word.story-mark--world { isolation: isolate; }                                /* Globus liegt hinter dem Wort */
+.story-scribble--globe { left: 50%; top: 50%; width: 2.25em; height: 2.25em; transform: translate(-50%, -50%); z-index: -1; }
 .cvs-big { margin: 0; max-width: min(16ch, calc(100% / var(--wide))); font-size: clamp(2.4rem, 5.4vw, 6.6rem); text-wrap: balance; }
 .cvs-intro .cvs-big { font-size: clamp(2.2rem, 4.6vw, 5.6rem); max-width: min(20ch, calc(100% / var(--wide))); }
 
 /* Überschrift der Szenen 3 + 4 (fett wie der Einstieg) */
 .cvs-title { margin: 0 0 clamp(26px, 5vh, 56px); font-size: clamp(2.4rem, 5.4vw, 6.2rem); }
 
-/* 3 — Tools als Übersicht: alle 3D-Icons auf einen Blick, sie flippen beim Scrollen nacheinander herein (cv.js).
-   Alle Icons neigen sich dezent zum Cursor. Tiefe entsteht durch gestapelte Ebenen desselben Logos (cv.js).
-   Hover wie „My work / More about me": eine weiße Fläche zieht ruhig von unten auf, beim Verlassen nach oben weg;
-   der Name wird dunkel. Sonst schweben sie leise */
+/* 3 — Tools: 3D-Icons ploppen verstreut auf (ohne Hintergrund). Tiefe entsteht durch gestapelte Ebenen
+   desselben Logos (cv.js). Beim Erscheinen flippen sie herein wie eine geworfene Münze; beim Hover
+   drehen sie sich einmal um die eigene Achse (Münzwurf); sonst schweben sie leise */
 .cvs-tools { will-change: transform, opacity; }               /* fährt beim Weiterscrollen leicht hoch und blendet aus */
-.cvs-deck { position: relative; width: min(1120px, 92vw); }
-.cvs-deck-list {
-  position: relative; z-index: 1; list-style: none; margin: 0; padding: 0;
-  display: flex; flex-wrap: wrap; justify-content: center; row-gap: clamp(28px, 5vh, 52px);
+.cvs-cloud {
+  position: relative; list-style: none; margin: 0; padding: 0;
+  width: min(1240px, 92vw); height: min(56vh, 560px);          /* mehr Fläche → mehr Abstand zwischen den Icons */
 }
 .cvs-i3d {
-  --w: clamp(48px, 5vw, 84px);
-  position: relative; flex: 0 0 calc(100% / 7);
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  padding: clamp(14px, 2.2vh, 22px) 0 clamp(12px, 2vh, 18px);
+  --w: calc(var(--k) * clamp(44px, 4.3vw, 82px));
+  position: absolute; left: var(--x); top: var(--y);
+  width: calc(var(--w) * 2); margin: calc(var(--w) / -2) 0 0 calc(var(--w) * -1);
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
   perspective: 700px;
   opacity: var(--pop, 0);
   transform: scale(calc(0.35 + 0.65 * var(--popS, 0)));
-  animation: cvs-float 6s ease-in-out infinite; animation-delay: var(--fd, 0s);   /* Schweben, je Icon versetzt */
-  cursor: default;
+  animation: cvs-float 6s ease-in-out infinite; animation-delay: calc(var(--k) * -4s);   /* Schweben auf der äußeren Ebene */
 }
 .cvs-i3d-body {
   position: relative; width: var(--w); height: var(--w);
   transform-style: preserve-3d;
-  transform: rotateX(calc(8deg + var(--rx, 0deg))) rotateY(calc(var(--flip, 0deg) + var(--ry, 0deg)));   /* von oben gesehen + Blick zum Cursor */
+  transform: rotateX(8deg) rotateY(var(--flip, 0deg));      /* leicht von oben gesehen → Tiefe sichtbar */
   will-change: transform;
 }
-.cvs-i3d::before {                                              /* weiße Hover-Fläche */
-  content: ''; position: absolute; inset: 0; z-index: 0;
-  background: var(--ink);
-  transform: scaleY(0); transform-origin: 50% 0;
-  transition: transform 0.75s var(--ease-out-expo);
-  pointer-events: none;
-}
-.cvs-i3d:hover::before { transform: scaleY(1); transform-origin: 50% 100%; transition-duration: 0.95s; }
-.cvs-i3d-body, .cvs-i3d-name { z-index: 1; }
-.cvs-i3d.is-mono:hover .cvs-i3d-body img { filter: invert(1) !important; }   /* GitHub-Logo (weiß): auf der weißen Hover-Fläche schwarz, inkl. aller Ebenen */
+.cvs-i3d.is-spin .cvs-i3d-body { animation: cvs-spin 0.95s cubic-bezier(0.45, 0, 0.2, 1); }   /* Drehen auf der inneren Ebene → kein Springen */
+@keyframes cvs-spin { from { rotate: y 0deg; } to { rotate: y 360deg; } }       /* Münzwurf */
 .cvs-i3d-body img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 @keyframes cvs-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
-.cvs-i3d-name { font-family: var(--font-mono); font-size: 11px; line-height: 1.25; color: var(--muted); text-align: center; position: relative; transition: color 0.5s ease; }
-.cvs-i3d:hover .cvs-i3d-name { color: var(--bg-dark); }
+.cvs-i3d-name { font-family: var(--font-mono); font-size: 11px; line-height: 1.25; color: var(--muted); text-align: center; }
 
 /* 4 — Interessen als Sticker-Collage */
 .cvs-stickers {
@@ -211,7 +201,7 @@
   font-size: clamp(1rem, 1.8vw, 2rem); line-height: 1; letter-spacing: 0.03em;
   text-transform: uppercase;
   transform: rotate(var(--r));
-  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 6px 12px -5px rgba(0, 0, 0, 0.38);                 /* kurzer, weicher Schatten */
 }
 
 /* Spielfläche über dem Footer: Pillen fallen hinein, stapeln sich, lassen sich ziehen (cv.js) */
@@ -221,7 +211,7 @@
   cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none;
   transform-origin: 50% 50%; will-change: transform;
 }
-.cvp-pill.is-held { cursor: grabbing; box-shadow: 0 22px 36px rgba(0, 0, 0, 0.5); }
+.cvp-pill.is-held { cursor: grabbing; box-shadow: 0 12px 20px -6px rgba(0, 0, 0, 0.42); }
 .cvs-sticker.is-dropped { visibility: hidden; }        /* Original ausgeblendet, solange die Physik-Kopie lebt */
 
 /* Ohne Animation (Reduced Motion / ohne ScrollTrigger): alles sichtbar, Szenen untereinander */
@@ -241,15 +231,13 @@
   .cvh-bubble { width: 44px; height: 44px; }
   .cvs-big { font-size: clamp(2rem, 9vw, 3.4rem); }
   .cvs-title { font-size: clamp(2rem, 9vw, 3.2rem); }
-  .cvs-deck { width: 94vw; }
-  .cvs-deck-list { row-gap: 22px; }
-  .cvs-i3d { --w: 44px; flex-basis: 25%; gap: 10px; }
+  .cvs-cloud { width: 94vw; height: min(56vh, 460px); }
+  .cvs-i3d { --w: calc(var(--k) * 40px); }
   .cvs-i3d-name { font-size: 9.5px; }
   .cvs-sticker { font-size: clamp(0.95rem, 4.6vw, 1.35rem); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cvs-i3d { animation: none; }
-  .cvs-i3d::before, .cvs-i3d-name { transition: none; }
+  .cvs-i3d, .cvs-i3d.is-spin .cvs-i3d-body { animation: none; }
   .cvh-portrait-img { transition: none; }
   .cvh.is-intro .cvh-portrait { animation: none; }
   .cvh-chip i::after { animation: none; }

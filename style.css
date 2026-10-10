@@ -44,7 +44,7 @@
   --ink:         #FFFFFF;
   --ink-muted:   #8C8C8C;            /* Labels, Kategorien */
   --ink-ghost:   #444444;            /* Haarlinien */
-  --accent:      #D0F25E;            /* Primärfarbe für Interaktion (Acid Lime, leicht entsättigt): Hover-Flächen, Cursor-Chips, aktiv, Fokus, Auswahl */
+  --accent:      #A3A86B;            /* Primärfarbe für Interaktion (gedecktes Oliv): Hover-Flächen, Cursor-Chips, aktiv, Fokus, Auswahl */
 
 
 
@@ -579,25 +579,26 @@ body::before {
   aspect-ratio: 280 / 190;
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.60), 0 2px 8px rgba(0,0,0,0.40);
-  clip-path: inset(50% 0 50% 0 round 6px);
-  transition: none;
+  clip-path: inset(100% 0 0 0 round 6px);                          /* zu: wartet unten (script.js → initServices) */
+  transform: translateY(14px);
+  transition: clip-path 0.6s cubic-bezier(0.7, 0, 0.84, 0), transform 0.6s cubic-bezier(0.7, 0, 0.84, 0);
 }
-
-.svc-preview-inner.is-revealed {
-  clip-path: inset(0% 0 0% 0 round 6px);
-  transition: clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1);
-}
+.svc-preview-inner.is-open { clip-path: inset(0 0 0 0 round 6px); transform: none; transition: clip-path 0.95s var(--ease-out-expo), transform 0.95s var(--ease-out-expo); }
+.svc-preview-inner.is-closing { clip-path: inset(0 0 100% 0 round 6px); transform: translateY(-10px); }   /* schließt nach oben */
+.svc-preview-inner.is-reset { transition: none; }
 
 .svc-preview-img {
   position: absolute;
   inset: 0;
-  opacity: 0;
   pointer-events: none;
   display: flex;
+  clip-path: inset(100% 0 0 0);                                     /* Bildwechsel: neues Bild wischt von unten herein */
+  transition: clip-path 0.7s var(--ease-out-expo);
 }
-.svc-preview-img svg { width: 100%; height: 100%; display: block; flex-shrink: 0; }
-.svc-preview-img.is-active { opacity: 1; }
+.svc-preview-img svg { width: 100%; height: 100%; display: block; flex-shrink: 0; scale: 1.14; transition: scale 1.2s var(--ease-out-expo); }
+.svc-preview-img.is-active { clip-path: inset(0); z-index: 1; }
+.svc-preview-img.is-active svg { scale: 1; }
+.svc-preview-inner.is-reset .svc-preview-img, .svc-preview-inner.is-reset .svc-preview-img svg { transition: none; }
 
 .services-list {
   display: flex;
@@ -695,10 +696,8 @@ body::before {
 .story-scribble { position: absolute; overflow: visible; pointer-events: none; }
 .story-scribble--jcky { left: -14%; top: -80%; width: 128%; height: 210%; }
 .story-scribble--salzburg { left: -6%; top: -60%; width: 112%; height: 190%; }
-.story-mark--work { margin-inline: 0.24em; }                          /* Platz für den Rahmen, damit er die Nachbarwörter nicht schneidet */
 .story-scribble--work { left: -12%; top: -55%; width: 124%; height: 260%; }
 .story-scribble--design { left: -10%; top: -40%; width: 120%; height: 180%; }
-.story-scribble--world { left: -16%; top: -42%; width: 132%; height: 184%; }
 .story-scribble path {
   fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
@@ -1074,6 +1073,12 @@ html.vt-arriving body { visibility: hidden; }
   overflow: hidden;
   display: block;
   padding-bottom: 0.08em;
+}
+#ainoPanel .aino-half {                                            /* Ankommen: zwei Hälften des Panels fahren auseinander (script.js) */
+  position: absolute; inset: 0; z-index: 2;
+  background: #FFFFFF;
+  display: flex; align-items: center; justify-content: center;
+  will-change: transform;
 }
 
 #ainoPanel .aino-name-inner {

@@ -869,10 +869,11 @@ function onEnterOnce(el, fn, margin) {
       try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
     };
 
+    /* Ankommen: das weiße Panel (mit Seitenname) teilt sich in der Mitte entlang einer gezackten Pixel-Naht —
+       obere Hälfte fährt nach oben, untere nach unten, dazwischen wird die Seite frei (wie bei der Intro). */
     const start = () => {
       const p = buildPanel(metaFor(location.href));
       p._px.draw(1, 'build');               // deckt bereits (volle Pixel-Fläche)
-      const nameInner = p.querySelector('.aino-name-inner');
 
       if (reduceMotion) {
         document.documentElement.classList.remove('vt-arriving');
@@ -881,16 +882,33 @@ function onEnterOnce(el, fn, margin) {
         setTimeout(() => cleanup(p), 240);
         return;
       }
+      /* zwei Hälften: je eine vollflächige Kopie des Panels, auf ihre Seite der Naht beschnitten */
+      const W = window.innerWidth, H = window.innerHeight, B = Math.max(16, Math.round(W / 70)), cols = Math.ceil(W / B);
+      const seam = [];
+      for (let i = 0; i < cols; i++) seam.push(Math.round(H / 2 + (pxRnd(i, 7) < 0.5 ? -B / 2 : B / 2)));
+      let topPts = '0px 0px, ' + W + 'px 0px', botPts = '';
+      for (let i = cols - 1; i >= 0; i--) topPts += ', ' + Math.min(W, (i + 1) * B) + 'px ' + seam[i] + 'px, ' + (i * B) + 'px ' + seam[i] + 'px';
+      for (let i = 0; i < cols; i++) botPts += (i ? ', ' : '') + (i * B) + 'px ' + seam[i] + 'px, ' + Math.min(W, (i + 1) * B) + 'px ' + seam[i] + 'px';
+      botPts += ', ' + W + 'px ' + H + 'px, 0px ' + H + 'px';
+      const content = [...p.children].filter(c => !c.classList.contains('aino-px'));
+      const halves = ['polygon(' + topPts + ')', 'polygon(' + botPts + ')'].map((clip) => {
+        const h = document.createElement('div');
+        h.className = 'aino-half';
+        h.style.clipPath = clip;
+        content.forEach(c => h.appendChild(c.cloneNode(true)));
+        p.appendChild(h);
+        return h;
+      });
+      content.forEach(c => c.remove());
+      p.querySelector('.aino-px').style.visibility = 'hidden';
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('vt-arriving');
         setTimeout(() => {
-          const center = p.querySelector('.aino-center');
-          /* Text bleibt sichtbar, während die Pixel von unten abbauen — und verschwindet
-             genau dann, wenn der Abbau die Mitte der Seite (≈50%) erreicht (dort steht der Text). */
-          animateCover(p, 1, 0, DUR, 'dissolve', (cover) => {
-            if (center && cover <= 0.5) { center.style.opacity = '0'; }
-          }).then(() => cleanup(p));
-        }, 150);
+          const ease = 'cubic-bezier(0.76, 0, 0.24, 1)', D = 1000;
+          anim(halves[0], [{ transform: 'translateY(0)' }, { transform: 'translateY(-' + (H / 2 + B) + 'px)' }], { duration: D, easing: ease });
+          anim(halves[1], [{ transform: 'translateY(0)' }, { transform: 'translateY(' + (H / 2 + B) + 'px)' }], { duration: D, easing: ease })
+            .finished.then(() => cleanup(p), () => cleanup(p));
+        }, 260);
       });
     };
 
@@ -1024,7 +1042,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   const BIAS  = 0.6;         // Anteil "von unten"
   const SMOOTH = 0.11;       // Sekunden – Ein-/Ausblenden
   const INK = (() => { const m = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '').trim().match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '208, 242, 94'; })();   // Akzentfarbe (--accent)
+    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '163, 168, 107'; })();   // Akzentfarbe (--accent)
 
   function rnd(gx, gy) {
     let h = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
@@ -1505,27 +1523,42 @@ window.__heroInit = heroInit;
 
   const imgInner = imgPanel ? imgPanel.querySelector('.svc-preview-inner') : null;
 
+  /* Vorschau: öffnet sich wie die Hover-Flächen der Seite von unten nach oben (Bild setzt sich dabei aus leichtem Zoom),
+     gleitet zwischen den Begriffen weich auf die neue Zeile, wechselt das Bild per Wisch von unten;
+     schließt kurz verzögert (damit es beim Wechsel zwischen Begriffen offen bleibt) nach oben weg. */
+  let open = false, closeT = 0, resetT = 0;
   function showPanel(name, imgId) {
     if (!imgPanel || !section) return;
+    clearTimeout(closeT); clearTimeout(resetT);
     const nameRect    = name.getBoundingClientRect();
     const sectionRect = section.getBoundingClientRect();
     const rowCenter   = (nameRect.top + nameRect.height / 2) - sectionRect.top;
-    gsap.set(imgPanel, { top: rowCenter, yPercent: -50, opacity: 1, scale: 1, rotation: 0 });
-    if (imgInner) imgInner.classList.remove('is-revealed');
+    if (!open) {
+      gsap.set(imgPanel, { top: rowCenter, yPercent: -50, opacity: 1 });
+      if (imgInner) { imgInner.classList.remove('is-closing', 'is-reset'); void imgInner.offsetWidth; imgInner.classList.add('is-open'); }
+      open = true;
+    } else {
+      gsap.to(imgPanel, { top: rowCenter, duration: 0.8, ease: 'expo.out', overwrite: true });
+      if (imgInner && !imgInner.classList.contains('is-open')) { imgInner.classList.remove('is-closing'); imgInner.classList.add('is-open'); }
+    }
     document.querySelectorAll('.svc-preview-img').forEach(img =>
       img.classList.toggle('is-active', img.id === imgId)
     );
-    if (imgInner) {
-      void imgInner.offsetWidth;
-      imgInner.classList.add('is-revealed');
-    }
   }
 
   function hidePanel() {
     if (!imgPanel) return;
-    gsap.set(imgPanel, { opacity: 0 });
-    if (imgInner) imgInner.classList.remove('is-revealed');
-    document.querySelectorAll('.svc-preview-img').forEach(img => img.classList.remove('is-active'));
+    clearTimeout(closeT);
+    closeT = setTimeout(() => {
+      open = false;
+      if (!imgInner) { gsap.set(imgPanel, { opacity: 0 }); return; }
+      imgInner.classList.remove('is-open'); imgInner.classList.add('is-closing');
+      resetT = setTimeout(() => {                                    // unsichtbar zurück nach unten
+        imgInner.classList.add('is-reset'); imgInner.classList.remove('is-closing');
+        document.querySelectorAll('.svc-preview-img').forEach(img => img.classList.remove('is-active'));
+        void imgInner.offsetWidth; imgInner.classList.remove('is-reset');
+      }, 700);
+    }, 140);
   }
 
   /* HyperText-Reveal: beim Hover laeuft ein Zeiger von links nach rechts durch;
