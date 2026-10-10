@@ -49,8 +49,29 @@
     if (typeof afterIntro === 'function') afterIntro(open); else open();
   }
 
-  /* ── Start: What I do ── */
-  document.querySelectorAll('.svc-item').forEach((item) => {
+  /* ── Start: What I do — Antippen öffnet darunter ein Mini-Modal mit einem Satz zum Service (data-desc in index.html);
+       immer nur eines offen, nochmal tippen schließt. Der Satz tippt sich ein (Mono → Umbruch steht von Anfang an). ── */
+  const svcItems = [...document.querySelectorAll('.svc-item')];
+  svcItems.forEach((item) => {
+    const desc = item.dataset.desc;
+    if (!desc) return;
+    item.insertAdjacentHTML('beforeend', '<span class="m-svc-ico" aria-hidden="true"></span><div class="m-svc-more"><div class="m-svc-clip"><p class="m-svc-card"></p></div></div>');
+    const card = item.querySelector('.m-svc-card');
+    card.textContent = desc;
+    item.setAttribute('role', 'button'); item.tabIndex = 0; item.setAttribute('aria-expanded', 'false');
+    const set = (it, open) => { it.classList.toggle('is-open', open); it.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+    const toggle = () => {
+      const open = !item.classList.contains('is-open');
+      svcItems.forEach((o) => { if (o !== item && o.classList.contains('is-open')) set(o, false); });
+      set(item, open);
+      if (open && !PX_REDUCE) { card._typeOrig = desc; card._typed = false; card.textContent = desc.replace(/\S/g, ' '); typeIn(card, 900); }
+    };
+    item.addEventListener('click', toggle);
+    item.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  });
+
+  /* What I do: Zeilen bauen sich beim Hereinkommen einmal aus Pixeln auf */
+  svcItems.forEach((item) => {
     const name = item.querySelector('.svc-name');
     const skills = [...item.querySelectorAll('.svc-skill')];
     if (!live) return;

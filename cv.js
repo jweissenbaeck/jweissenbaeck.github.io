@@ -228,7 +228,8 @@
     timeline.push({ el: s, inn: [a, a + 0.2], out: null });
   });
   var Q = L0 + stickers.length * LS + 0.4;           // Ende: letzter Sticker steht noch kurz
-  var STEP = (typeof PHONE !== 'undefined' && PHONE) ? 0.42 : 0.6;   // Scrollweg je Schritt (Bildschirmhöhen); Handy wischt schneller
+  var PHONE_CV = typeof PHONE !== 'undefined' && PHONE;
+  var STEP = PHONE_CV ? 0.42 : 0.6;   // Scrollweg je Schritt (Bildschirmhöhen); Handy wischt schneller
   function spanQ(q, a, b) { return clamp01((q - a) / (b - a)); }
   function renderScribbles(q) {
     if (!hasScrib) return;
@@ -256,10 +257,11 @@
     cv.className = 'cv-bgfx'; cv.setAttribute('aria-hidden', 'true');
     document.body.insertBefore(cv, document.body.firstChild);
     var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#FFFFFF';
-    var N = 1000, W = 0, H = 0, dpr = 1, P = null, raf = 0, storyTop = 0;
+    var N = 1000, W = 0, H = 0, VH = 0, dpr = 1, P = null, raf = 0, storyTop = 0;
     var mouse = { x: 0, y: 0, tx: 0, ty: 0 }, GR = 1;               // GR: Radius der Galaxie
     function build() {
-      W = window.innerWidth; H = window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = window.innerWidth; H = PHONE_CV ? (cv.clientHeight || window.innerHeight) : window.innerHeight; dpr = Math.min(2, window.devicePixelRatio || 1);
+      VH = window.innerHeight;                                                  // Scroll-Einheit (wie beim Pin)
       cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
       storyTop = (stInst && typeof stInst.start === 'number') ? stInst.start : story.getBoundingClientRect().top + window.scrollY;
       var cx = W / 2, cy = H / 2 + 10, i;
@@ -295,7 +297,7 @@
     function frame(now) {
       raf = 0;
       if (!P) build();
-      var sy = window.scrollY, U = H * 0.6;
+      var sy = window.scrollY, U = VH * STEP;
       var q = (sy - storyTop) / U;                                             // < 0 im Hero
       var fade = clamp01(1 - (q - Q) / 0.9);                                   // nach der Story ausblenden (Footer)
       mouse.x += (mouse.tx - mouse.x) * 0.06; mouse.y += (mouse.ty - mouse.y) * 0.06;
@@ -346,14 +348,14 @@
           x = x + (p.wx - x) * kw; y = y + (wy - y) * kw;
           a = a + (0.4 + pull * 0.35 - a) * kw;
         }
-        ctx.globalAlpha = a * fade;
+        ctx.globalAlpha = a * fade * (PHONE_CV ? 1 - tW : 1);                  // Handy: bei „My passions" ohne Hintergrund
         ctx.fillRect(Math.round(x), Math.round(y), s, s);
       }
       ctx.globalAlpha = 1;
       schedule(sy);
     }
     function schedule(sy) {                                                    // weiterlaufen, solange sichtbar
-      var end = storyTop + (Q + 1) * H * 0.6;
+      var end = storyTop + (Q + 1) * VH * STEP;
       if (sy < end && !document.hidden) raf = requestAnimationFrame(frame);
     }
     function kick() { if (!raf) raf = requestAnimationFrame(frame); }

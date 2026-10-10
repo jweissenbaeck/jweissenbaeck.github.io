@@ -37,6 +37,21 @@ const PX_CLIP_OK = !!(window.CSS && CSS.supports && CSS.supports('clip-path', "p
 /* Handy-Version (eigenes Layout: mobile.css + mobile.js). Gesetzt im <head> jeder Seite; die Desktop-Effekte unten
    steigen bei PHONE aus, der Desktop-Pfad selbst bleibt unverändert. */
 const PHONE = document.documentElement.classList.contains('is-phone');
+/* Handy: Bildschirmhöhe bei eingefahrener Adressleiste (100lvh) — bleibt gleich, egal ob die Leiste gerade sichtbar ist.
+   Damit ändert sich beim Scrollen nichts an Abständen, sonst „springt" die Seite, wenn die Leiste ein- oder ausfährt. */
+const phoneVH = (() => {
+  let probe = null;
+  return () => {
+    if (!PHONE) return window.innerHeight;
+    if (!probe) {
+      probe = document.createElement('div');
+      probe.setAttribute('aria-hidden', 'true');
+      probe.style.cssText = 'position:fixed;left:0;top:0;width:0;height:100vh;height:100lvh;visibility:hidden;pointer-events:none';
+      document.documentElement.appendChild(probe);
+    }
+    return probe.offsetHeight || window.innerHeight;
+  };
+})();
 function pxRand(gx, gy) {
   let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
   x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
@@ -763,8 +778,8 @@ function onEnterOnce(el, fn, margin) {
   function dirBetween(fromU, toU) { return metaFor(toU).order < metaFor(fromU).order ? 'back' : 'forward'; }
 
   const PANEL_COLOR = '#FFFFFF';
-  const PX_BLOCK = 72;          // gleiche Blockgröße wie der Scroll-Pixel-Wipe
-  const PX_BIAS  = 0.62;        // Anteil "von unten" (wie beim Scroll-Wipe)
+  const PX_BLOCK = PHONE ? 16 : 72;      // gleiche Blockgröße wie der Scroll-Pixel-Wipe (Handy: feine Pixel)
+  const PX_BIAS  = PHONE ? 0.8 : 0.62;   // Anteil "von unten" (wie beim Scroll-Wipe; Handy: klarer von unten nach oben)
   function pxRnd(gx, gy) {
     let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
     x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
@@ -925,6 +940,15 @@ function onEnterOnce(el, fn, margin) {
         setTimeout(() => cleanup(p), 240);
         return;
       }
+      /* Handy: Seitenname blendet aus, die Fläche zerfällt weiter nach oben (unten zuerst frei) */
+      if (PHONE) {
+        requestAnimationFrame(() => {
+          document.documentElement.classList.remove('vt-arriving');
+          [p.querySelector('.aino-center'), p.querySelector('.aino-meta')].forEach((el) => { if (el) anim(el, [{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-out' }); });
+          setTimeout(() => animateCover(p, 1, 0, 900, 'dissolve').then(() => cleanup(p)), 180);
+        });
+        return;
+      }
       /* die ganze weiße Fläche (samt Seitenname) wird weich nach rechts weggezogen */
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('vt-arriving');
@@ -954,6 +978,7 @@ const lenis = new Lenis({
 });
 
 lenis.on('scroll', ScrollTrigger.update);
+if (PHONE && ScrollTrigger.config) ScrollTrigger.config({ ignoreMobileResize: true });   // Adressleiste ein/aus → Pins nicht neu berechnen
 
 gsap.ticker.add((time) => {
   lenis.raf(time * 1000);
@@ -2270,7 +2295,7 @@ window.__heroInit = heroInit;
   /* ── Zeichnen (im gsap-Takt nach Lenis + ScrollTrigger) ── */
   const BUCK = 8, SIZES = 9, groups = Array.from({ length: BUCK * SIZES }, () => []);   // Helligkeit × Blockgröße (1–9 px)
   let story = null, visible = false, last = 0;
-  const storyT = () => story ? (window.scrollY - story.start) / window.innerHeight : PIN;
+  const storyT = () => story ? (window.scrollY - story.start) / (PHONE ? (story.end - story.start) / PIN : window.innerHeight) : PIN;   // Handy: Adressleiste verändert innerHeight → Pin-Länge ist stabil
   function frame() {
     const now = performance.now(), dt = Math.min(now - (last || now) || 16.7, 50) / 1000; last = now;
     if (!visible) return;
@@ -2410,7 +2435,7 @@ window.__heroInit = heroInit;
       const top = () => next.getBoundingClientRect().top + window.scrollY;
       const end = () => document.body.getBoundingClientRect().bottom + window.scrollY;   // exakte Seitenunterkante (scrollHeight wäre gerundet)
       /* > 0: unten fehlt Platz · < 0: zu viel Inhalt unter der Oberkante */
-      const diff = () => (window.innerHeight - navLine) - (end() - top());
+      const diff = () => (phoneVH() - navLine) - (end() - top());          // Handy: stabile Höhe → kein Sprung, wenn die Adressleiste ein-/ausfährt
       const t0 = top();
       if (Math.abs(t0 - Math.round(t0)) > 0.01) {                          // ganzzahlige Lage → Linie liegt pixelgenau auf
         const mt = parseFloat(getComputedStyle(next).marginTop) || 0;
@@ -2581,7 +2606,7 @@ window.__heroInit = heroInit;
     document.documentElement.classList.toggle('at-page-end', y >= max - 24);   // ganz unten (CSS: Filter aus, kein View-Label)
     if (y < 48) { show(); return; }   // ganz oben immer sichtbar
     if (y >= max - 24) { show(true); return; }   // ganz unten angekommen → Nav einblenden, verdeckt den Filter
-    if (dir > 0) hide();              // runter → smooth nach oben
+    if (dir > 0 && !PHONE) hide();    // runter → smooth nach oben (Handy: Nav bleibt immer stehen)
     else if (dir < 0) show();         // hoch → einblenden
   }
 

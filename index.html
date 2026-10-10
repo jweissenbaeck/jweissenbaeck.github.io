@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#232323">
 <title>Jacob Weissenbäck — Portfolio</title>
 
 <link rel="icon" type="image/svg+xml" href="assets/jcky-logo-bold-small.svg">
@@ -16,7 +18,12 @@
 <script>
   /* Handy-Version: eigenes Layout (mobile.css + mobile.js). Wechselt das Fenster über die Grenze, lädt die Seite neu. */
   (function () { try { var mq = window.matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse) and (max-height: 500px)');
-    if (mq.matches) document.documentElement.classList.add('is-phone');
+    if (mq.matches) {
+      document.documentElement.classList.add('is-phone');
+      /* Adressleiste fährt ein/aus = nur die Höhe ändert sich → nichts neu aufbauen (sonst springen Sterne und Abstände) */
+      var w0 = window.innerWidth;
+      window.addEventListener('resize', function (e) { if (window.innerWidth === w0) e.stopImmediatePropagation(); else w0 = window.innerWidth; }, true);
+    }
     (mq.addEventListener ? mq.addEventListener.bind(mq, 'change') : mq.addListener.bind(mq))(function () { location.reload(); });
   } catch (e) {} })();
 </script>
@@ -261,7 +268,7 @@
 
   <div class="services-list" id="servicesList">
 
-    <div class="svc-item" data-img="svc-preview-img-uiux">
+    <div class="svc-item" data-img="svc-preview-img-uiux" data-desc="I design interfaces people get at first glance — from research and wireframes to clickable prototypes in Figma and Framer.">
       <span class="svc-name">UI / UX Design</span>
       <div class="svc-skills">
         <span class="svc-skill">Figma</span>
@@ -271,7 +278,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="svc-preview-img-product">
+    <div class="svc-item" data-img="svc-preview-img-product" data-desc="I shape products end to end: design systems, reusable components and flows that hold up from the first sketch to launch.">
       <span class="svc-name">Product Design</span>
       <div class="svc-skills">
         <span class="svc-skill">Systems</span>
@@ -280,7 +287,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="svc-preview-img-image">
+    <div class="svc-item" data-img="svc-preview-img-image" data-desc="I retouch and composite images in Photoshop and Lightroom — clean, natural and true to the brand.">
       <span class="svc-name">Image Editing</span>
       <div class="svc-skills">
         <span class="svc-skill">Photoshop</span>
@@ -289,7 +296,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="svc-preview-img-color">
+    <div class="svc-item" data-img="svc-preview-img-color" data-desc="I colorgrade footage in DaVinci Resolve and build custom LUTs that give every project its own mood.">
       <span class="svc-name">Colorgrading</span>
       <div class="svc-skills">
         <span class="svc-skill">DaVinci</span>
@@ -298,7 +305,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="svc-preview-img-video">
+    <div class="svc-item" data-img="svc-preview-img-video" data-desc="I cut videos in DaVinci Resolve with a feel for pacing, rhythm and sound — every second has to earn its place.">
       <span class="svc-name">Video Cutting</span>
       <div class="svc-skills">
         <span class="svc-skill">DaVinci Resolve</span>
@@ -307,7 +314,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="svc-preview-img-ads">
+    <div class="svc-item" data-img="svc-preview-img-ads" data-desc="I create ads that stop the scroll: motion, copy and visuals working together to sell one clear idea.">
       <span class="svc-name">Advertisements</span>
       <div class="svc-skills">
         <span class="svc-skill">Motion</span>
@@ -316,7 +323,7 @@
       </div>
     </div>
 
-    <div class="svc-item" data-img="svc-preview-img-social">
+    <div class="svc-item" data-img="svc-preview-img-social" data-desc="I plan and produce social content with a clear strategy and a consistent look across every channel.">
       <span class="svc-name">Social Media</span>
       <div class="svc-skills">
         <span class="svc-skill">Content</span>

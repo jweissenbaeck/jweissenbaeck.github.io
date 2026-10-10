@@ -87,13 +87,15 @@
 /* ============================
    START — What I do
    ============================ */
-.main-content .services-section { padding: 72px var(--m-pad) 88px; }
+.main-content .services-section { padding: 72px var(--m-pad) 28px; }
+.services-section::after { bottom: -24px; height: 48px; }   /* kurzer Übergang → die Sterne der Story schließen direkt an */
 .svc-preview-panel { display: none; }
 .svc-eyebrow { justify-content: flex-start; padding-bottom: 24px; }
 .services-list { align-items: stretch; text-align: left; border-top: 1px solid var(--ink-ghost); counter-reset: svc; }
-.services-list .svc-name:hover { color: var(--ink); }
+.services-list .svc-item .svc-name { color: var(--ink) !important; }   /* kein „hängender“ Hover nach dem Antippen (Desktop graut sonst die anderen aus) */
 .svc-item {
-  display: grid; grid-template-columns: 34px 1fr; align-items: start;
+  display: grid; grid-template-columns: 34px 1fr 22px; align-items: start; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   padding: 18px 0 16px; border-bottom: 1px solid var(--ink-ghost);
   counter-increment: svc;
 }
@@ -110,6 +112,28 @@
   margin-top: 10px; white-space: normal;
 }
 .svc-skill { font-size: 10.5px; letter-spacing: 0.14em; }
+.svc-item:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
+/* Plus → Minus rechts in der Zeile: zeigt, dass man antippen kann (mobile.js) */
+.m-svc-ico { grid-column: 3; grid-row: 1; position: relative; width: 12px; height: 12px; margin: 0.9em 0 0 auto; }
+.m-svc-ico::before, .m-svc-ico::after { content: ''; position: absolute; left: 0; top: 5px; width: 12px; height: 2px; background: var(--ink); transition: transform 0.5s var(--ease-out-expo), background-color 0.3s ease; }
+.m-svc-ico::after { transform: rotate(90deg); }
+.svc-item.is-open .m-svc-ico::after { transform: rotate(0deg); }
+.svc-item.is-open .m-svc-ico::before, .svc-item.is-open .m-svc-ico::after { background: var(--accent); }
+/* Mini-Modal unter dem Service: klappt auf, Fläche wischt von oben herein, Satz tippt sich ein */
+.m-svc-more { grid-column: 2 / 4; display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.55s var(--ease-out-expo); }
+.svc-item.is-open .m-svc-more { grid-template-rows: 1fr; }
+.m-svc-clip { min-height: 0; overflow: hidden; }
+.m-svc-card {
+  position: relative; margin: 14px 0 4px; padding: 14px 16px 15px;
+  background: #2C2C2C; border-left: 2px solid var(--accent);
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.6; letter-spacing: 0.01em; color: rgba(255,255,255,0.86);
+  white-space: pre-wrap;
+  clip-path: inset(0 0 100% 0); transition: clip-path 0.6s var(--ease-out-expo);
+}
+.svc-item.is-open .m-svc-card { clip-path: inset(0); transition-delay: 0.05s; }
+
+/* Story: Bühne so hoch wie der Bildschirm bei eingefahrener Adressleiste → unten bleibt kein Streifen frei */
+.story-stage { height: 100vh; height: 100lvh; }
 
 /* ============================
    START — Weiter-Links + Footer
@@ -174,13 +198,46 @@
    ME
    ============================ */
 .cv { --pad: var(--m-pad); }
+.cv-bgfx { height: 100vh; height: 100lvh; }          /* Sterne: volle Höhe, auch wenn die Adressleiste einfährt */
+
+/* Hero: Name oben, das Foto nimmt den Raum darunter ein, darunter die Position;
+   letzte Zeile: „View my work“ + CV links, Social rechts — auf einer Linie */
+.cvh {
+  height: 100vh; height: 100svh; min-height: 560px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  grid-template-areas: 'name name' 'photo photo' 'now now' 'cta social';
+  column-gap: 10px;
+  padding: calc(var(--nav) + 14px) var(--m-pad) 20px;
+}
+.cvh-name { grid-area: name; position: static; margin: 0 0 20px; }
+.cvh-portrait {
+  grid-area: photo; position: relative; left: auto; top: auto; transform: none;
+  width: auto; height: auto; min-height: 0; margin: 0 10px 42px;   /* Platz für Schnittmarken + Bildunterschrift */
+}
+.cvh-cap { top: calc(100% + 14px); }
+.cvh.is-intro .cvh-portrait { animation-name: m-cvh-rise; }
+@keyframes m-cvh-rise { from { transform: translateY(28px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
+.cvh-now { grid-area: now; position: static; transform: none; width: auto; max-width: none; text-align: left; margin-bottom: 18px; }
+.cvh-now-org { justify-content: flex-start; }
+.cvh-cta-wrap { grid-area: cta; position: static; transform: none; width: auto; align-self: center; gap: 6px; }
+.cvh-cta, .cvh-cv { height: 42px; box-sizing: border-box; padding: 0 12px; }
+.cvh-cta .projects-cta-label, .cvh-cv .projects-cta-label { font-size: 10.5px; letter-spacing: 0.14em; }
+.cvh-social { grid-area: social; position: static; transform: none; align-self: center; gap: 6px; }
+.cvh-bubble { width: 42px; height: 42px; }
+.cvh-bubble svg { width: 18px; height: 18px; }
+
 .cvs-scene { inset: var(--nav) var(--m-pad) var(--m-pad); }
-/* Tools: Raster, alles auf einen Blick (statt Streuung) — Aufpoppen + Münzwurf bleiben */
+.cvs-intro .story-scribble { display: none; }        /* „Design shapes the world“: ohne Globus und Strich */
+/* Tools: Figma oben allein, darunter 4 × 3 (Adobe + Video · Web · Entwicklung + KI) — Aufpoppen + Münzwurf bleiben */
 .cvs-cloud {
-  display: flex; flex-wrap: wrap; justify-content: center; row-gap: 26px;   /* letzte Reihe mittig */
+  display: flex; flex-wrap: wrap; justify-content: center; row-gap: 24px;
   width: calc(100vw - 2 * var(--m-pad)); height: auto;
 }
-.cvs-i3d { --w: 42px; position: relative; left: auto; top: auto; flex: 0 0 25%; width: auto; margin: 0; padding: 0 3px; box-sizing: border-box; gap: 9px; }
+.cvs-i3d { --w: 40px; position: relative; left: auto; top: auto; flex: 0 0 25%; width: auto; margin: 0; padding: 0 3px; box-sizing: border-box; gap: 9px; }
+.cvs-i3d:first-child { flex-basis: 100%; --w: 58px; }
+.cvs-i3d-body { transform: rotateY(var(--flip, 0deg)); }                 /* flach: Logos in ihren echten Farben */
+.cvs-i3d-body img[aria-hidden='true'] { display: none; }                 /* ohne die abgedunkelten Tiefen-Ebenen */
 .cvs-i3d-name { font-size: 9px; letter-spacing: 0.02em; overflow-wrap: anywhere; }
 .cvs-title { margin-bottom: 30px; }
 .cvp { height: 62vh; height: 62svh; min-height: 380px; }

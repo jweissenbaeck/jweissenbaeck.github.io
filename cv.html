@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#232323">
   <title>Jacob Weissenbäck — CV</title>
   <link rel="icon" type="image/svg+xml" href="assets/jcky-logo-bold-small.svg">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -14,7 +16,12 @@
   <script>
     /* Handy-Version: eigenes Layout (mobile.css + mobile.js). Wechselt das Fenster über die Grenze, lädt die Seite neu. */
     (function () { try { var mq = window.matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse) and (max-height: 500px)');
-      if (mq.matches) document.documentElement.classList.add('is-phone');
+      if (mq.matches) {
+      document.documentElement.classList.add('is-phone');
+      /* Adressleiste fährt ein/aus = nur die Höhe ändert sich → nichts neu aufbauen (sonst springen Sterne und Abstände) */
+      var w0 = window.innerWidth;
+      window.addEventListener('resize', function (e) { if (window.innerWidth === w0) e.stopImmediatePropagation(); else w0 = window.innerWidth; }, true);
+    }
       (mq.addEventListener ? mq.addEventListener.bind(mq, 'change') : mq.addListener.bind(mq))(function () { location.reload(); });
     } catch (e) {} })();
   </script>
