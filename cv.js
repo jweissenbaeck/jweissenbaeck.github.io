@@ -211,11 +211,12 @@
   function measureScribbles() { if (hasScrib) Object.keys(scr).forEach(function (k) { scribbleMeasure(scr[k]); }); }
 
   /* Ablauf in „Schritten“ q. Jedes Element: Aufbau-Fenster (in) und optional Zerfall-Fenster (out). */
-  var W0 = 0.06, WS = 0.09, WD = 0.32;              // Einstieg: Wörter erscheinen nacheinander (Start, Abstand, Dauer)
+  var PHONE_CV = typeof PHONE !== 'undefined' && PHONE;   // Handy: kürzerer Ablauf (weniger Pausen, Satz steht schon beim Hereinscrollen)
+  var W0 = PHONE_CV ? -0.25 : 0.06, WS = 0.09, WD = 0.32;   // Einstieg: Wörter erscheinen nacheinander (Start, Abstand, Dauer)
   var WEND = W0 + (words.length - 1) * WS + WD;
-  var IOUT = [WEND + 1.6, WEND + 1.9];               // Einstieg bleibt länger stehen (Zeit für die Scribbles), dann zerfällt er in Pixel
-  var C0 = IOUT[1] + 1.8, CS = 0.14;                // 3D-Icons: Start (davor langer, ruhiger Übergang Sterne → Kugel) + Abstand
-  var CEND = C0 + icons.length * CS + 1.6;           // alle stehen, dann bleibt die Szene noch deutlich länger
+  var IOUT = PHONE_CV ? [WEND + 0.5, WEND + 0.8] : [WEND + 1.6, WEND + 1.9];   // Einstieg bleibt länger stehen (Zeit für die Scribbles), dann zerfällt er in Pixel
+  var C0 = IOUT[1] + (PHONE_CV ? 0.9 : 1.8), CS = 0.14;   // 3D-Icons: Start (davor langer, ruhiger Übergang Sterne → Kugel) + Abstand
+  var CEND = C0 + icons.length * CS + (PHONE_CV ? 0.7 : 1.6);   // alle stehen, dann bleibt die Szene noch deutlich länger
   var TOUT = [CEND + 0.35, CEND + 0.75];             // Tools: leicht hochfahren + ausblenden (wie der Name auf der Startseite)
   var L0 = TOUT[1] + 0.4, LS = 0.2;                 // Interessen: Start + Abstand
   var timeline = [
@@ -228,7 +229,6 @@
     timeline.push({ el: s, inn: [a, a + 0.2], out: null });
   });
   var Q = L0 + stickers.length * LS + 0.4;           // Ende: letzter Sticker steht noch kurz
-  var PHONE_CV = typeof PHONE !== 'undefined' && PHONE;
   var STEP = PHONE_CV ? 0.42 : 0.6;   // Scrollweg je Schritt (Bildschirmhöhen); Handy wischt schneller
   function spanQ(q, a, b) { return clamp01((q - a) / (b - a)); }
   function renderScribbles(q) {
@@ -338,7 +338,8 @@
           s = depth > 0.35 ? 2 : (kg > 0.5 ? 1 : s);
         }
         /* → Saiten (von links nach rechts) */
-        if (tW > 0) {
+        if (tW > 0 && PHONE_CV) a *= 1 - ease(clamp01(tW * 2.5));              // Handy: keine Saiten, der Hintergrund blendet aus
+        else if (tW > 0) {
           var kw = ease(clamp01((tW - (p.wx / W) * 0.5) / 0.5));
           var wy = wave(p, now);
           /* ganz leicht: Saite in Cursornähe neigt sich ein paar Pixel zum Cursor und leuchtet etwas auf */
@@ -348,7 +349,7 @@
           x = x + (p.wx - x) * kw; y = y + (wy - y) * kw;
           a = a + (0.4 + pull * 0.35 - a) * kw;
         }
-        ctx.globalAlpha = a * fade * (PHONE_CV ? 1 - tW : 1);                  // Handy: bei „My passions" ohne Hintergrund
+        ctx.globalAlpha = a * fade;
         ctx.fillRect(Math.round(x), Math.round(y), s, s);
       }
       ctx.globalAlpha = 1;

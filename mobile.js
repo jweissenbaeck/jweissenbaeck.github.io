@@ -49,6 +49,46 @@
     if (typeof afterIntro === 'function') afterIntro(open); else open();
   }
 
+  /* ── Start: Porträt hinter dem Namen — rechts neben „JACOB“, unten bündig hinter „…NBACK“.
+       Lage aus den Buchstaben gemessen (offset* ignoriert die Einblend-Verschiebung des Namens). ── */
+  const heroBlock = document.getElementById('heroTitleBlock');
+  const letters = [...document.querySelectorAll('#heroNameLetters .nl')];
+  const gapAt = letters.findIndex((l) => l.classList.contains('nl--space'));
+  if (heroBlock && gapAt > 0) {
+    const photo = document.createElement('img');
+    photo.className = 'm-hero-photo'; photo.src = 'assets/jcky-3.jpg'; photo.alt = ''; photo.decoding = 'async';
+    photo.setAttribute('aria-hidden', 'true');
+    heroBlock.insertBefore(photo, heroBlock.firstChild);
+    const box = (el) => { let x = 0, y = 0, n = el; while (n && n !== heroBlock) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; } return { x, y, w: el.offsetWidth, h: el.offsetHeight }; };
+    const place = () => {
+      const first = letters.slice(0, gapAt).map(box), second = letters.slice(gapAt + 1).map(box);
+      if (!first.length || !second.length) return;
+      const left = Math.max(...first.map((b) => b.x + b.w)) + 14;
+      const right = Math.max(...second.map((b) => b.x + b.w));
+      const bottom = Math.max(...second.map((b) => b.y + b.h)) - second[0].h * 0.12;   // Grundlinie statt Zeilenkasten
+      const w = Math.max(80, right - left), h = Math.round(w * 1.28);
+      Object.assign(photo.style, { left: left + 'px', width: w + 'px', top: (bottom - h) + 'px', height: h + 'px' });
+    };
+    const show = () => { place(); setTimeout(() => photo.classList.add('is-in'), 420); };
+    if (typeof afterIntro === 'function') afterIntro(() => setTimeout(show, 200)); else show();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+    let rt = 0;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(place, 220); });   // nach dem Neu-Einpassen des Namens
+  }
+
+  /* ── Start: „My work“ / „More about me“ — Drücken zeigt die Akzent-Fläche; sie wandert zwischen den Feldern:
+       erstes Drücken von oben nach unten, zum unteren Feld nach unten, zum oberen nach oben ── */
+  const sn = [...document.querySelectorAll('#storyNext .sn-link')];
+  let snOn = -1;
+  sn.forEach((a, i) => a.addEventListener('pointerdown', () => {
+    if (snOn === i) return;
+    const down = snOn < 0 || i > snOn;
+    sn.forEach((b) => b.classList.remove('m-in-top', 'm-in-bot', 'm-out-top', 'm-out-bot'));
+    if (snOn >= 0) sn[snOn].classList.add(down ? 'm-out-bot' : 'm-out-top');
+    a.classList.add(down ? 'm-in-top' : 'm-in-bot');
+    snOn = i;
+  }));
+
   /* ── Start: What I do — Antippen öffnet darunter ein Mini-Modal mit einem Satz zum Service (data-desc in index.html);
        immer nur eines offen, nochmal tippen schließt. Der Satz tippt sich ein (Mono → Umbruch steht von Anfang an). ── */
   const svcItems = [...document.querySelectorAll('.svc-item')];

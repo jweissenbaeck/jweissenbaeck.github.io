@@ -45,6 +45,17 @@
   gap: 16px; padding-top: 4vh;
 }
 .hero-word--fullname { padding-inline: 0 0.08em; line-height: 0.9; }
+.hero-title-clip { position: relative; }               /* über dem Foto, ohne eigene Ebene → der Name invertiert sich gegen das Foto */
+/* Porträt hinter dem Namen: rechts neben „JACOB“, unten hinter „…NBACK“ (Lage misst mobile.js aus den Buchstaben).
+   Der Name invertiert sich darüber (mix-blend-mode: difference) → bleibt lesbar */
+.m-hero-photo {
+  position: absolute; z-index: 0; display: block;
+  object-fit: cover; object-position: 50% 22%;
+  filter: grayscale(0.15);
+  clip-path: inset(100% 0 0 0); transition: clip-path 1.1s var(--ease-out-expo);
+  pointer-events: none;
+}
+.m-hero-photo.is-in { clip-path: inset(0); }
 .name-letter-wrap { display: flex; flex-wrap: wrap; align-items: baseline; }
 .nl--space { flex: 0 0 100%; width: auto; height: 0; }   /* zweite Zeile: WEISSENBÄCK */
 .hero-subtitle { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
@@ -87,8 +98,11 @@
 /* ============================
    START — What I do
    ============================ */
-.main-content .services-section { padding: 72px var(--m-pad) 28px; }
-.services-section::after { bottom: -24px; height: 48px; }   /* kurzer Übergang → die Sterne der Story schließen direkt an */
+.main-content .services-section { padding: 40px var(--m-pad) 28px; }
+.services-section::after {                           /* weicher Übergang: die Sterne der Story tauchen langsam aus dem Grau auf */
+  bottom: -150px; height: 150px;
+  background: linear-gradient(to bottom, var(--bg) 0%, rgba(35, 35, 35, 0.82) 30%, rgba(35, 35, 35, 0.4) 65%, rgba(35, 35, 35, 0) 100%);
+}
 .svc-preview-panel { display: none; }
 .svc-eyebrow { justify-content: flex-start; padding-bottom: 24px; }
 .services-list { align-items: stretch; text-align: left; border-top: 1px solid var(--ink-ghost); counter-reset: svc; }
@@ -138,10 +152,23 @@
 /* ============================
    START — Weiter-Links + Footer
    ============================ */
-.sn-link { min-height: 150px; }
+.sn-link { min-height: 150px; -webkit-tap-highlight-color: transparent; }
+/* Weiter-Felder: Drücken statt Hover (mobile.js). Die Akzent-Fläche wandert zwischen den beiden Feldern:
+   erstes Drücken → von oben nach unten · danach zum unteren Feld → fließt nach unten · zum oberen → fließt nach oben */
+.sn-link:hover::before { transform: scaleY(0); }
+.sn-link:hover { color: var(--ink); }
+.sn-link:hover .sn-k { color: var(--ink-muted); }
+.sn-link:hover .wk-l { transform: none; }
+.sn-link.m-in-top::before, .sn-link.m-in-bot::before { transform: scaleY(1); transition-duration: 0.85s; }
+.sn-link.m-in-top::before { transform-origin: 50% 0; }
+.sn-link.m-in-bot::before { transform-origin: 50% 100%; }
+.sn-link.m-out-top::before { transform: scaleY(0); transform-origin: 50% 0; transition-duration: 0.85s; }
+.sn-link.m-out-bot::before { transform: scaleY(0); transform-origin: 50% 100%; transition-duration: 0.85s; }
+.sn-link.m-in-top, .sn-link.m-in-bot, .sn-link.m-in-top .sn-k, .sn-link.m-in-bot .sn-k { color: var(--bg-dark); }
+.sn-link.m-in-top .wk-l, .sn-link.m-in-bot .wk-l { transform: translateY(-100%); }
 .site-footer-text { padding: 20px var(--m-pad) 16px; }
 .site-footer-bar { display: block; min-height: 0; }
-.sf-links { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid rgba(255,255,255,0.16); }
+.sf-links { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--stroke); }
 .sf-link, .sf-links .sf-link:first-child { justify-content: center; height: 52px; padding: 0 6px; }
 .sf-links .sf-link:last-child { border-right: none; }
 .sf-right { justify-content: center; height: 46px; padding: 0 var(--m-pad); border-left: none; font-size: 10px; letter-spacing: 0.14em; }
@@ -150,7 +177,7 @@
    MY WORK
    ============================ */
 .pj { --filter-h: 52px; }
-.pj-hero { height: 58vh; height: 58svh; min-height: 340px; align-items: flex-end; padding-bottom: 5vh; }
+.pj-hero { height: auto; min-height: 0; align-items: center; padding: calc(52px + 7vh) 0 7vh; }   /* Laufband nah unter der Nav */
 .pj-hero-title { font-size: clamp(4.4rem, 30vw, 12rem); }
 .pj-filter { padding: 0 var(--m-pad); }
 .pj-filter-menu { min-width: min(260px, calc(100vw - 2 * var(--m-pad))); }
@@ -171,7 +198,10 @@
 }
 .pj-view-t { display: none; }
 .pj-view-a { width: 14px; height: 14px; }
-.pj-project.is-hot .pj-view { color: var(--bg-dark); border-color: rgba(26, 26, 26, 0.45); }
+/* Handy: keine Akzent-Fläche hinter dem aktiven Projekt */
+.pj-fill, .pj-ink { display: none; }
+.pj-project.is-hot .pj-view { color: var(--ink); border-color: rgba(255,255,255,0.3); }
+.pj-project.is-hot .pj-view::before { background: var(--accent); }
 /* Bilder: Wisch-Galerie, das nächste Bild schaut rechts herein */
 .pj-project-row {
   flex-direction: row; align-items: stretch; gap: 10px;
@@ -192,7 +222,6 @@
 .m-count-dots { display: flex; gap: 6px; }
 .m-count-dots i { width: 6px; height: 6px; border: 1px solid currentColor; box-sizing: border-box; transition: background-color 0.3s ease; }
 .m-count-dots i.is-on { background: currentColor; }
-.pj-project.is-hot .m-count { color: var(--bg-dark); }
 
 /* ============================
    ME
@@ -229,13 +258,18 @@
 
 .cvs-scene { inset: var(--nav) var(--m-pad) var(--m-pad); }
 .cvs-intro .story-scribble { display: none; }        /* „Design shapes the world“: ohne Globus und Strich */
-/* Tools: Figma oben allein, darunter 4 × 3 (Adobe + Video · Web · Entwicklung + KI) — Aufpoppen + Münzwurf bleiben */
+/* Tools: 4 · 5 · 4 — oben Adobe + Video, Mitte Web mit Figma im Zentrum (wie am Desktop) + Claude, unten Code + Git.
+   Aufpoppen + Münzwurf bleiben */
 .cvs-cloud {
-  display: flex; flex-wrap: wrap; justify-content: center; row-gap: 24px;
+  display: flex; flex-wrap: wrap; justify-content: center; row-gap: 22px;
   width: calc(100vw - 2 * var(--m-pad)); height: auto;
 }
-.cvs-i3d { --w: 40px; position: relative; left: auto; top: auto; flex: 0 0 25%; width: auto; margin: 0; padding: 0 3px; box-sizing: border-box; gap: 9px; }
-.cvs-i3d:first-child { flex-basis: 100%; --w: 58px; }
+.cvs-i3d { --w: 38px; position: relative; left: auto; top: auto; flex: 0 0 25%; width: auto; margin: 0; padding: 0 2px; box-sizing: border-box; gap: 9px; }
+.cvs-i3d:nth-child(2)  { order: 1; }  .cvs-i3d:nth-child(3)  { order: 2; }  .cvs-i3d:nth-child(4)  { order: 3; }  .cvs-i3d:nth-child(5)  { order: 4; }
+.cvs-i3d:nth-child(6)  { order: 5; }  .cvs-i3d:nth-child(7)  { order: 6; }  .cvs-i3d:nth-child(1)  { order: 7; }  .cvs-i3d:nth-child(8)  { order: 8; }  .cvs-i3d:nth-child(13) { order: 9; }
+.cvs-i3d:nth-child(9)  { order: 10; } .cvs-i3d:nth-child(10) { order: 11; } .cvs-i3d:nth-child(11) { order: 12; } .cvs-i3d:nth-child(12) { order: 13; }
+.cvs-i3d:nth-child(6), .cvs-i3d:nth-child(7), .cvs-i3d:nth-child(1), .cvs-i3d:nth-child(8), .cvs-i3d:nth-child(13) { flex-basis: 20%; }
+.cvs-i3d:nth-child(1) { --w: 48px; }
 .cvs-i3d-body { transform: rotateY(var(--flip, 0deg)); }                 /* flach: Logos in ihren echten Farben */
 .cvs-i3d-body img[aria-hidden='true'] { display: none; }                 /* ohne die abgedunkelten Tiefen-Ebenen */
 .cvs-i3d-name { font-size: 9px; letter-spacing: 0.02em; overflow-wrap: anywhere; }
