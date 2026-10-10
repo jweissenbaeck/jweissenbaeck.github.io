@@ -569,20 +569,17 @@ function onEnterOnce(el, fn, margin) {
 })();
 
 /* ============================
-   PAGE LOADER — HUD / Visier
-   1. HUD steht sofort: Eckwinkel, Skalen, Scan-Linie, Live-Zeit Salzburg.
-   2. Zähler 000 → 100 %: „JCKY" baut sich dazu pixelweise auf, der Segmentbalken füllt sich,
-      der Status tippt sich neu ein (Fonts → Assets → Layout → Ready). Echte Bereitschaft (load + Schriften)
-      deckelt den Zähler bei 90 %, bis die Seite wirklich fertig ist.
-   3. Bei 100 % rastet der Fokusrahmen ein, dann teilt sich der Bildschirm: obere Hälfte nach oben, untere nach unten.
-      Die Schnittkante zerbröselt Spalte für Spalte in Pixelblöcke, die davonfliegen; dabei steigt der Hero-Name auf.
+   PAGE LOADER — schlicht, wie der Seitenwechsel
+   Weiße Fläche, „My Portfolio“ / „by Jacky“ gleiten von der Mitte her herein; darunter füllen sich Pixel von links
+   nach rechts, daneben zählt die Prozentzahl. Echte Bereitschaft (load + Schriften) deckelt den Zähler bei 90 %.
+   Danach teilt sich die Fläche genau zwischen den beiden Zeilen: obere Hälfte (mit „My Portfolio“) nach oben,
+   untere (mit „by Jacky“) nach unten; dabei steigt der Hero-Name auf.
    Volle Länge einmal pro Sitzung; bei erneutem Laden eine kurze Version. Zeit läuft Bild für Bild
    (max. 1/30 s pro Bild) → hängt der Browser kurz, springt nichts.
 ============================ */
 (function initLoader() {
   const loader = document.getElementById('pageLoader');
-  const hud = document.getElementById('ldHud');
-  if (!loader || !hud) return;
+  if (!loader) return;
 
   /* Bei interner Navigation Loader überspringen — die Seitenwechsel-Transition
      sorgt bereits für Kontinuität; Hero danach normal einblenden. */
@@ -599,46 +596,18 @@ function onEnterOnce(el, fn, margin) {
   document.documentElement.style.overflow = 'hidden';
   const quick = vtStoreGet('jcky:introSeen') === '1';                 // schon gesehen → kurze Version
   vtStoreSet('jcky:introSeen', '1');
-  const COUNT = PX_REDUCE ? 0 : quick ? 900 : 2300;                   // 000 → 100 (ms)
-  const SPLIT = PX_REDUCE ? 0 : quick ? 850 : 1150;                   // Teilung (ms)
-  const live = !PX_REDUCE && PX_CLIP_OK;
+  const COUNT = PX_REDUCE ? 0 : quick ? 900 : 1900;                   // 000 → 100 (ms)
+  const SPLIT = PX_REDUCE ? 0 : 1100;                                 // Teilung (ms)
 
-  const word = hud.querySelector('.ld-word'), num = hud.querySelector('.ld-num');
-  const status = hud.querySelector('.ld-status-txt'), bar = hud.querySelector('.ld-bar');
-  const clock = hud.querySelector('.ld-clock');
-  const SEG = 32;
-  bar.innerHTML = '<i></i>'.repeat(SEG);
-  const segs = [...bar.children];
+  const num = loader.querySelector('.ld-num'), row = loader.querySelector('.ld-px');
+  const N = 24;                                                        // Pixel der Ladeanzeige
+  row.innerHTML = '<i></i>'.repeat(N);
+  const cells = [...row.children];
+  requestAnimationFrame(() => requestAnimationFrame(() => loader.classList.add('is-in')));   // Zeilen gleiten herein
 
-  /* Live-Zeit Salzburg */
-  try {
-    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Vienna', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const tick = () => { clock.textContent = fmt.format(new Date()); };
-    tick(); const iv = setInterval(tick, 1000);
-    window.addEventListener('jcky:intro-done', () => clearInterval(iv), { once: true });
-  } catch (e) {}
-
-  /* Status: tippt sich bei jedem Wechsel neu ein */
-  const STEPS = [[0, 'Loading fonts'], [26, 'Loading assets'], [58, 'Building layout'], [88, 'Calibrating'], [100, 'Ready']];
-  let stepShown = -1;
-  function setStatus(p) {
-    let k = 0; STEPS.forEach((s, i) => { if (p >= s[0]) k = i; });
-    if (k === stepShown) return;
-    stepShown = k;
-    status._typeOrig = STEPS[k][1]; status._typed = false;
-    if (PX_REDUCE) status.textContent = STEPS[k][1];
-    else { status.textContent = STEPS[k][1].replace(/\S/g, ' '); typeIn(status, 320); }
-  }
-
-  /* „JCKY" pixelweise: Blockgröße relativ zur Schrift; Messung erst, wenn Anton geladen ist */
-  if (live) loader.classList.add('is-live');
-  let wordReady = !live;
-  const measureWord = () => { pxMeasure(word, Math.max(8, parseFloat(getComputedStyle(word).fontSize) * 0.055)); wordReady = true; };
   const fontsOk = (document.fonts && document.fonts.load)
-    ? Promise.race([Promise.all([document.fonts.load('400 100px Anton'), document.fonts.load('400 10px "DM Mono"')]), new Promise(r => setTimeout(r, 700))])
+    ? Promise.race([document.fonts.load('500 10px "DM Mono"'), new Promise(r => setTimeout(r, 700))])
     : Promise.resolve();
-  fontsOk.then(() => { if (live) measureWord(); });
-
   /* echte Bereitschaft */
   const ready = new Promise((resolve) => {
     const go = () => (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(resolve);
@@ -646,13 +615,13 @@ function onEnterOnce(el, fn, margin) {
   });
   let isReady = false; ready.then(() => { isReady = true; });
 
+  let onShown = -1;
   function render(p) {
-    const n = Math.round(p);
-    num.textContent = String(n).padStart(3, '0');
-    const on = Math.round(p / 100 * SEG);
-    segs.forEach((s, i) => s.classList.toggle('is-on', i < on));
-    setStatus(n);
-    if (live && wordReady) pxClip(word, Math.min(1, p / 100), 'build');
+    num.textContent = String(Math.round(p)).padStart(3, '0');
+    const on = Math.floor(p / 100 * N + 1e-6);
+    if (on === onShown) return;
+    onShown = on;
+    cells.forEach((c, i) => c.classList.toggle('is-on', i < on));
   }
 
   /* ── Zählen (Bild für Bild) ── */
@@ -670,13 +639,13 @@ function onEnterOnce(el, fn, margin) {
     }));
   });
 
-  /* ── Teilung: zwei Kopien des HUD gleiten auseinander, die Kante zerbröselt in Pixel ── */
   function finish() {
     loader.classList.add('is-hidden');
     loader.style.display = 'none';
     window.__introDone = true;
     window.dispatchEvent(new Event('jcky:intro-done'));             // jetzt darf die schwere Vorarbeit starten (afterIntro)
   }
+  /* ── Teilung in der Mitte: obere Hälfte nach oben, untere nach unten ── */
   function split() {
     document.documentElement.style.overflow = '';
     if (!SPLIT) {
@@ -684,72 +653,15 @@ function onEnterOnce(el, fn, margin) {
       loader.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.then(finish);
       return;
     }
-    const W = window.innerWidth, H = window.innerHeight, mid = H / 2;
-    const halves = ['top', 'bot'].map((side) => {
-      const h = document.createElement('div');
-      h.className = 'ld-half';
-      const c = hud.cloneNode(true); c.removeAttribute('id');
-      h.appendChild(c);
-      loader.appendChild(h);
-      return h;
-    });
-    hud.style.visibility = 'hidden';
-    loader.classList.add('is-splitting');
-    const dust = document.createElement('canvas'), dctx = dust.getContext('2d'), dpr = Math.min(2, window.devicePixelRatio || 1);
-    dust.className = 'ld-dust'; dust.width = W * dpr; dust.height = H * dpr; loader.appendChild(dust);
-    const ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#FFFFFF';
-    const dark = getComputedStyle(document.documentElement).getPropertyValue('--bg-dark').trim() || '#1A1A1A';
-
-    const B = Math.max(16, Math.round(W / 70)), cols = Math.ceil(W / B), DEPTH = 7;   // Blockgröße · max. zerbröselte Reihen
-    const kTop = new Array(cols).fill(0), kBot = new Array(cols).fill(0), bits = [];
-    const ease = t => t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;  // weich an + aus
-    function edge(k, side) {                                                         // gezackte Schnittkante als clip-path
-      let d = side === 'top' ? 'M0 0H' + W : 'M0 ' + H + 'H' + W;
-      for (let i = cols - 1; i >= 0; i--) {
-        const y = side === 'top' ? mid - k[i] * B : mid + k[i] * B;
-        d += 'V' + y + 'H' + i * B;
-      }
-      return "path('" + d + 'V' + (side === 'top' ? 0 : H) + "Z')";
-    }
-    let elapsed = 0, last = 0, heroStarted = false;
-    requestAnimationFrame(function frame(now) {
-      const dt = last ? Math.min(now - last, 1000 / 30) : 0; last = now; elapsed += dt;
-      const p = Math.min(1, elapsed / SPLIT), e = ease(p), D = e * (mid + DEPTH * B + 40);
-      /* Spalten zerbröseln nacheinander (zufällig gestaffelt), jeder abgelöste Block fliegt als Pixel davon */
-      for (let i = 0; i < cols; i++) {
-        [[kTop, 'top', 11], [kBot, 'bot', 23]].forEach(([k, side, seed]) => {
-          const target = Math.floor(Math.min(1, Math.max(0, p * 1.7 - pxRand(i, seed) * 0.7)) * DEPTH);
-          while (k[i] < target) {
-            const yRel = side === 'top' ? mid - (k[i] + 1) * B : mid + k[i] * B;
-            bits.push({ x: i * B, y: yRel, side: side, vx: (pxRand(i, k[i] + seed) - 0.5) * 2.4, vy: (side === 'top' ? -1 : 1) * (1.2 + pxRand(k[i], i) * 3.2), a: 1, inkBit: pxRand(i * 3, k[i]) < 0.18 });
-            k[i]++;
-          }
-        });
-      }
-      halves[0].style.clipPath = edge(kTop, 'top'); halves[0].style.transform = 'translate3d(0,' + (-D).toFixed(1) + 'px,0)';
-      halves[1].style.clipPath = edge(kBot, 'bot'); halves[1].style.transform = 'translate3d(0,' + D.toFixed(1) + 'px,0)';
-      /* lose Pixel: folgen ihrer Hälfte, driften auseinander, blenden aus */
-      dctx.setTransform(dpr, 0, 0, dpr, 0, 0); dctx.clearRect(0, 0, W, H);
-      const f = dt / 16.67;
-      for (let j = bits.length - 1; j >= 0; j--) {
-        const b = bits[j];
-        b.x += b.vx * f; b.y += b.vy * f; b.a -= 0.022 * f;
-        if (b.a <= 0) { bits.splice(j, 1); continue; }
-        const off = b.side === 'top' ? -D : D, s = B * (0.35 + 0.65 * b.a);
-        dctx.globalAlpha = b.a; dctx.fillStyle = b.inkBit ? ink : dark;
-        dctx.fillRect(Math.round(b.x + (B - s) / 2), Math.round(b.y + off + (B - s) / 2), Math.ceil(s), Math.ceil(s));
-      }
-      dctx.globalAlpha = 1;
-      if (!heroStarted && p > 0.18) { heroStarted = true; if (typeof window.__heroInit === 'function') window.__heroInit(); }
-      if (p < 1 || bits.length) requestAnimationFrame(frame); else finish();
-    });
+    const [top, bot] = loader.querySelectorAll('.ld-half');
+    const opts = { duration: SPLIT, easing: 'cubic-bezier(0.76, 0, 0.24, 1)', fill: 'forwards' };
+    top.animate([{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(0,-100%,0)' }], opts);
+    bot.animate([{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(0,100%,0)' }], opts)
+      .finished.then(finish, finish);
+    setTimeout(() => { if (typeof window.__heroInit === 'function') window.__heroInit(); }, SPLIT * 0.3);
   }
 
-  Promise.all([counted, ready]).then(() => {
-    loader.classList.add('is-locked');                                // Fokusrahmen rastet ein
-    if (live) pxClip(word, 1, 'build');
-    setTimeout(split, PX_REDUCE ? 0 : quick ? 200 : 360);
-  });
+  Promise.all([counted, ready]).then(() => setTimeout(split, PX_REDUCE ? 0 : quick ? 160 : 320));
 })();
 /* ============================
    PAGE TRANSITIONS — EDITORIAL PANEL (Aino-Stil)
