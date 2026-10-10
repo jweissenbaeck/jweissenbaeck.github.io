@@ -17,6 +17,9 @@
 (function () {
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var fine = !window.matchMedia || window.matchMedia('(any-hover: hover)').matches;
+  /* Handy (PHONE aus script.js): eigene Seite in einer Spalte (mobile.css + mobile.js) — Name in zwei Zeilen, keine Story
+     mit Pin, kein Sternen-Hintergrund; die Pillen fallen weiterhin in die Spielfläche */
+  var PHONE_ME = typeof PHONE !== 'undefined' && PHONE;
 
   /* ── Pixel-Engine ── */
   var PX_BIAS = 0.62;
@@ -72,10 +75,17 @@
     var name = document.getElementById('cvhName'), inner = name && name.querySelector('.cvh-name-inner');
     var wide = parseFloat(getComputedStyle(hero).getPropertyValue('--wide')) || 1.18;
 
+    /* Handy: „Jacob“ / „Weissenback“ als zwei Zeilen, die längere so breit wie der Inhalt */
+    if (PHONE_ME && inner) inner.innerHTML = inner.textContent.trim().split(/\s+/).map(function (w) { return '<span class="cvh-line">' + w + '</span>'; }).join('');
     /* Name exakt auf ~96 % der Breite (inkl. Streckung) */
     function fitName() {
       if (!inner) return;
       name.style.fontSize = '100px';
+      if (PHONE_ME) {
+        var m = Math.max.apply(null, [].map.call(inner.children, function (l) { return l.offsetWidth; }));
+        if (m) name.style.fontSize = (100 * (document.documentElement.clientWidth - 32) / m) + 'px';
+        return;
+      }
       var w = inner.offsetWidth * wide;
       if (w) name.style.fontSize = (100 * window.innerWidth * 0.96 / w) + 'px';
     }
@@ -211,7 +221,7 @@
   function measureScribbles() { if (hasScrib) Object.keys(scr).forEach(function (k) { scribbleMeasure(scr[k]); }); }
 
   /* Ablauf in „Schritten“ q. Jedes Element: Aufbau-Fenster (in) und optional Zerfall-Fenster (out). */
-  var PHONE_CV = typeof PHONE !== 'undefined' && PHONE;   // Handy: kürzerer Ablauf (weniger Pausen, Satz steht schon beim Hereinscrollen)
+  var PHONE_CV = PHONE_ME;                          // Handy: Szenen stehen untereinander (kein Ablauf am Scroll)
   var W0 = PHONE_CV ? -0.25 : 0.06, WS = 0.09, WD = 0.32;   // Einstieg: Wörter erscheinen nacheinander (Start, Abstand, Dauer)
   var WEND = W0 + (words.length - 1) * WS + WD;
   var IOUT = PHONE_CV ? [WEND + 0.5, WEND + 0.8] : [WEND + 1.6, WEND + 1.9];   // Einstieg bleibt länger stehen (Zeit für die Scribbles), dann zerfällt er in Pixel
@@ -237,8 +247,11 @@
     [['design', spanQ(q, WEND - 0.05, WEND + 0.3) * outI], ['world', spanQ(q, WEND + 0.2, WEND + 0.55) * outI]]
       .forEach(function (g) { var ps = scr[g[0]]; if (!ps.length) return; if (!ps[0]._len) scribbleMeasure(ps); scribbleDraw(ps, g[1]); });
   }
-  timeline.forEach(function (t) { t.el.classList.add('cvs-clip'); });
-  story.classList.add('is-live');
+  if (PHONE_CV) story.classList.add('is-phone');     // Handy: Szenen untereinander, ohne Pixel-Ablauf (mobile.js blendet ein)
+  else {
+    timeline.forEach(function (t) { t.el.classList.add('cvs-clip'); });
+    story.classList.add('is-live');
+  }
 
   /* ============================
      HINTERGRUND — läuft hinter Hero + Story und erzählt den ersten Satz:
@@ -251,7 +264,7 @@
      Phasen hängen am Scroll (rückwärts genauso); Funkeln + Schwingen laufen in der Zeit.
      ============================ */
   var stInst = null;                                // ScrollTrigger der Story (liefert die exakte Startposition)
-  var bg = (function () {
+  var bg = PHONE_CV ? null : (function () {
     var cv = document.createElement('canvas'), ctx = cv.getContext('2d');
     if (!ctx) return null;
     cv.className = 'cv-bgfx'; cv.setAttribute('aria-hidden', 'true');
@@ -393,6 +406,7 @@
   }
   function render(q) {
     lastQ = q;
+    if (PHONE_CV) return;                           // Handy: kein Ablauf
     renderDeck(q);
     renderScribbles(q);
     var hold = performance.now() < holdStickers;
@@ -419,7 +433,7 @@
 
   /* 3D-Icons: jedes Logo wird als Stapel aus Ebenen aufgebaut (nach hinten dunkler) → echte Materialstärke,
      sichtbar beim Hereinflippen und wenn sich ein Icon beim Hover leicht nach hinten neigt. */
-  var LAYERS = 9;
+  var LAYERS = PHONE_CV ? 1 : 9;                   // Handy: flache Logos in echten Farben
   icons.forEach(function (ic) {
     var body = ic.querySelector('.cvs-i3d-body'), img = body.querySelector('img');
     var depth = parseFloat(ic.style.getPropertyValue('--k')) || 1;
@@ -675,7 +689,7 @@
     }
     return { drop: drop, reset: reset };
   })();
-  stInst = ScrollTrigger.create({
+  stInst = PHONE_CV ? null : ScrollTrigger.create({
     trigger: story,
     start: 'top top',
     end: '+=' + Math.round(Q * STEP * 100) + '%',     // 60 % Bildschirmhöhe Scrollweg pro Schritt (Handy: 42 %)

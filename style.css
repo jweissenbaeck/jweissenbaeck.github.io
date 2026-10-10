@@ -57,6 +57,10 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Die Seite hat selbst ein dunkles Design → Browser mit eigenem Dunkelmodus (Chrome, Samsung Internet) erkennen das an
+   dieser Abfrage und färben Akzent-Flächen und Text nicht nachträglich um */
+@media (prefers-color-scheme: dark) { :root { color-scheme: dark; } }
+
 /* ============================
    RESET + BASE
 ============================ */

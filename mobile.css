@@ -13,6 +13,13 @@
 
 :root { --m-pad: 16px; }
 
+/* Farben exakt wie gesetzt: keine Papier-Körnung (multiply) über Nav, Chips und Flächen, kein grauer Tipp-Schleier */
+body::before { display: none; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Seitenwechsel: Schrift auf der weißen Fläche schwarz */
+#ainoPanel .aino-name-inner, #ainoPanel .aino-code, #ainoPanel .aino-meta { color: #000; }
+
 /* ── Scroll-Anzeige: Pixel-Leiste oben am Bildschirmrand (mobile.js) ── */
 .px-scroll, .px-track { display: none !important; }
 .m-progress {
@@ -177,8 +184,8 @@
    MY WORK
    ============================ */
 .pj { --filter-h: 52px; }
-.pj-hero { height: auto; min-height: 0; align-items: center; padding: calc(52px + 7vh) 0 7vh; }   /* Laufband nah unter der Nav */
-.pj-hero-title { font-size: clamp(4.4rem, 30vw, 12rem); }
+.pj-hero { height: auto; min-height: 0; align-items: center; padding: calc(52px + 3vh) 0 3vh; }   /* Laufband nah unter der Nav */
+.pj-hero-title { font-size: clamp(3.4rem, 19vw, 9rem); }   /* gut lesbar, ohne den Bildschirm zu sprengen */
 .pj-filter { padding: 0 var(--m-pad); }
 .pj-filter-menu { min-width: min(260px, calc(100vw - 2 * var(--m-pad))); }
 .pj-filter-menu li { padding: 13px 22px; }            /* größere Tippfläche */
@@ -227,27 +234,26 @@
    ME
    ============================ */
 .cv { --pad: var(--m-pad); }
-.cv-bgfx { height: 100vh; height: 100lvh; }          /* Sterne: volle Höhe, auch wenn die Adressleiste einfährt */
-
-/* Hero: Name oben, das Foto nimmt den Raum darunter ein, darunter die Position;
-   letzte Zeile: „View my work“ + CV links, Social rechts — auf einer Linie */
+/* Me auf dem Handy: eine Spalte, ohne Story-Pin und Sternen-Hintergrund (cv.js → PHONE)
+   Name · Foto · Rolle · Buttons + Social → Satz → Tools (gruppiertes Raster) → My passions → Pillen-Spielfläche */
 .cvh {
-  height: 100vh; height: 100svh; min-height: 560px;
+  height: auto; min-height: 0; overflow: visible;
   display: grid; grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto minmax(0, 1fr) auto auto;
   grid-template-areas: 'name name' 'photo photo' 'now now' 'cta social';
   column-gap: 10px;
-  padding: calc(var(--nav) + 14px) var(--m-pad) 20px;
+  padding: calc(var(--nav) + 30px) var(--m-pad) 0;
 }
-.cvh-name { grid-area: name; position: static; margin: 0 0 20px; }
+.cvh-name { grid-area: name; position: static; margin: 0 0 24px; text-align: left; white-space: normal; line-height: 0.9; }
+.cvh-name-inner { transform: none; line-height: 0.9; }
+.cvh-line { display: table; }                   /* eigene Zeile, so breit wie das Wort (cv.js misst daran) */
 .cvh-portrait {
   grid-area: photo; position: relative; left: auto; top: auto; transform: none;
-  width: auto; height: auto; min-height: 0; margin: 0 10px 42px;   /* Platz für Schnittmarken + Bildunterschrift */
+  width: auto; height: auto; aspect-ratio: 4 / 5; margin: 0 0 46px;    /* Platz für die Bildunterschrift */
 }
 .cvh-cap { top: calc(100% + 14px); }
 .cvh.is-intro .cvh-portrait { animation-name: m-cvh-rise; }
 @keyframes m-cvh-rise { from { transform: translateY(28px) scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
-.cvh-now { grid-area: now; position: static; transform: none; width: auto; max-width: none; text-align: left; margin-bottom: 18px; }
+.cvh-now { grid-area: now; position: static; transform: none; width: auto; max-width: none; text-align: left; margin-bottom: 20px; }
 .cvh-now-org { justify-content: flex-start; }
 .cvh-cta-wrap { grid-area: cta; position: static; transform: none; width: auto; align-self: center; gap: 6px; }
 .cvh-cta, .cvh-cv { height: 42px; box-sizing: border-box; padding: 0 12px; }
@@ -256,25 +262,40 @@
 .cvh-bubble { width: 42px; height: 42px; }
 .cvh-bubble svg { width: 18px; height: 18px; }
 
-.cvs-scene { inset: var(--nav) var(--m-pad) var(--m-pad); }
-.cvs-intro .story-scribble { display: none; }        /* „Design shapes the world“: ohne Globus und Strich */
-/* Tools: 4 · 5 · 4 — oben Adobe + Video, Mitte Web mit Figma im Zentrum (wie am Desktop) + Claude, unten Code + Git.
-   Aufpoppen + Münzwurf bleiben */
-.cvs-cloud {
-  display: flex; flex-wrap: wrap; justify-content: center; row-gap: 22px;
-  width: calc(100vw - 2 * var(--m-pad)); height: auto;
+.cvs.is-phone .cvs-stage { height: auto; min-height: 0; }
+.cvs.is-phone .cvs-scene { position: static; inset: auto; display: block; text-align: left; pointer-events: auto; padding: 0 var(--m-pad); }
+.cvs.is-phone .cvs-inner { align-items: stretch; }
+.cvs.is-phone .cvs-wide { transform: none; max-width: none; }
+.cvs.is-phone .story-scribble { display: none; }
+/* Satz: groß, links, Wort für Wort (mobile.js) */
+.cvs.is-phone .cvs-intro { padding: 104px 0 8px; }
+.cvs.is-phone .cvs-big { font-size: clamp(2.3rem, 11.5vw, 3.6rem); line-height: 1.02; text-align: left; }
+.m-word { opacity: 0; transform: translateY(0.4em); transition: opacity 0.6s ease, transform 0.8s var(--ease-out-expo); }
+.m-word.is-in { opacity: 1; transform: none; }
+/* Überschriften der Abschnitte */
+.cvs.is-phone .cvs-title { margin: 0 0 22px; font-size: clamp(2rem, 10vw, 2.8rem); text-align: left; }
+.cvs.is-phone .cvs-tools { padding-top: 88px; opacity: 1 !important; transform: none !important; }
+.cvs.is-phone .cvs-love { padding-top: 96px; }
+/* Tools: drei Gruppen, je ein Raster aus Zellen (Linien wie Nav/Footer); Logo + Name; Antippen = Münzwurf */
+.m-tools { display: flex; flex-direction: column; gap: 26px; }
+.m-tools-k { display: flex; gap: 10px; margin: 0 0 10px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-muted); }
+.m-tools-k span { color: var(--accent); }
+.m-tools-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--stroke); border-left: 1px solid var(--stroke); }
+.m-tools-grid .cvs-i3d {
+  --w: 26px; position: relative; left: auto; top: auto; width: auto; margin: 0;
+  flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px;
+  padding: 14px 12px; min-height: 58px;
+  border-right: 1px solid var(--stroke); border-bottom: 1px solid var(--stroke);
+  opacity: 1; transform: none; animation: none; perspective: 400px; cursor: pointer;
 }
-.cvs-i3d { --w: 38px; position: relative; left: auto; top: auto; flex: 0 0 25%; width: auto; margin: 0; padding: 0 2px; box-sizing: border-box; gap: 9px; }
-.cvs-i3d:nth-child(2)  { order: 1; }  .cvs-i3d:nth-child(3)  { order: 2; }  .cvs-i3d:nth-child(4)  { order: 3; }  .cvs-i3d:nth-child(5)  { order: 4; }
-.cvs-i3d:nth-child(6)  { order: 5; }  .cvs-i3d:nth-child(7)  { order: 6; }  .cvs-i3d:nth-child(1)  { order: 7; }  .cvs-i3d:nth-child(8)  { order: 8; }  .cvs-i3d:nth-child(13) { order: 9; }
-.cvs-i3d:nth-child(9)  { order: 10; } .cvs-i3d:nth-child(10) { order: 11; } .cvs-i3d:nth-child(11) { order: 12; } .cvs-i3d:nth-child(12) { order: 13; }
-.cvs-i3d:nth-child(6), .cvs-i3d:nth-child(7), .cvs-i3d:nth-child(1), .cvs-i3d:nth-child(8), .cvs-i3d:nth-child(13) { flex-basis: 20%; }
-.cvs-i3d:nth-child(1) { --w: 48px; }
-.cvs-i3d-body { transform: rotateY(var(--flip, 0deg)); }                 /* flach: Logos in ihren echten Farben */
-.cvs-i3d-body img[aria-hidden='true'] { display: none; }                 /* ohne die abgedunkelten Tiefen-Ebenen */
-.cvs-i3d-name { font-size: 9px; letter-spacing: 0.02em; overflow-wrap: anywhere; }
-.cvs-title { margin-bottom: 30px; }
-.cvp { height: 62vh; height: 62svh; min-height: 380px; }
+.m-tools-grid .cvs-i3d:last-child:nth-child(odd) { grid-column: span 2; }   /* ungerade Anzahl: letzte Zelle über die volle Breite */
+.m-tools-grid .cvs-i3d-body { flex: none; transform: rotateY(var(--flip, 0deg)); }
+.m-tools-grid .cvs-i3d-name { font-size: 11px; line-height: 1.3; letter-spacing: 0.04em; color: var(--ink); text-align: left; }
+/* My passions: Sticker poppen auf (mobile.js), darunter fallen sie als Pillen in die Spielfläche (cv.js) */
+.cvs.is-phone .cvs-stickers { justify-content: flex-start; max-width: none; gap: 10px 8px; }
+.cvs-sticker.m-pop { opacity: 0; transform: rotate(var(--r)) scale(0.6); transition: opacity 0.35s ease, transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.cvs-sticker.m-pop.is-in { opacity: 1; transform: rotate(var(--r)); }
+.cvp { height: 60vh; height: 60svh; min-height: 360px; }
 
 @media (prefers-reduced-motion: reduce) {
   .m-progress, .m-reel-chip { transition: none; }

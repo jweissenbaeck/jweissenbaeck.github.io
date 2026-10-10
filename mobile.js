@@ -60,14 +60,17 @@
     photo.setAttribute('aria-hidden', 'true');
     heroBlock.insertBefore(photo, heroBlock.firstChild);
     const box = (el) => { let x = 0, y = 0, n = el; while (n && n !== heroBlock) { x += n.offsetLeft; y += n.offsetTop; n = n.offsetParent; } return { x, y, w: el.offsetWidth, h: el.offsetHeight }; };
+    /* rechtsbündig mit „…NBACK“, senkrecht mittig zu Name + Rolle; schmal genug, um rechts neben „JACOB“ zu passen */
+    const role = document.getElementById('heroSubtitleRow');
     const place = () => {
       const first = letters.slice(0, gapAt).map(box), second = letters.slice(gapAt + 1).map(box);
       if (!first.length || !second.length) return;
-      const left = Math.max(...first.map((b) => b.x + b.w)) + 14;
       const right = Math.max(...second.map((b) => b.x + b.w));
-      const bottom = Math.max(...second.map((b) => b.y + b.h)) - second[0].h * 0.12;   // Grundlinie statt Zeilenkasten
-      const w = Math.max(80, right - left), h = Math.round(w * 1.28);
-      Object.assign(photo.style, { left: left + 'px', width: w + 'px', top: (bottom - h) + 'px', height: h + 'px' });
+      const top = Math.min(...first.map((b) => b.y)) + first[0].h * 0.1;            // Oberkante der Großbuchstaben
+      const bottom = role ? box(role).y + role.offsetHeight : Math.max(...second.map((b) => b.y + b.h));
+      const free = right - (Math.max(...first.map((b) => b.x + b.w)) + 16);
+      const w = Math.round(Math.max(90, Math.min(free, right * 0.34))), h = Math.round(w * 1.25);
+      Object.assign(photo.style, { left: (right - w) + 'px', width: w + 'px', top: Math.round((top + bottom) / 2 - h / 2) + 'px', height: h + 'px' });
     };
     const show = () => { place(); setTimeout(() => photo.classList.add('is-in'), 420); };
     if (typeof afterIntro === 'function') afterIntro(() => setTimeout(show, 200)); else show();
@@ -122,6 +125,52 @@
       skills.forEach((s, i) => setTimeout(() => typeIn(s, 320), 260 + i * 90));
     }, '-8%');
   });
+
+  /* ── Me: eigene Seite (cv.js überspringt auf dem Handy die Story). Satz Wort für Wort, Tools als gruppiertes Raster,
+       Sticker poppen auf — jeweils einmal beim Hereinscrollen. Die Pillen-Physik (cv.js) bleibt. ── */
+  const meStory = document.querySelector('.cvs.is-phone');
+  if (meStory) {
+    const cloud = meStory.querySelector('.cvs-cloud');
+    if (cloud) {
+      const byName = {};
+      [...cloud.children].forEach((li) => { byName[li.querySelector('.cvs-i3d-name').textContent.trim()] = li; });
+      const GROUPS = [
+        ['Design & Video', ['Figma', 'Illustrator', 'Photoshop', 'Lightroom Classic', 'DaVinci Resolve Studio']],
+        ['Code', ['HTML5', 'CSS3', 'JavaScript', 'Python']],
+        ['Workflow & AI', ['Git', 'GitHub', 'GitLab', 'Claude']]
+      ];
+      const tools = document.createElement('div');
+      tools.className = 'm-tools';
+      GROUPS.forEach(([title, names], gi) => {
+        const g = document.createElement('div');
+        g.className = 'm-tools-group';
+        g.innerHTML = '<p class="m-tools-k"><span>0' + (gi + 1) + '</span>' + title + '</p><ul class="m-tools-grid"></ul>';
+        const ul = g.querySelector('ul');
+        names.forEach((n) => { if (byName[n]) { ul.appendChild(byName[n]); delete byName[n]; } });
+        Object.keys(byName).forEach((n) => { if (gi === GROUPS.length - 1) ul.appendChild(byName[n]); });   // falls ein Tool dazukommt
+        tools.appendChild(g);
+      });
+      cloud.replaceWith(tools);
+      tools.addEventListener('click', (e) => {                          // Antippen: Münzwurf (Drehung, cv.js räumt danach auf)
+        const li = e.target.closest('.cvs-i3d');
+        if (li && !PX_REDUCE && !li.classList.contains('is-spin')) li.classList.add('is-spin');
+      });
+      if (live) tools.querySelectorAll('.cvs-i3d').forEach((li) => {
+        li.style.clipPath = 'inset(50%)';
+        onEnterOnce(li, () => setTimeout(() => build(li, 8, 520), (li.parentNode.children.length > 1 ? [...li.parentNode.children].indexOf(li) : 0) * 70), '-6%');
+      });
+    }
+    if (!PX_REDUCE) {
+      const words = [...meStory.querySelectorAll('.cvs-word')];
+      const big = meStory.querySelector('.cvs-big');
+      words.forEach((w, i) => { w.classList.add('m-word'); w.style.transitionDelay = (i * 70) + 'ms'; });
+      if (big) onEnterOnce(big, () => words.forEach((w) => w.classList.add('is-in')), '-12%');
+      const stickers = [...meStory.querySelectorAll('.cvs-sticker')];
+      const list = meStory.querySelector('.cvs-stickers');
+      stickers.forEach((s, i) => { s.classList.add('m-pop'); s.style.transitionDelay = (i * 55) + 'ms'; });
+      if (list) onEnterOnce(list, () => stickers.forEach((s) => s.classList.add('is-in')), '-10%');
+    }
+  }
 
   /* ── My Work: Zähler unter jeder Galerie (nach projects.js, das die Projekte ebenfalls auf window baut) ── */
   window.addEventListener('DOMContentLoaded', () => {
