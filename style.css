@@ -255,24 +255,79 @@ body::before {
 
 
 /* ============================
-   HERO
+   HERO — Porträt als Hintergrund (script.js → heroInit, initHero)
+   Foto bildschirmfüllend, abgedunkelt; Lichtkegel auf der Person in der Mitte, Ränder dunkler → Schrift rundherum lesbar.
+   Feine senkrechte Haarlinien; links Kennzahlen + Name, rechts Zitat + Eckdaten, unten rechts „Showreel".
 ============================ */
-.hero {
-  height: 100vh; min-height: 640px;
-  background: var(--bg);
-  display: flex; flex-direction: column; justify-content: center;
-  align-items: stretch;
-  padding-top: 40px; padding-bottom: 3vh;
-  position: relative; overflow: visible; overflow-x: clip; gap: 0;   /* Reel-Zoom darf nicht seitlich überstehen (Handy zoomt sonst heraus) */
+.hx {
+  --hx-x: var(--edge, 28px);                           /* gleicher Seitenrand wie alle anderen Abschnitte */
+  position: relative; z-index: 1;
+  height: 100vh; height: 100svh; min-height: 620px;
+  overflow: hidden; background: #141414; color: var(--ink);
 }
+.hx-bg { position: absolute; inset: 0; z-index: 0; will-change: transform; transform-origin: 50% 0; }
+.hx-bg img, .hx-person img {
+  display: block; width: 100%; height: 100%; object-fit: cover; object-position: 49% 30%;
+  transform: scale(1.04);                              /* blendet den hellen Rand der Wand aus */
+  will-change: transform, translate;
+}
+/* Person: eigene Ebene vor Wand + Linien (Fotos ohne Filter, in Originalfarben) */
+.hx-person { position: absolute; inset: 0; z-index: 3; pointer-events: none; will-change: transform; transform-origin: 50% 100%; }
+.hx-fade {                                             /* unten dunkler für Name + Text (liegt auch über der Person) */
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: linear-gradient(to top, rgba(20, 20, 20, 0.92) 0%, rgba(20, 20, 20, 0) 34%);
+}
+/* Lichtkegel hinter der Person, dunkle Ränder (nur auf der Wand) */
+.hx-bg::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 34% 70% at 49% 46%, rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 0.34) 55%, rgba(20, 20, 20, 0.86) 100%),
+    linear-gradient(to bottom, rgba(20, 20, 20, 0.6) 0%, rgba(20, 20, 20, 0) 22%);
+}
+.hx-shade { position: absolute; inset: 0; z-index: 4; background: #141414; opacity: 0; pointer-events: none; }   /* dunkelt beim Wegscrollen ab */
+.hx-grid { position: absolute; inset: 0; z-index: 1; display: flex; justify-content: space-evenly; pointer-events: none; }
+.hx-grid i { width: 1px; height: 100%; background: rgba(255, 255, 255, 0.09); transform-origin: 50% 0; }
 
-.hero-middle-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  flex: 1;
+/* Inhalte */
+.hx-left, .hx-right, .hx-bottom, .hx-reel { position: absolute; z-index: 5; }
+.hx-left { left: var(--hx-x); top: 30%; display: flex; flex-direction: column; gap: clamp(18px, 3.4vh, 34px); margin: 0; padding: 0; list-style: none; }
+.hx-stat { display: flex; flex-direction: column; gap: 6px; }
+.hx-num { display: inline-flex; height: 1em; overflow: hidden; font-family: 'Anton', Impact, sans-serif; font-size: clamp(2.4rem, 3.4vw, 3.8rem); line-height: 1; }
+.hx-d { display: flex; flex-direction: column; transform: translateY(0); transition: transform 1.4s var(--ease-out-expo); transition-delay: calc(var(--k) * 90ms); }
+.hx-d > span { display: block; height: 1em; line-height: 1; }
+.hx-num.is-on .hx-d, .hx.is-still .hx-d { transform: translateY(calc(var(--d) * -1em)); }
+.hx-lab, .hx-k { font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-label); letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.62); }
+
+.hx-bottom { left: var(--hx-x); bottom: clamp(28px, 6vh, 64px); max-width: min(46vw, 640px); }
+.hx-name { margin: 0 0 18px; font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: clamp(2.8rem, 5.4vw, 6.6rem); line-height: 0.92; letter-spacing: 0.005em; text-transform: uppercase; }
+.hx-mask { display: block; overflow: hidden; padding-bottom: 0.04em; }
+.hx-mask > span { display: block; }
+.hx-text { margin: 0; max-width: 46ch; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.65; color: rgba(255, 255, 255, 0.82); white-space: pre-wrap; }
+.hx-text::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 10px; background: var(--accent); vertical-align: 0.05em; }
+
+.hx-right { right: var(--hx-x); top: 30%; display: flex; flex-direction: column; align-items: flex-end; gap: clamp(18px, 3vh, 30px); margin: 0; padding: 0; list-style: none; text-align: right; }
+.hx-quote { margin: 0 0 6px; max-width: 30ch; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; color: rgba(255, 255, 255, 0.86); }
+.hx-item { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.hx-v { font-family: 'Anton', Impact, sans-serif; font-size: clamp(1.3rem, 1.6vw, 1.8rem); line-height: 1; text-transform: uppercase; }
+
+.hx-reel { right: var(--hx-x); bottom: clamp(28px, 6vh, 64px); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right; }
+.hx-note { margin: 0; max-width: 34ch; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6; color: rgba(255, 255, 255, 0.82); }
+
+/* Auftritt (heroInit setzt .is-in; .is-still = sofort, z. B. nach dem Seitenwechsel) */
+.hx-bg img { transition: transform 2.2s var(--ease-out-expo); }
+.hx:not(.is-in):not(.is-still) .hx-bg img { transform: scale(1.16); }
+.hx-person img { transition: transform 1.8s var(--ease-out-expo) 0.15s, opacity 1s ease 0.15s; }
+.hx:not(.is-in):not(.is-still) .hx-person img { transform: scale(1.04) translateY(6%); opacity: 0; }
+.hx .hx-grid i { transform: scaleY(0); transition: transform 1.6s var(--ease-out-expo); transition-delay: calc(var(--i) * 70ms); }
+.hx.is-in .hx-grid i, .hx.is-still .hx-grid i { transform: none; }
+.hx-mask > span { transform: translateY(105%); transition: transform 1.1s var(--ease-out-expo); }
+.hx-mask + .hx-mask > span { transition-delay: 0.08s; }
+.hx.is-in .hx-mask > span, .hx.is-still .hx-mask > span { transform: none; }
+.hx-rv { opacity: 0; transform: translateY(18px); transition: opacity 0.8s ease, transform 1.1s var(--ease-out-expo); transition-delay: calc(0.35s + var(--r, 0) * 0.1s); }
+.hx.is-in .hx-rv, .hx.is-still .hx-rv { opacity: 1; transform: none; }
+.hx.is-still .hx-rv, .hx.is-still .hx-mask > span, .hx.is-still .hx-grid i, .hx.is-still .hx-bg img, .hx.is-still .hx-person img { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .hx-bg img, .hx-person img, .hx-grid i, .hx-mask > span, .hx-rv, .hx-d { transition: none !important; }
 }
 
 .hero-dust { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }   /* Punktraster am Cursor — unter Name, Bildern, Video (script.js → initHeroParticles) */
@@ -299,7 +354,6 @@ body::before {
 .hp-chip svg { width: 9px; height: 9px; flex: none; }
 .hp-chip path { fill: currentColor; }
 .hero-play.is-on .hp-chip { clip-path: inset(0 0 0 0); }
-.play-reel-on #heroImgCard, .play-reel-on #heroImgCard * { cursor: none; }   /* nur ein Zeiger sichtbar */
 @media (prefers-reduced-motion: reduce) { .hp-chip { transition: none; } }
 /* ============================
    SCROLL-ANZEIGE rechts (script.js → initScrollReveals)
@@ -334,170 +388,6 @@ body::before {
 .psl-d > span, .psl-u { display: block; height: 1em; line-height: 1; }
 @media (max-width: 760px) { .px-track { width: 100px; } .psl { right: 24px; } }
 @media (prefers-reduced-motion: reduce) { .psl, .psl-d { transition: none; } }
-.hero-img-card {
-  position: absolute;
-  left: 50%;
-  top: auto;
-  flex-shrink: 0;
-  display: flex; flex-direction: column;
-  width: clamp(240px, 26vw, 440px);
-  opacity: 0;
-  will-change: transform; z-index: 4;
-  transform-origin: 50% 50%;
-  overflow: visible;
-}
-
-.hero-img-wrap {
-  width: 100%; aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: 0; box-shadow: var(--shadow-lg);
-  clip-path: inset(50% 0 50% 0);
-  transition: none;
-}
-
-.hero-img-wrap.is-revealed {
-  clip-path: inset(0% 0 0% 0);
-  transition: clip-path 0.82s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hero-img-wrap img {
-  width: 100%; height: 100%; object-fit: cover; display: block;
-  filter: saturate(0.85) brightness(0.97);
-  transition: filter 0.5s ease;
-}
-
-.hero-name-row {
-  position: absolute;
-  inset: 0; z-index: 6;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; pointer-events: none;
-}
-
-.hero-center-block {
-  position: absolute;
-  inset: 0; z-index: 7;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 12px; text-align: center;
-  pointer-events: none;
-}
-
-.hero-title-clip {
-  overflow: hidden;
-  padding-top: 1.5em;
-  margin-top: -1.5em;
-  padding-bottom: 0.15em;
-}
-.hero-subtitle-row { overflow: hidden; }
-
-.hero-subtitle {
-  display: block;
-  font-family: var(--font-mono); font-size: clamp(0.65rem, 1vw, 0.95rem);
-  font-weight: 400; letter-spacing: 0.1em; color: var(--ink-muted);
-  text-transform: none; will-change: transform; transform: translateY(-110%);
-}
-
-.hero-word {
-  font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
-  font-weight: 400; font-style: normal;
-  line-height: 0.88; letter-spacing: -0.02em;
-  color: var(--ink); text-transform: uppercase;
-  display: block; white-space: nowrap;
-  will-change: transform; transform: translateY(110%);
-}
-
-.hero-word--fullname {
-  display: block; white-space: nowrap;
-  mix-blend-mode: difference;
-  color: #ffffff;
-  font-size: clamp(2rem, 8.5vw, 10rem);
-  padding-inline: 0.08em;               /* Puffer: das schräge Bein des „K" ragt über den Textkasten → sonst schneidet der Clip es ab */
-}
-
-/* ============================
-   HERO — ZOOM PARALLAX PHOTOS
-============================ */
-.hero-parallax-stage {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-  overflow: hidden;
-}
-
-.hero-parallax-item {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  will-change: transform;
-  transform-origin: center center;
-  opacity: 0;
-}
-
-.hero-parallax-wrap {
-  position: absolute;
-  overflow: hidden;
-  clip-path: inset(50% 0 50% 0);
-  transition: none;
-}
-
-.hero-parallax-wrap.is-revealed {
-  clip-path: inset(0% 0 0% 0);
-  transition: clip-path 0.72s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.hero-parallax-wrap img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  filter: saturate(0.82) brightness(0.96);
-}
-
-.hero-parallax-tl {
-  width: 18vw; height: 24vw;
-  top: 50%;
-  left: calc(50% - 13vw - 1.5vw - 18vw);
-  transform: translate(0, -50%);
-}
-
-.hero-parallax-tr {
-  width: 20vw; height: 13vw;
-  top: 50%;
-  left: calc(50% + 13vw + 1.5vw);
-  transform: translate(0, -50%);
-}
-
-.hero-parallax-bl {
-  width: 16vw; height: 10vw;
-  top: calc(50% - 7.3vw - 1.5vw - 10vw);
-  left: calc(50% - 13vw);
-  transform: none;
-}
-
-.hero-parallax-br {
-  width: 22vw; height: 13vw;
-  top: calc(50% + 7.3vw + 1.5vw);
-  left: calc(50% + 13vw - 22vw);
-  transform: none;
-}
-
-.hero-parallax-sm {
-  width: 13vw; height: 9vw;
-  top: calc(50% - 7.3vw - 1.5vw - 9vw);
-  left: calc(50% + 13vw + 1.5vw);
-  transform: none;
-}
-
-.hero-parallax-br2 {
-  width: 15vw; height: 10vw;
-  top: calc(50% + 7.3vw + 1.5vw);
-  left: calc(50% - 13vw - 1.5vw - 15vw);
-  transform: none;
-}
-
 /* ============================
    BOTTOM SHEET
 ============================ */
@@ -509,22 +399,6 @@ body::before {
 }
 
 .main-content .services-section { max-height: none; overflow: visible; overflow-x: clip; padding-top: 60px; }   /* Bänder ragen seitlich hinaus → abschneiden */
-
-/* ============================
-   HERO NAME — LETTER EASTER EGG
-============================ */
-.name-letter-wrap {
-  display: inline-flex; align-items: baseline;
-  gap: 0; letter-spacing: inherit; vertical-align: baseline;
-}
-
-.nl {
-  display: inline-block;
-  position: relative;
-  cursor: default;
-  user-select: none;
-}
-.nl--space { display: inline-block; width: 0.28em; }
 
 /* ============================
    WHAT I DO (script.js → initServices)

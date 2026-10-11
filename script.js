@@ -1109,327 +1109,106 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 })();
 
 /* ============================
-   PLAY REEL — Label folgt dem Cursor über dem Hero-Video
-   Ohne Glättung/Nachziehen: pro Bild genau eine Transform auf die aktuelle Mausposition (läuft auf der GPU)
-   → auf 60 Hz genauso direkt wie auf 144 Hz. Erscheint, sobald der Zeiger über dem sichtbaren Video steht —
-   auch wenn das Video beim Scrollen unter den stillstehenden Zeiger wandert. Optik: style.css → .hero-play.
-============================ */
-(function initPlayReel() {
-  const card = document.getElementById('heroImgCard'), play = document.getElementById('heroPlay');
-  if (!card || !play || PHONE) return;
-  if (window.matchMedia && !window.matchMedia('(pointer: fine)').matches) return;   // Touch: kein Maus-Label
-  let mx = -1, my = -1, on = false, raf = 0;
-  function place() { raf = 0; play.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)'; }
-  function check() {
-    const r = card.getBoundingClientRect();
-    let inside = mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
-    /* nicht über der Navigation (ihre freien Flächen lassen die Maus durch) und nicht über Inhalten, die sich über das Video schieben */
-    if (inside) {
-      const nav = document.getElementById('mainNav');
-      if (nav && my <= nav.getBoundingClientRect().bottom) inside = false;
-      const hit = document.elementFromPoint(mx, my);
-      if (hit && !hit.closest('#hero')) inside = false;
-    }
-    const vis = typeof gsap === 'undefined' || +gsap.getProperty(card, 'opacity') > 0.6;
-    const next = inside && vis;
-    if (next === on) return;
-    on = next;
-    if (on) place();                                           // beim Erscheinen sofort am Zeiger
-    play.classList.toggle('is-on', on);
-    document.documentElement.classList.toggle('play-reel-on', on);
-    window.__playCursorActive = on;                          // Hero-Partikel pausieren über dem Video
-  }
-  window.addEventListener('pointermove', (e) => {
-    mx = e.clientX; my = e.clientY;
-    check();
-    if (on && !raf) raf = requestAnimationFrame(place);
-  }, { passive: true });
-  if (typeof lenis !== 'undefined' && lenis.on) lenis.on('scroll', check);
-  document.addEventListener('pointerleave', () => { mx = my = -1; check(); });
-})();
-/* ============================
-   HERO — Reveal
+   HERO — in Ebenen (index.html → #hero)
+   · Wand (hinten, unscharf), feine senkrechte Haarlinien, Person (vorne, freigestellt); Lichtkegel auf der Person
+   · Maus: die Person bewegt sich dezent mit (max. ±4 px), die Wand kaum gegenläufig → leichte Tiefe (nur mit Maus)
+   · links Alter + Name, rechts Zitat + Eckdaten, unten rechts Platzhaltertext
+   · Auftritt (heroInit, nach der Intro): Linien wachsen von oben, Zahlen rollen hoch wie die Prozentanzeige,
+     Name steigt aus der Maske, Text tippt sich ein, der Rest gleitet nacheinander herein; das Foto setzt sich aus
+     leichtem Zoom
+   · Scrollen (Parallax): die Wand sinkt am langsamsten weg, die Person etwas schneller, die Texte am schnellsten;
+     und blenden aus; „What I do" schiebt sich mit schräger Oberkante darüber (panelEdge)
 ============================ */
 const heroInit = (instant) => {
-  const elName  = document.getElementById('heroWordFullname');
-  /* Start melden: andere Hero-Teile (Handy: Showreel-Karte, Foto — mobile.js) erscheinen gleichzeitig mit dem Namen */
+  const hero = document.getElementById('hero');
   window.__heroStarted = true;
   setTimeout(() => window.dispatchEvent(new CustomEvent('jcky:hero-in', { detail: { instant: !!instant } })), 0);
-
-  gsap.set('#heroWordFullname', { y: '110%' });
-  gsap.set('#heroImgCard',      { opacity: 0, y: 0, xPercent: -50, transformOrigin: '50% 50%' });
-  gsap.set('.hero-subtitle',    { y: '-110%' });
-
-  /* Handy: Name bricht in zwei Zeilen (mobile.css) → gemessen wird die breiteste Zeile; bricht ein Wort selbst um, ist es zu groß */
-  const lineW = () => {
-    let a = Infinity, b = -Infinity; const tops = new Set();
-    elName.querySelectorAll('.nl:not(.nl--space)').forEach(l => { const r = l.getBoundingClientRect(); tops.add(Math.round(r.top)); if (r.left < a) a = r.left; if (r.right > b) b = r.right; });
-    return tops.size > 2 ? Infinity : b - a;
-  };
-  const fitFullname = () => {
-    if (!elName) return;
-    const vw = document.documentElement.clientWidth;
-    const targetW = PHONE ? (window.innerWidth > window.innerHeight ? vw * 0.42 : vw - 32) : vw / 2.2;   // Handy quer: Name links, Reel rechts
-    let lo = 10, hi = targetW * 2;
-    elName.style.visibility = 'hidden';
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + hi) / 2;
-      elName.style.fontSize = mid + 'px';
-      if ((PHONE ? lineW() : elName.scrollWidth) <= targetW) lo = mid;
-      else hi = mid;
-    }
-    elName.style.fontSize = lo + 'px';
-    elName.style.visibility = '';
-  };
-
-  fitFullname();
-  let fitRaf;
-  window.addEventListener('resize', () => {
-    clearTimeout(fitRaf);
-    fitRaf = setTimeout(fitFullname, 120);
-  });
-
-  if (instant) {
-    /* Interne Ankunft: Hero steht sofort — die ASCII-Transition ist der Auftritt. */
-    gsap.set('#heroWordFullname', { y: '0%' });
-    gsap.set('.hero-subtitle',    { y: '0%' });
-    return;
-  }
-
-  const subtitle = document.querySelector('.hero-subtitle');
-  typePrepare(subtitle);                                          // Untertitel tippt sich ein, während er hereingleitet
-  const heroTL = gsap.timeline({ delay: 0.0 });
-  heroTL
-    .to('#heroWordFullname', { y: '0%', duration: 0.75, ease: 'power4.out' }, 0.05)
-    .to('.hero-subtitle',    { y: '0%', duration: 0.6,  ease: 'power3.out' }, 0.65)
-    .call(() => typeIn(subtitle, 650), null, 0.7);
+  if (!hero) return;
+  hero.classList.add(instant || PX_REDUCE ? 'is-still' : 'is-in');
+  /* Zahlen rollen auf ihren Wert */
+  hero.querySelectorAll('.hx-num').forEach((n, i) => setTimeout(() => n.classList.add('is-on'), instant ? 0 : 500 + i * 120));   // Alter rollt hoch
+  /* Text tippt sich ein */
+  const txt = hero.querySelector('.hx-text');
+  if (txt && !instant && !PX_REDUCE) setTimeout(() => typeIn(txt, 1100), 900);
 };
-
-/* ============================
-   EASTER EGG — Name letter hover
-============================ */
-(function initNameEasterEgg() {
-  const wrap = document.getElementById('heroNameLetters');
-  if (!wrap) return;
-
-  const chars = [...'JACOB WEISSENBACK'];
-  wrap.textContent = '';
-
-  chars.forEach((ch) => {
-    if (ch === ' ') {
-      const sp = document.createElement('span');
-      sp.className = 'nl nl--space';
-      sp.setAttribute('aria-hidden', 'true');
-      wrap.appendChild(sp);
-      return;
-    }
-    const span = document.createElement('span');
-    span.className = 'nl';
-    span.textContent = ch;
-    wrap.appendChild(span);
-  });
-})();
-
 window.__heroInit = heroInit;
 
+(function initHero() {
+  const hero = document.getElementById('hero');
+  if (!hero) return;
+  /* Alter aus dem Geburtsdatum (17. Jänner 2003) */
+  const born = new Date(2003, 0, 17), today = new Date();
+  const age = today.getFullYear() - born.getFullYear() - ((today.getMonth() < born.getMonth() || (today.getMonth() === born.getMonth() && today.getDate() < born.getDate())) ? 1 : 0);
+  hero.querySelectorAll('[data-age]').forEach((el) => { el.dataset.value = String(age); });
+  /* Zahlen als rollende Ziffern (Spalten 0–9, wie die Prozentanzeige) */
+  const col = '0123456789'.split('').map(d => '<span>' + d + '</span>').join('');
+  hero.querySelectorAll('.hx-num').forEach((n) => {
+    const v = n.dataset.value || n.textContent.trim();
+    n.setAttribute('aria-label', v);
+    n.innerHTML = v.split('').map((d, k) => '<span class="hx-d" style="--d:' + d + ';--k:' + k + '" aria-hidden="true">' + col + '</span>').join('');
+  });
+  const txt = hero.querySelector('.hx-text');
+  if (txt && !PX_REDUCE) typePrepare(txt);
 
-/* ============================
-   SCROLL SYSTEM
-   Phase A [0.00 → 0.40] — Name letters float dissolve
-   Phase B [0.35 → 0.78] — Parallax photos
-   danach — „What I do" scrollt mit schräger Oberkante herein (panelEdge)
-============================ */
-(function initScrollSystem() {
-  const hero       = document.getElementById('hero');
-  const imgCard    = document.getElementById('heroImgCard');
-  const nameEl     = document.getElementById('heroWordFullname');
-  const roleEl     = document.getElementById('heroSubtitleRow');
-  const panel      = document.getElementById('mainContent');
-  const zpStage    = document.getElementById('heroParallaxStage');
-  const zpItems    = zpStage ? [...zpStage.querySelectorAll('.hero-parallax-item')] : [];
-
-  if (!hero || !roleEl || !panel || !imgCard || !nameEl) return;
-  if (PHONE) return;                                    // Handy: Hero steht ohne Pin, Reel als Karte (mobile.js)
-
-  /* Statische Referenzen EINMALIG cachen — update() läuft pro Scroll-Frame,
-     querySelector/parseFloat dort waren teuer und unnötig. */
-  const letters     = [...nameEl.querySelectorAll('.nl:not(.nl--space)')];
-  const subtitleEl  = document.querySelector('.hero-subtitle');
-  const heroImgWrap = imgCard.querySelector('.hero-img-wrap');
-  const zpData      = zpItems.map(item => ({
-    item,
-    wrap:  item.querySelector('.hero-parallax-wrap'),
-    scale: parseFloat(item.dataset.scale) || 1.5,
-    delay: parseFloat(item.dataset.delay) || 0,
-  }));
-
-  const c01 = v => Math.max(0, Math.min(1, v));
-  const eIO = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-  const ph  = (p, a, b, easeFn) => {
-    const t = c01((p - a) / (b - a));
-    return easeFn ? easeFn(t) : t;
-  };
-
-  let cardRect = null;
-  let pinLeft  = false;
-
-  /* ── PIXEL-WIPE: gepixelte Treppen-Kante statt gerader clip-path-Linie ──
-     Blöcke in fester Größe; jede Spalte enthüllt gestaffelt → gezackte Pixel-Grenze. */
-  const PX_BLOCK = 72;        // Blockgröße in px (wie in der Referenz)
-  const PX_JITTER_ROWS = 3;   // wie viele Blockreihen die Spalten gegeneinander versetzt sind
-  let pxCols = 1, pxRows = 1, pxJit = [];
-  function pxHash(i) { let h = (i * 2654435761) >>> 0; h ^= h >>> 15; return (h >>> 0) / 4294967296; }
-  function pxMeasure() {
-    pxCols = Math.max(1, Math.ceil(window.innerWidth / PX_BLOCK));
-    pxRows = Math.max(1, Math.ceil(window.innerHeight / PX_BLOCK));
-    pxJit = [];
-    for (let i = 0; i < pxCols; i++) pxJit[i] = pxHash(i) * PX_JITTER_ROWS;  // stabil je Spalte
-  }
-  pxMeasure();
-
-  function measure() {
-    gsap.set(roleEl, { opacity: 1, y: 0 });
-    gsap.set(imgCard, { clearProps: 'transform' });
-    gsap.set(imgCard, { xPercent: -50 });
-    cardRect = imgCard.getBoundingClientRect();
-    pxMeasure();
-  }
-
-  /* „What I do" kommt unter dem Video mit weicher, schräger Oberkante herein (links tiefer) und zieht sich beim
-     Hereinscrollen gerade — wie die Kanten von „Selected Work" (statt der früheren Pixel-Blöcke) */
-  let lastEdge = '';
-  function panelEdge() {
-    const r = panel.getBoundingClientRect(), vh = window.innerHeight;
-    if (r.top > vh * 1.5 || r.top < -vh) return;
-    const S = Math.min(vh * 0.13, 120), k = c01((vh - r.top) / (vh * 0.75)), e = Math.pow(1 - k, 3);
-    const clip = e < 0.002 ? 'none' : 'polygon(0 ' + (S * e).toFixed(1) + 'px, 100% 0, 100% 100%, 0 100%)';
-    if (clip !== lastEdge) { lastEdge = clip; panel.style.clipPath = clip; }
-  }
-  panelEdge();
-  lenis.on('scroll', panelEdge);
-  window.addEventListener('resize', panelEdge);
-
-  function update(p) {
-    if (pinLeft) return;
-    if (!cardRect) return;
-
-    /* Zeitachse: bisherige Phasen laufen in q (0 … 1) über die ersten 80 % des Scrollwegs;
-       danach bleibt das Video kurz im Vollbild stehen (0.80–0.88), erst dann kommt die Services-Sektion. */
-    const q = Math.min(1, p / 0.80);
-
-    // Phase A — letters float up
-    const pA = ph(q, 0.04, 0.40, eIO);
-    const total   = letters.length;
-    const center  = (total - 1) / 2;
-
-    letters.forEach((el, i) => {
-      const distFromCenter = Math.abs(i - center) / center;
-      const staggerDelay = (1 - distFromCenter) * 0.30;
-      const t = Math.max(0, Math.min(1, (pA - staggerDelay) / (1 - staggerDelay)));
-      const e = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-      gsap.set(el, {
-        y:              -e * 60,
-        opacity:        1 - e,
-        filter:         `blur(${e * 8}px)`,
-        display:        'inline-block',
-        transformOrigin:'50% 100%',
+  /* Parallax beim Scrollen */
+  const bg = hero.querySelector('.hx-bg'), person = hero.querySelector('.hx-person'), shade = hero.querySelector('.hx-shade');
+  const groups = [...hero.querySelectorAll('[data-hx-speed]')];
+  const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  let last = -1;
+  function update() {
+    const y = window.scrollY, vh = phoneVH();
+    if (y > vh * 1.2 && last > vh * 1.2) return;
+    last = y;
+    const k = c01(y / vh);
+    if (!PX_REDUCE) {
+      bg.style.transform = 'translate3d(0,' + (y * 0.18).toFixed(1) + 'px,0) scale(' + (1 + k * 0.02).toFixed(4) + ')';   // dezent
+      person.style.transform = 'translate3d(0,' + (y * 0.1).toFixed(1) + 'px,0)';
+      groups.forEach((g) => {
+        const sp = parseFloat(g.dataset.hxSpeed) || 0.2;
+        g.style.transform = 'translate3d(0,' + (-y * sp).toFixed(1) + 'px,0)';
+        g.style.opacity = c01(1 - k * 1.6).toFixed(3);
       });
-    });
-
-    if (subtitleEl) gsap.set(subtitleEl, {
-      y:       -pA * 30,
-      opacity: c01(1 - pA * 3.5),
-      filter:  `blur(${pA * 8}px)`,
-    });
-
-    // Phase B — parallax photos
-    const pB        = ph(q, 0.35, 0.78, eIO);
-    const pCardZoom = ph(q, 0.78, 1.00, eIO);
-
-    const imgCardFadeIn = c01(ph(q, 0.35, 0.55));
-    const cardW    = imgCard.offsetWidth || window.innerWidth * 0.26;
-    const maxScale = Math.max(window.innerWidth / cardW, window.innerHeight / (cardW * 0.5625));
-    const cardZoom = 1 + pA * 0.05 + pCardZoom * (maxScale - 1.05);
-    gsap.set(imgCard, { scale: cardZoom, opacity: imgCardFadeIn, xPercent: -50, transformOrigin: '50% 50%' });
-    window.__heroFullscreen = pCardZoom > 0.9;   // Bild praktisch Vollbild → Play-Cursor aktiv
-
-    if (heroImgWrap) {
-      if (q >= 0.35) {
-        if (!heroImgWrap.classList.contains('is-revealed')) {
-          void heroImgWrap.offsetWidth;
-          heroImgWrap.classList.add('is-revealed');
-        }
-      } else {
-        heroImgWrap.classList.remove('is-revealed');
-      }
     }
+    shade.style.opacity = (k * 0.75).toFixed(3);
+  }
+  update();
+  lenis.on('scroll', update);
+  window.addEventListener('resize', update);
 
-    const pExit = ph(q, 0.78, 0.92, eIO);
-
-    zpData.forEach(({ item, wrap, scale: targetScale, delay }) => {
-      const itemP   = c01((pB - delay) / (1 - delay));
-      const fadeIn  = c01(itemP * 4);
-      const zoomVal = 1 + itemP * (targetScale - 1);
-      const exitScale   = zoomVal + pExit * 0.4;
-      const exitOpacity = fadeIn * c01(1 - pExit * 1.8);
-
-      gsap.set(item, { opacity: exitOpacity, scale: exitScale });
-
-      if (wrap) {
-        if (itemP > 0) {
-          if (!wrap.classList.contains('is-revealed')) {
-            void wrap.offsetWidth;
-            wrap.classList.add('is-revealed');
-          }
-        } else {
-          wrap.classList.remove('is-revealed');
-        }
-      }
-    });
-
+  /* Maus-Parallax: Person folgt spürbar, Wand minimal gegenläufig (weich nachgeführt) */
+  if (!PX_REDUCE && !PHONE && (!window.matchMedia || window.matchMedia('(pointer: fine)').matches)) {
+    const pImg = person.querySelector('img'), bImg = bg.querySelector('img');
+    let tx = 0, ty = 0, x = 0, yy = 0, raf = 0, lastT = 0;
+    const loop = (now) => {
+      const dt = Math.min(0.05, lastT ? (now - lastT) / 1000 : 0.016); lastT = now;
+      x = smoothTowards(x, tx, 0.14, dt); yy = smoothTowards(yy, ty, 0.14, dt);
+      pImg.style.translate = (x * 8).toFixed(2) + 'px ' + (yy * 4).toFixed(2) + 'px';      // dezent: max. ±4 px
+      bImg.style.translate = (-x * 2).toFixed(2) + 'px ' + (-yy * 1).toFixed(2) + 'px';
+      if (Math.abs(tx - x) > 0.001 || Math.abs(ty - yy) > 0.001) raf = requestAnimationFrame(loop); else { raf = 0; lastT = 0; }
+    };
+    hero.addEventListener('pointermove', (e) => {
+      const r = hero.getBoundingClientRect();
+      tx = (e.clientX - r.left) / r.width - 0.5; ty = (e.clientY - r.top) / r.height - 0.5;
+      if (!raf) raf = requestAnimationFrame(loop);
+    }, { passive: true });
+    hero.addEventListener('pointerleave', () => { tx = ty = 0; if (!raf) raf = requestAnimationFrame(loop); });
   }
 
-  function resetAll() {
-    gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
-    letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none' }));
-    gsap.set(roleEl, { opacity: 1 });
-    gsap.set(imgCard, { opacity: 0, xPercent: -50, scale: 1 });
-    if (subtitleEl) gsap.set(subtitleEl, { y: 0, opacity: 1, filter: 'blur(0px)' });
-    if (heroImgWrap) heroImgWrap.classList.remove('is-revealed');
-    zpData.forEach(({ item, wrap }) => {
-      gsap.set(item, { opacity: 0, scale: 1 });
-      if (wrap) wrap.classList.remove('is-revealed');
-    });
+  /* „What I do" schiebt sich mit weicher, schräger Oberkante über das Foto und zieht sich beim Hereinscrollen gerade */
+  const panel = document.getElementById('mainContent');
+  if (panel && !PX_REDUCE) {
+    let lastEdge = '';
+    const panelEdge = () => {
+      const r = panel.getBoundingClientRect(), vh = window.innerHeight;
+      if (r.top > vh * 1.5 || r.top < -vh) return;
+      const S = Math.min(vh * 0.13, 120), e = Math.pow(1 - c01((vh - r.top) / (vh * 0.75)), 3);
+      const clip = e < 0.002 ? 'none' : 'polygon(0 ' + (S * e).toFixed(1) + 'px, 100% 0, 100% 100%, 0 100%)';
+      if (clip !== lastEdge) { lastEdge = clip; panel.style.clipPath = clip; }
+    };
+    panelEdge();
+    lenis.on('scroll', panelEdge);
+    window.addEventListener('resize', panelEdge);
   }
-
-  measure();
-
-  ScrollTrigger.create({
-    trigger:       hero,
-    start:         'top top',
-    end:           '+=290%',                          // +60 %: kurze Haltephase im Vollbild-Video
-    pin:           true,
-    anticipatePin: 1,
-    scrub:         0.4,
-    onUpdate(self) { update(self.progress); },
-    onLeave()      { pinLeft = true; },
-    onEnterBack()  { pinLeft = false; },
-    onLeaveBack()  { resetAll(); },
-    onRefresh() {
-      pinLeft = false;
-      measure();
-      resetAll();
-      panelEdge();
-    },
-  });
-
-  document.fonts.ready.then(() => { measure(); ScrollTrigger.refresh(); });
-
-  let resizeRaf;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeRaf);
-    resizeRaf = setTimeout(() => { measure(); ScrollTrigger.refresh(); }, 150);
-  });
 })();
 
 /* ============================

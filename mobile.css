@@ -43,68 +43,24 @@ body::before { display: none; }
 .nav-right .nav-cell:last-child { padding-right: var(--m-pad); }
 
 /* ============================
-   START — Hero
+   START — Hero (Porträt als Hintergrund): Kennzahlen oben in einer Reihe, Name + Text unten, Showreel darunter
    ============================ */
-.hero {
-  height: 100vh; height: 100svh; min-height: 560px;
-  padding: 52px var(--m-pad) var(--m-pad);
-  justify-content: flex-end; gap: 28px;
+.hx { --hx-x: var(--m-pad); min-height: 520px; }
+.hx-bg img, .hx-person img { object-position: 49% 26%; }
+.hx-bg::after {
+  background:
+    radial-gradient(ellipse 60% 52% at 50% 42%, rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 0.4) 60%, rgba(20, 20, 20, 0.85) 100%),
+    linear-gradient(to bottom, rgba(20, 20, 20, 0.7) 0%, rgba(20, 20, 20, 0) 24%);
 }
-.hero-center-block {                                  /* Name + Rolle: links, groß, im oberen Teil */
-  position: relative; inset: auto; order: 1; flex: 1;
-  align-items: flex-start; justify-content: center; text-align: left;
-  gap: 16px; padding-top: 4vh;
-}
-.hero-word--fullname { padding-inline: 0 0.08em; line-height: 0.9; }
-.hero-title-clip { position: relative; }               /* über dem Foto, ohne eigene Ebene → der Name invertiert sich gegen das Foto */
-/* Porträt hinter dem Namen: rechts neben „JACOB“, unten hinter „…NBACK“ (Lage misst mobile.js aus den Buchstaben).
-   Der Name invertiert sich darüber (mix-blend-mode: difference) → bleibt lesbar */
-.m-hero-photo {
-  position: absolute; z-index: 0; display: block;
-  object-fit: cover; object-position: 50% 22%;
-  filter: grayscale(0.15);
-  clip-path: inset(100% 0 0 0); transition: clip-path 0.85s var(--ease-out-expo) 0.15s;
-  pointer-events: none;
-}
-.m-hero-photo.is-in { clip-path: inset(0); }
-.name-letter-wrap { display: flex; flex-wrap: wrap; align-items: baseline; }
-.nl--space { flex: 0 0 100%; width: auto; height: 0; }   /* zweite Zeile: WEISSENBÄCK */
-.hero-subtitle { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; }
-.hero-subtitle-row { display: flex; align-items: center; gap: 10px; }
-.hero-subtitle-row::before {                          /* kleines Pixel in Akzentfarbe vor der Rolle */
-  content: ''; width: 6px; height: 6px; flex: none; background: var(--accent);
-}
-
-.hero-middle-row { order: 2; flex: none; display: block; }
-.main-content { clip-path: none; will-change: auto; }          /* kein Aufziehen durch den Hero-Pin: Inhalt steht direkt darunter */
-.hero-name-row, .hero-parallax-stage, .hero-play, .hero-dust { display: none; }
-.hero-img-card {                                      /* Showreel als Karte, volle Breite */
-  position: relative; left: auto; top: auto;
-  width: 100%;
-  opacity: 1 !important; transform: none !important;   /* Desktop-Startwerte (unsichtbar, zentriert) gelten hier nicht */
-}
-.hero-img-wrap { aspect-ratio: 16 / 10; box-shadow: none; }
-.m-reel-chip {                                        /* „Play reel" sitzt fest auf der Karte (kein Cursor auf dem Handy) */
-  position: absolute; left: 12px; bottom: 12px; z-index: 2;
-  display: inline-flex; align-items: center; gap: 10px;
-  padding: 10px 14px 10px 12px;
-  background: var(--accent); color: var(--bg-dark);
-  font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
-  clip-path: inset(0 100% 0 0); transition: clip-path 0.7s var(--ease-out-expo) 0.35s;
-}
-.m-reel-chip svg { width: 9px; height: 9px; fill: currentColor; }
-.hero-img-wrap.is-revealed ~ .m-reel-chip, .m-reel-chip.is-on { clip-path: inset(0); }
-.m-reel-meta {                                        /* Bildunterschrift unter der Karte */
-  display: flex; justify-content: space-between; margin-top: 10px;
-  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-muted);
-}
-
-/* Handy quer: Name links, Reel rechts — sonst füllt die Karte den ganzen Bildschirm */
-@media (orientation: landscape) {
-  .hero { min-height: 340px; flex-direction: row; align-items: center; justify-content: space-between; gap: 28px; padding-top: 64px; padding-bottom: 20px; }
-  .hero-center-block { flex: 1; padding-top: 0; }
-  .hero-middle-row { width: 44%; }
-}
+.hx-fade { background: linear-gradient(to top, rgba(20, 20, 20, 0.95) 0%, rgba(20, 20, 20, 0) 45%); }
+.hx-grid i:nth-child(even) { display: none; }
+.hx-left { top: calc(52px + 22px); }
+.hx-num { font-size: 2.1rem; }
+.hx-right { display: none; }
+.hx-bottom { right: var(--m-pad); bottom: 24px; max-width: none; }
+.hx-name { font-size: 12.4vw; margin-bottom: 12px; }
+.hx-text { font-size: 12px; }
+.hx-reel { display: none; }                               /* Platzhaltertext nur am Desktop (kein Platz neben dem Namen) */
 
 /* ============================
    START — What I do
