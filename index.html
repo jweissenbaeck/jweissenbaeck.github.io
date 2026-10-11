@@ -320,52 +320,51 @@
 
 </section>
 
-<!-- STORY — „Von Pixeln zu Menschen": Pixel-Partikel morphen beim Scrollen durch drei Kapitel
-     (Pixel-Avatar → Salzburg → zurück zu Sternenstaub). Der Satz steht oben und baut sich aus Pixeln auf;
-     im dritten Kapitel blenden sich die Projektbilder ein (script.js → initStory, initWorkGrid).
-     Klick auf ein Bild öffnet eine kleine Vorschau (#wkOpen) mit Pfeil zur Projektseite (data-href). -->
-<section class="story" id="storySection" aria-label="About me and selected work">
-  <div class="story-stage">
-
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="scribbleRough" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3.2" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
-    <div class="story-lines" id="storyLines">
-      <p class="story-line">Hi, I'm Jacob — but you can call me <span class="story-nb"><span class="story-mark">JACKY<svg class="story-scribble story-scribble--jcky" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" pathLength="1" d="M14 33L19 10L33 27L47 4L60 26L76 8L83 33C62 29 38 35 12 31"/><path class="s-thick" pathLength="1" d="M4 92C28 86 58 97 97 88L8 98C40 95 70 100 92 97"/><path class="s-thin" pathLength="1" d="M93 44L103 37M95 58L106 58M93 72L103 79"/></g></svg></span>.</span></p>
-      <p class="story-line">Born and raised in <span class="story-nb"><span class="story-mark">Salzburg<svg class="story-scribble story-scribble--salzburg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" pathLength="1" d="M2 90C20 84 45 95 70 87C82 83 92 86 99 84"/><path class="s-thin" pathLength="1" d="M97 92L6 96L92 99"/><path class="s-thick" pathLength="1" d="M100 24C93 17 86.5 10 87 1C87.5 -7 97 -8 100 0C103 -8 112.5 -7 113 1C113.5 10 107 17 100 24L97.5 28.5"/><path class="s-thin" pathLength="1" d="M98.5 20.5C92.5 14.5 89.5 8.5 90 2.5"/><path class="s-thin" pathLength="1" d="M117.5 -5L122 -10M119 3.5L125 3"/></g></svg></span>,</span> still the place I call home.</p>
-      <p class="story-line">I love designing — some of <span class="story-mark story-mark--work">my work<svg class="story-scribble story-scribble--work" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><g filter="url(#scribbleRough)"><path class="s-thick" d="M4 66C28 61 62 70 95 63"/><path class="s-thin" d="M12 73C38 70 64 76 86 71"/></g></svg></span> looks like this.</p>
-    </div>
-
-    <ul class="wk" id="wkGrid" aria-label="Selected work">
-      <li class="wk-item" data-cat="UI / UX Design" data-year="2026" data-href="projects.html">
-        <button class="wk-card" type="button" aria-haspopup="dialog">
-          <span class="wk-frame"><img src="https://picsum.photos/id/1015/1600/1000" alt="Lumina — UI / UX Design" loading="lazy" decoding="async"><img class="wk-detail" src="https://picsum.photos/id/1016/1600/1000" alt="" loading="lazy" decoding="async"></span>
-          <span class="wk-cap"><span class="wk-name" data-t="Lumina">Lumina</span><span class="wk-meta">UI / UX Design — 2026</span></span>
-        </button>
-      </li>
-      <li class="wk-item" data-cat="Video Editing" data-year="2026" data-href="projects.html">
-        <button class="wk-card" type="button" aria-haspopup="dialog">
-          <span class="wk-frame"><img src="https://picsum.photos/id/1043/1600/1000" alt="Kane — Video Editing" loading="lazy" decoding="async"><img class="wk-detail" src="https://picsum.photos/id/1044/1600/1000" alt="" loading="lazy" decoding="async"></span>
-          <span class="wk-cap"><span class="wk-name" data-t="Kane">Kane</span><span class="wk-meta">Video Editing — 2026</span></span>
-        </button>
-      </li>
-      <li class="wk-item" data-cat="UI / UX Design" data-year="2025" data-href="projects.html">
-        <button class="wk-card" type="button" aria-haspopup="dialog">
-          <span class="wk-frame"><img src="https://picsum.photos/id/1050/1600/1000" alt="Flux — UI / UX Design" loading="lazy" decoding="async"><img class="wk-detail" src="https://picsum.photos/id/1051/1600/1000" alt="" loading="lazy" decoding="async"></span>
-          <span class="wk-cap"><span class="wk-name" data-t="Flux">Flux</span><span class="wk-meta">UI / UX Design — 2025</span></span>
-        </button>
-      </li>
-      <li class="wk-item" data-cat="Photography" data-year="2024" data-href="projects.html">
-        <button class="wk-card" type="button" aria-haspopup="dialog">
-          <span class="wk-frame"><img src="https://picsum.photos/id/1074/1600/1000" alt="Vertex — Photography" loading="lazy" decoding="async"><img class="wk-detail" src="https://picsum.photos/id/1075/1600/1000" alt="" loading="lazy" decoding="async"></span>
-          <span class="wk-cap"><span class="wk-name" data-t="Vertex">Vertex</span><span class="wk-meta">Photography — 2024</span></span>
-        </button>
-      </li>
-    </ul>
-
-  </div>
-
+<!-- SELECTED WORK — Projekt-Index auf der Akzentfläche (script.js → initSelectedWork).
+     Zeile = Link zum Projekt auf „My Work". Hover: dunkle Fläche zieht von unten auf, Name rollt um, Pfeil schießt raus,
+     Vorschaubild am Zeiger. Handy: kleines Vorschaubild in der Zeile. -->
+<section class="sw" id="selectedWork" aria-labelledby="swTitle">
+  <header class="sw-head">
+    <h2 class="sw-title" id="swTitle"><span class="sw-title-in">Selected Work</span></h2>
+  </header>
+  <div class="sw-cols" aria-hidden="true"><span>No.</span><span>Project</span><span>Category</span><span>Year</span></div>
+  <ol class="sw-list">
+      <li><a class="sw-row" href="projects.html#lumina" data-img="https://picsum.photos/id/1015/1200/900">
+        <span class="sw-n">01</span>
+        <span class="sw-name">Lumina</span>
+        <span class="sw-cat">UI / UX Design</span>
+        <span class="sw-year">2026</span>
+        <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
+        <img class="sw-thumb" src="https://picsum.photos/id/1015/480/360" alt="" loading="lazy" decoding="async">
+      </a></li>
+      <li><a class="sw-row" href="projects.html#kane" data-img="https://picsum.photos/id/1043/1200/900">
+        <span class="sw-n">02</span>
+        <span class="sw-name">Kane</span>
+        <span class="sw-cat">Video Editing</span>
+        <span class="sw-year">2026</span>
+        <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
+        <img class="sw-thumb" src="https://picsum.photos/id/1043/480/360" alt="" loading="lazy" decoding="async">
+      </a></li>
+      <li><a class="sw-row" href="projects.html#flux" data-img="https://picsum.photos/id/1050/1200/900">
+        <span class="sw-n">03</span>
+        <span class="sw-name">Flux</span>
+        <span class="sw-cat">UI / UX Design</span>
+        <span class="sw-year">2025</span>
+        <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
+        <img class="sw-thumb" src="https://picsum.photos/id/1050/480/360" alt="" loading="lazy" decoding="async">
+      </a></li>
+      <li><a class="sw-row" href="projects.html#vertex" data-img="https://picsum.photos/id/1074/1200/900">
+        <span class="sw-n">04</span>
+        <span class="sw-name">Vertex</span>
+        <span class="sw-cat">Photography</span>
+        <span class="sw-year">2024</span>
+        <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
+        <img class="sw-thumb" src="https://picsum.photos/id/1074/480/360" alt="" loading="lazy" decoding="async">
+      </a></li>
+  </ol>
 </section>
 
-<!-- WEITER — zwei große Wege aus der Story (script.js → initWorkGrid; Abstand so, dass sie ganz unten genau an der Nav anliegen) -->
+<!-- WEITER — zwei große Wege (script.js → initStoryNext; Abstand so, dass sie ganz unten genau an der Nav anliegen) -->
 <nav class="sn" id="storyNext" aria-label="Continue">
   <a class="sn-link" href="projects.html">
     <span class="sn-k">All projects</span>
@@ -396,17 +395,6 @@
     <span class="sf-right"><span class="sf-txt">My Portfolio — made with love</span></span>
   </div>
 </footer>
-
-<!-- PROJEKT-VORSCHAU — das Kachelbild wächst in die Bildmitte, darüber nur ein Pfeil zur Projektseite
-     (script.js → initWorkGrid). Schließen: Klick daneben, Esc oder Scrollen. -->
-<div class="wkl" id="wkOpen" role="dialog" aria-modal="true" aria-label="Project preview" hidden>
-  <div class="wkl-bg" aria-hidden="true"></div>
-  <figure class="wkl-fig">
-    <img alt="">
-    <a class="wkl-go" href="projects.html" aria-label="Open project page"><span class="wkl-arrows" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span></a>
-  </figure>
-  <button class="wkl-close" type="button">Close preview</button>
-</div>
 
 <script src="script.js" defer></script>
 <script src="mobile.js" defer></script>

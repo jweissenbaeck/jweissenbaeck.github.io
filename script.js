@@ -201,10 +201,16 @@ function splitRoll(el, text) {
 function onEnterOnce(el, fn, margin) {
   if (!el) return;
   if (!('IntersectionObserver' in window)) { fn(); return; }
-  const io = new IntersectionObserver((en) => {
-    if (en[0].isIntersecting) { io.disconnect(); fn(); }
-  }, { rootMargin: '0px 0px ' + (margin || '-15%') + ' 0px' });
+  let done = false;
+  const m = margin || '-15%', inset = /%$/.test(m) ? -parseFloat(m) / 100 : 0;   // z. B. '-15%' → untere 15 % zählen noch nicht
+  const fire = () => { if (done) return; done = true; io.disconnect(); window.removeEventListener('scroll', check); fn(); };
+  /* sichtbar — oder schon oberhalb (direkt dorthin gesprungen, z. B. Neuladen mitten auf der Seite) → trotzdem auslösen */
+  const io = new IntersectionObserver((en) => { if (en[0].isIntersecting || en[0].boundingClientRect.bottom < 0) fire(); },
+    { rootMargin: '0px 0px ' + m + ' 0px' });
+  /* Absicherung: harte Sprünge (immediate scroll) meldet der Beobachter nicht immer → zusätzlich die Lage prüfen */
+  function check() { const r = el.getBoundingClientRect(); if (r.top < window.innerHeight * (1 - inset)) fire(); }
   io.observe(el);
+  window.addEventListener('scroll', check, { passive: true });
 }
 
 /* ============================
@@ -1231,7 +1237,7 @@ window.__heroInit = heroInit;
    SCROLL SYSTEM
    Phase A [0.00 → 0.40] — Name letters float dissolve
    Phase B [0.35 → 0.78] — Parallax photos
-   Phase C [0.80 → 1.00] — Bottom Sheet slides up
+   danach — „What I do" scrollt mit schräger Oberkante herein (panelEdge)
 ============================ */
 (function initScrollSystem() {
   const hero       = document.getElementById('hero');
@@ -1289,7 +1295,19 @@ window.__heroInit = heroInit;
     pxMeasure();
   }
 
-  gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
+  /* „What I do" kommt unter dem Video mit weicher, schräger Oberkante herein (links tiefer) und zieht sich beim
+     Hereinscrollen gerade — wie die Kanten von „Selected Work" (statt der früheren Pixel-Blöcke) */
+  let lastEdge = '';
+  function panelEdge() {
+    const r = panel.getBoundingClientRect(), vh = window.innerHeight;
+    if (r.top > vh * 1.5 || r.top < -vh) return;
+    const S = Math.min(vh * 0.13, 120), k = c01((vh - r.top) / (vh * 0.75)), e = Math.pow(1 - k, 3);
+    const clip = e < 0.002 ? 'none' : 'polygon(0 ' + (S * e).toFixed(1) + 'px, 100% 0, 100% 100%, 0 100%)';
+    if (clip !== lastEdge) { lastEdge = clip; panel.style.clipPath = clip; }
+  }
+  panelEdge();
+  lenis.on('scroll', panelEdge);
+  window.addEventListener('resize', panelEdge);
 
   function update(p) {
     if (pinLeft) return;
@@ -1369,18 +1387,9 @@ window.__heroInit = heroInit;
       }
     });
 
-    // Phase C — bottom sheet (Hero-Reveal; der Pixel-Effekt wird separat an #work getriggert)
-    if (p < 0.88) {                                   // bis hierhin: Video bleibt im Vollbild
-      gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
-    } else {
-      const pC = ph(p, 0.88, 1.00, eIO);
-      const insetTop = c01(1 - pC) * 100;
-      gsap.set(panel, { clipPath: `inset(${insetTop}% 0 0 0)` });
-    }
   }
 
   function resetAll() {
-    window.__heroPixel = 0;
     gsap.set(nameEl, { opacity: 1, clearProps: 'filter' });
     letters.forEach(el => gsap.set(el, { y: 0, opacity: 1, filter: 'none' }));
     gsap.set(roleEl, { opacity: 1 });
@@ -1410,7 +1419,7 @@ window.__heroInit = heroInit;
       pinLeft = false;
       measure();
       resetAll();
-      gsap.set(panel, { clipPath: 'inset(100% 0 0 0)' });
+      panelEdge();
     },
   });
 
@@ -1451,213 +1460,274 @@ window.__heroInit = heroInit;
   });
 })();
 
+
 /* ============================
-   PIXEL WIPE — sichtbare Pixel-Blöcke beim Übergang Video → "What I do"
-   Zeichnet in Hintergrundfarbe (leicht aufgehellt, damit sie über dem Video
-   lesbar sind) eine gezackte, spaltenweise gestaffelte Pixelkante, die mit dem
-   Scrollen hochwächst. Reines Canvas-Overlay; liest window.__heroPixel (0..1).
+   ZEILEN-FLÄCHE (rowBand) — eine Fläche für eine ganze Liste („What I do", „Selected Work"), wie auf „My Work":
+   Ober- und Unterkante sind gedämpfte Federn (Lage, Tempo und Beschleunigung bleiben stetig) → auch bei sehr schnellem
+   Wechsel über viele Zeilen nichts springt, nie eine Lücke. Nach unten führt die Unterkante (Fläche fließt von oben in die
+   neue Zeile), nach oben die Oberkante; im Lauf kippen die Kanten leicht, in Ruhe stehen sie gerade.
+   Über der Fläche: Kopie jeder Zeile (inkClass) in der umgekehrten Farbe, gleich beschnitten → Farbwechsel genau an der Kante.
+   rowBand(list, rows, { bandClass, inkClass }) → { set(i, yViewport), poly() }   (i = −1: keine Zeile)
 ============================ */
-(function initPixelWipe() {
-  if (PHONE) return;
-  const reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-
-  const BLOCK = 72;          // Blockgröße in px (wie in der Referenz)
-  const COLOR = '35, 35, 35';        // nur EINE Farbe: --bg (#232323), Anthrazit der Sections
-
-  const canvas = document.createElement('canvas');
-  canvas.id = 'pixelWipe';
-  document.body.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  const panelEl = document.getElementById('mainContent');   // Oberkante der Services-Section = Anker
-
-  let cols = 1, vw = 0, vh = 0, dpr = 1;
-  const BIAS = 0.62;         // Anteil "von unten" (0 = rein zufällig, 1 = strikt von unten)
-  // stabiler Zufalls-Anteil pro Seiten-Zelle (Spalte, Dokument-Reihe) → fester Platz, kein Flackern
-  function rnd(gx, docRow) {
-    let h = ((gx + 1) * 374761393 + (docRow + 1) * 668265263) >>> 0;
-    h = (h ^ (h >>> 13)) * 1274126177 >>> 0;
-    return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+function rowBand(list, rows, opt) {
+  const band = document.createElement('span');
+  band.className = opt.bandClass; band.setAttribute('aria-hidden', 'true');
+  list.insertBefore(band, list.firstChild);
+  const inks = rows.map((row) => {
+    const ink = document.createElement('span');
+    ink.className = opt.inkClass; ink.setAttribute('aria-hidden', 'true');
+    [...row.children].forEach((ch) => ink.appendChild(ch.cloneNode(true)));
+    row.appendChild(ink);
+    return ink;
+  });
+  /* je Kante: goal = Zeilengrenze · to = weich nachgeführtes Ziel · y/v = Lage/Tempo der Feder · p = Schwingdauer */
+  const T = { y: 0, v: 0, to: 0, goal: 0, p: 0.52 }, B = { y: 0, v: 0, to: 0, goal: 0, p: 0.34 };
+  const LEAD = 0.34, TRAIL = 0.52, GOAL = 0.12;
+  let shown = false, active = -1, dir = 1, raf = 0, lastT = 0, cur = null;   // cur: aktuelle Form (Liste, px)
+  const geo = (i) => ({ t: rows[i].offsetTop, b: rows[i].offsetTop + rows[i].offsetHeight });
+  function spring(e, period, dt) {                                      // kritisch gedämpft → kein Überschwingen
+    e.to += (e.goal - e.to) * (1 - Math.exp(-dt / GOAL));
+    e.p += (period - e.p) * (1 - Math.exp(-dt / 0.12));                 // Rollenwechsel führend ↔ folgend weich überblenden
+    const w = 2 * Math.PI / e.p;
+    e.v += (w * w * (e.to - e.y) - 2 * w * e.v) * dt;
+    e.y += e.v * dt;
   }
-  function resize() {
-    vw = window.innerWidth; vh = window.innerHeight;
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(vw * dpr); canvas.height = Math.floor(vh * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    cols = Math.max(1, Math.ceil(vw / BLOCK));
+  function render() {
+    const W = list.clientWidth, tilt = v => Math.max(-24, Math.min(24, v * 0.03));
+    let tl = T.y + tilt(T.v), tr = T.y - tilt(T.v), bl = B.y + tilt(B.v), br = B.y - tilt(B.v);
+    if (bl < tl) bl = tl;
+    if (br < tr) br = tr;                                               // nie umklappen
+    const empty = bl - tl < 0.5 && br - tr < 0.5;
+    cur = empty ? null : [[0, tl], [W, tr], [W, br], [0, bl]];
+    const shape = (o) => empty ? 'inset(50%)' : 'polygon(0px ' + (tl - o).toFixed(1) + 'px, ' + W + 'px ' + (tr - o).toFixed(1) + 'px, ' + W + 'px ' + (br - o).toFixed(1) + 'px, 0px ' + (bl - o).toFixed(1) + 'px)';
+    band.style.clipPath = shape(0);
+    rows.forEach((r, k) => { inks[k].style.clipPath = shape(r.offsetTop - 1); });   // Kopie liegt 1px über der Zeile
   }
-  resize();
-  window.addEventListener('resize', resize);
-
-  function frame() {
-    requestAnimationFrame(frame);
-    const r = reduce ? (window.__heroPixel >= 0.999 ? 1 : 0) : (window.__heroPixel || 0);
-    ctx.clearRect(0, 0, vw, vh);
-    if (r <= 0.001) return;
-
-    /* An der Oberkante der Services-Section verankern und von dort NACH OBEN
-       aufbauen → die unterste Blockreihe schließt exakt an die Section an
-       (keine halbe Pixel-Lücke). Die Kante hat eine feste Seitenposition, daher
-       bleibt das Muster stabil und steigt von unten auf. */
-    const boundary = Math.round(panelEl ? panelEl.getBoundingClientRect().top : vh);
-    const maxK = Math.ceil((boundary + BLOCK) / BLOCK) + 1;
-
-    ctx.fillStyle = 'rgb(' + COLOR + ')';
-    for (let k = 1; k <= maxK; k++) {
-      const y = boundary - k * BLOCK;            // Reihe k oberhalb der Section-Kante
-      if (y > vh) continue;
-      if (y + BLOCK < 0) break;                  // über dem Viewport-Rand → fertig
-      const depthNorm = Math.max(0, Math.min(1, (k * BLOCK) / vh)); // Distanz zur Kante: 0 = an der Section
-      for (let gx = 0; gx < cols; gx++) {
-        // "von unten"-Bias (nahe der Kante zuerst) + Zufall → aufsteigend, verstreut
-        const thr = depthNorm * BIAS + rnd(gx, k) * (1 - BIAS);
-        // +1 px Überlappung schließt Nähte zwischen benachbarten Blöcken (gleiche Farbe → unsichtbar)
-        if (r >= thr) ctx.fillRect(gx * BLOCK, y, BLOCK + 1, BLOCK + 1);
-      }
+  function frame(now) {
+    raf = 0;
+    const dt = Math.min(1 / 30, lastT ? (now - lastT) / 1000 : 1 / 60); lastT = now;
+    for (let s = 0; s < 2; s++) {                                       // zwei Teilschritte → stabil auch bei 30 fps
+      spring(dir > 0 ? B : T, LEAD, dt / 2);
+      spring(dir > 0 ? T : B, TRAIL, dt / 2);
     }
+    const moving = Math.abs(T.goal - T.y) > 0.15 || Math.abs(B.goal - B.y) > 0.15 || Math.abs(T.v) > 0.8 || Math.abs(B.v) > 0.8;
+    if (!moving) { T.y = T.to = T.goal; B.y = B.to = B.goal; T.v = B.v = 0; lastT = 0; if (active < 0) shown = false; }
+    render();
+    if (moving) raf = requestAnimationFrame(frame);
   }
-  requestAnimationFrame(frame);
-})();
+  const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+  function set(i, y) {
+    if (i === active) return;
+    const ly = y - list.getBoundingClientRect().top;
+    if (i >= 0) {
+      const g = geo(i);
+      if (!shown) {                                                     // aus dem Nichts: von der Seite, von der der Zeiger kommt
+        const from = ly < (g.t + g.b) / 2 ? g.t : g.b;
+        T.y = B.y = T.to = B.to = from; T.v = B.v = 0; shown = true;
+        dir = from === g.t ? 1 : -1;
+      } else dir = (g.t + g.b) / 2 > (T.goal + B.goal) / 2 ? 1 : -1;
+      T.goal = g.t; B.goal = g.b;
+    } else if (active >= 0) {                                           // ins Nichts: zieht sich dorthin zurück, wohin der Zeiger geht
+      const g = geo(active), exit = ly > (g.t + g.b) / 2 ? g.b : g.t;
+      dir = exit === g.b ? 1 : -1;
+      T.goal = B.goal = exit;
+    }
+    rows.forEach((r, k) => r.classList.toggle('is-hot', k === i));
+    active = i;
+    if (PX_REDUCE) { T.y = T.to = T.goal; B.y = B.to = B.goal; T.v = B.v = 0; render(); return; }
+    kick();
+  }
+  window.addEventListener('resize', () => { if (active >= 0) { const g = geo(active); T.y = T.to = T.goal = g.t; B.y = B.to = B.goal = g.b; T.v = B.v = 0; render(); } });
+  /* aktuelle Form im Viewport (für die Scroll-Anzeige rechts) */
+  function poly() {
+    if (!cur) return null;
+    const r = list.getBoundingClientRect();
+    return cur.map(([x, y]) => [r.left + x, r.top + y]);
+  }
+  return { set, poly };
+}
 
 /* ============================
-   WHAT I DO — Hover interactions
+   VORSCHAU AM ZEIGER (rowPreview) — sitzt direkt am Mauszeiger (ohne Nachziehen); beim Wechsel der Zeile wischt der
+   neue Inhalt von unten über den alten. Nur mit Maus.
+   rowPreview({ scope, rows, make(row) → Element, chip, onRow(i, y), hideClass })
+============================ */
+function rowPreview(opt) {
+  const pv = document.createElement('div');
+  pv.className = 'sw-pv'; pv.setAttribute('aria-hidden', 'true');
+  pv.innerHTML = '<div class="sw-pv-in"></div>' + (opt.chip || '');
+  document.body.appendChild(pv);
+  const inner = pv.querySelector('.sw-pv-in');
+  let mx = -1, my = -1, cur = null, raf = 0;
+  function show(row) {
+    if (row === cur) return;
+    const was = cur; cur = row;
+    if (!row) { pv.classList.remove('is-on'); return; }
+    const el = opt.make(row);
+    el.classList.add('sw-pv-img');
+    inner.appendChild(el);
+    void el.offsetWidth;
+    el.classList.add('is-in');                                         // neuer Inhalt wischt von unten über den alten
+    const olds = [...inner.querySelectorAll('.sw-pv-img')].slice(0, -1);
+    setTimeout(() => olds.forEach(o => o.remove()), 800);
+    if (!was) { pv.classList.remove('is-on'); void pv.offsetWidth; pv.classList.add('is-on'); }
+  }
+  const place = () => { raf = 0; pv.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)'; };
+  const check = (el) => {
+    let row = el && el.closest ? el.closest(opt.scope) : null;
+    const nav = document.getElementById('mainNav');
+    if (row && nav && my <= nav.getBoundingClientRect().bottom) row = null;   // nicht über der Nav
+    show(row);
+    opt.onRow(row ? opt.rows.indexOf(row) : -1, my);
+    document.documentElement.classList.toggle(opt.hideClass, !!row);
+  };
+  window.addEventListener('pointermove', (e) => {
+    if (e.pointerType !== 'mouse') return;
+    mx = e.clientX; my = e.clientY; check(e.target);
+    if (!raf) raf = requestAnimationFrame(place);
+  }, { passive: true });
+  lenis.on('scroll', () => { if (mx >= 0) check(document.elementFromPoint(mx, my)); });   // Zeile fährt unter den stillstehenden Zeiger
+  document.addEventListener('mouseleave', () => { show(null); opt.onRow(-1, my); mx = my = -1; document.documentElement.classList.remove(opt.hideClass); });
+}
+
+/* Flächen in --accent bzw. dunkle „Löcher" darin für die Scroll-Anzeige rechts (initScrollReveals liest sie bei jedem Bild) */
+window.__accentPolys = window.__accentPolys || [];
+window.__accentHoles = window.__accentHoles || [];
+
+/* ============================
+   WHAT I DO — rollender Satz (Desktop + Handy)
+   „I'm your go-to for" + ein Wort in einem Feld in --accent. Der Abschnitt bleibt beim Scrollen kurz stehen (Pin);
+   je Schritt rollt das Wort Buchstabe für Buchstabe zur nächsten Leistung (alte Buchstaben rollen nach oben weg, neue
+   kommen von unten — wie der Hover-Roll der Nav), das Feld passt seine Breite weich an. Dazu: Satz tippt sich ein,
+   Werkzeuge als Chips, Mockup setzt sich aus Pixeln neu zusammen, Fortschritt als Pixel-Reihe mit rollender Zahl.
+   Inhalte aus der Liste in index.html (.svc-item: Name, Werkzeuge, data-desc, data-img); die Liste bleibt für
+   Screenreader erhalten (unsichtbar), die Bühne ist Dekoration.
 ============================ */
 (function initServices() {
-  const imgPanel = document.getElementById('svcImgPanel');
-  const section  = document.querySelector('.services-section');
-  if (PHONE) return;                                    // Handy: Liste mit Werkzeugen, ohne Hover-Vorschau (mobile.js)
+  const section = document.querySelector('.services-section');
+  const list = document.getElementById('servicesList');
+  if (!section || !list) return;
+  const items = [...list.querySelectorAll('.svc-item')];
+  const N = items.length;
+  const live = !PX_REDUCE && PX_CLIP_OK;
+  const data = items.map(it => ({
+    name: it.querySelector('.svc-name').textContent.trim(),
+    tools: [...it.querySelectorAll('.svc-skill')].map(s => s.textContent.trim()),
+    desc: it.dataset.desc || '', img: it.dataset.img
+  }));
 
-  if (imgPanel) gsap.set(imgPanel, { opacity: 0 });
+  /* Bühne */
+  const digit = '<span class="svr-d">' + '0123456789'.split('').map(d => '<span>' + d + '</span>').join('') + '</span>';
+  const stage = document.createElement('div');
+  stage.className = 'svr'; stage.setAttribute('aria-hidden', 'true');
+  stage.innerHTML =
+    '<div class="svr-in">' +
+      '<div class="svr-main">' +
+        '<p class="svr-lead">I\'m your go-to for</p>' +
+        '<div class="svr-field"><span class="svr-sizer"></span></div>' +
+        '<p class="svr-desc"></p>' +
+        '<ul class="svr-tools"></ul>' +
+        '<div class="svr-prog"><span class="svr-dots">' + data.map(() => '<i></i>').join('') + '</span>' +
+          '<span class="svr-count"><span class="svr-num">' + digit + digit + '</span> / ' + String(N).padStart(2, '0') + '</span></div>' +
+      '</div>' +
+      '<div class="svr-mock"></div>' +
+    '</div>';
+  list.after(stage);
+  const field = stage.querySelector('.svr-field'), sizer = stage.querySelector('.svr-sizer');
+  const desc = stage.querySelector('.svr-desc'), tools = stage.querySelector('.svr-tools');
+  const dots = [...stage.querySelectorAll('.svr-dots i')], digits = [...stage.querySelectorAll('.svr-d')];
+  const mockBox = stage.querySelector('.svr-mock');
+  const mocks = data.map((d) => {
+    const m = document.createElement('div');
+    m.className = 'svr-mk';
+    const svg = (document.getElementById(d.img) || document.createElement('i')).querySelector('svg');
+    if (svg) { const c = svg.cloneNode(true); c.setAttribute('preserveAspectRatio', 'xMidYMid slice'); m.appendChild(c); }
+    mockBox.appendChild(m);
+    return m;
+  });
 
-  const imgInner = imgPanel ? imgPanel.querySelector('.svc-preview-inner') : null;
-
-  /* Vorschau: öffnet sich wie die Hover-Flächen der Seite von unten nach oben (Bild setzt sich dabei aus leichtem Zoom),
-     gleitet zwischen den Begriffen weich auf die neue Zeile, wechselt das Bild per Wisch von unten;
-     schließt kurz verzögert (damit es beim Wechsel zwischen Begriffen offen bleibt) nach oben weg. */
-  let open = false, closeT = 0, resetT = 0;
-  function showPanel(name, imgId) {
-    if (!imgPanel || !section) return;
-    clearTimeout(closeT); clearTimeout(resetT);
-    const nameRect    = name.getBoundingClientRect();
-    const sectionRect = section.getBoundingClientRect();
-    const rowCenter   = (nameRect.top + nameRect.height / 2) - sectionRect.top;
-    if (!open) {
-      gsap.set(imgPanel, { top: rowCenter, yPercent: -50, opacity: 1 });
-      if (imgInner) { imgInner.classList.remove('is-closing', 'is-reset'); void imgInner.offsetWidth; imgInner.classList.add('is-open'); }
-      open = true;
-    } else {
-      gsap.to(imgPanel, { top: rowCenter, duration: 0.8, ease: 'expo.out', overwrite: true });
-      if (imgInner && !imgInner.classList.contains('is-open')) { imgInner.classList.remove('is-closing'); imgInner.classList.add('is-open'); }
-    }
-    document.querySelectorAll('.svc-preview-img').forEach(img =>
-      img.classList.toggle('is-active', img.id === imgId)
-    );
+  /* Wort: Buchstaben rollen (alt nach oben weg, neu von unten), Feldbreite folgt weich */
+  const letters = (txt) => txt.split('').map((ch, i) => '<span class="svr-l" style="--i:' + i + '">' + (ch === ' ' ? '&nbsp;' : ch) + '</span>').join('');
+  let layer = null;
+  function setWord(txt, instant) {
+    const old = layer;
+    layer = document.createElement('span');
+    layer.className = 'svr-w';
+    layer.innerHTML = letters(txt);
+    field.appendChild(layer);
+    sizer.textContent = txt;                                            // misst die Breite des neuen Worts
+    field.style.width = Math.ceil(sizer.getBoundingClientRect().width) + 'px';
+    if (instant || PX_REDUCE) { layer.classList.add('is-in'); if (old) old.remove(); return; }
+    void layer.offsetWidth;
+    layer.classList.add('is-in');
+    if (old) { old.classList.remove('is-in'); old.classList.add('is-out'); setTimeout(() => old.remove(), 900); }
   }
 
-  function hidePanel() {
-    if (!imgPanel) return;
-    clearTimeout(closeT);
-    closeT = setTimeout(() => {
-      open = false;
-      if (!imgInner) { gsap.set(imgPanel, { opacity: 0 }); return; }
-      imgInner.classList.remove('is-open'); imgInner.classList.add('is-closing');
-      resetT = setTimeout(() => {                                    // unsichtbar zurück nach unten
-        imgInner.classList.add('is-reset'); imgInner.classList.remove('is-closing');
-        document.querySelectorAll('.svc-preview-img').forEach(img => img.classList.remove('is-active'));
-        void imgInner.offsetWidth; imgInner.classList.remove('is-reset');
-      }, 700);
-    }, 140);
+  let active = -1, run = 0;
+  function set(i, instant) {
+    if (i === active) return;
+    const prev = active; active = i;
+    const d = data[i];
+    setWord(d.name, instant);
+    dots.forEach((x, k) => x.classList.toggle('is-on', k <= i));
+    const n = String(i + 1).padStart(2, '0');
+    digits.forEach((x, k) => x.style.setProperty('--d', n[k]));
+    tools.innerHTML = d.tools.map((t, k) => '<li style="--k:' + k + '">' + t + '</li>').join('');
+    if (instant || PX_REDUCE) desc.textContent = d.desc;
+    else { desc._typeOrig = d.desc; desc._typed = false; desc.textContent = d.desc.replace(/\S/g, ' '); setTimeout(() => { if (active === i) typeIn(desc, 650); }, 180); }
+    /* Mockup: das neue setzt sich aus Pixeln über das alte zusammen */
+    const id = ++run, m = mocks[i];
+    mocks.forEach((x, k) => { x.classList.toggle('is-top', k === i); if (k !== i && k !== prev) x.classList.remove('is-shown'); });
+    m.classList.add('is-shown');
+    if (!live || instant || prev < 0) { m.style.clipPath = ''; return; }
+    pxMeasure(m, Math.max(10, Math.round(m.offsetWidth / 22)));
+    const t0 = performance.now();
+    (function frame(now) {
+      if (id !== run) return;
+      const k = Math.min(1, (now - t0) / 650);
+      pxClip(m, 1 - Math.pow(1 - k, 3), 'build');
+      if (k < 1) requestAnimationFrame(frame);
+      else { m.style.clipPath = ''; if (prev >= 0 && prev !== active) mocks[prev].classList.remove('is-shown'); }
+    })(t0);
   }
+  set(0, true);
+  const refit = () => { sizer.textContent = data[Math.max(0, active)].name; field.style.width = Math.ceil(sizer.getBoundingClientRect().width) + 'px'; };
+  window.addEventListener('resize', refit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
 
-  /* HyperText-Reveal: beim Hover laeuft ein Zeiger von links nach rechts durch;
-     Buchstaben links davon stehen final, rechts davon zufaellige A-Z bis erreicht. */
-  const HYPER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  /* stabiles Pseudo-Zufallszeichen je Position + Flacker-Tick (kein Flimmern pro Frame) */
-  function hyChar(i, tick) {
-    let h = ((i * 73 + tick * 131) >>> 0) * 2654435761 >>> 0;
-    return HYPER_CHARS[h % 26];
-  }
-  function scramble(el) {
-    if (!el.dataset.orig) el.dataset.orig = el.textContent.trim();
-    const orig = el.dataset.orig;
-    const n = Math.max(1, orig.length);
-    cancelAnimationFrame(el._raf || 0);
-    /* Breite fixieren -> keine x-Sprünge durch unterschiedlich breite Zufallsbuchstaben */
-    el.style.display = 'inline-block';
-    el.style.width = Math.ceil(el.getBoundingClientRect().width) + 'px';
-    el.style.textAlign = 'left';
-    el.style.whiteSpace = 'pre';
-
-    const duration = 420;      // ms - kurz
-    const WINDOW = 2;          // nur wenige Zeichen um den Zeiger scramblen (dezent)
-    const FLICKER = 55;        // ms - Takt der Zufallszeichen (ruhig, nicht pro Frame)
-    const start = performance.now();
-    let lastStr = null;
-
-    function loop(now) {
-      const t = Math.min(1, (now - start) / duration);
-      const iter = t * n;                        // Zeiger läuft flüssig, zeitbasiert
-      const tick = Math.floor(now / FLICKER);    // Zufallszeichen nur alle FLICKER ms neu
-      let s = '';
-      for (let i = 0; i < n; i++) {
-        const ch = orig[i];
-        if (ch === ' ') { s += ' '; continue; }
-        if (i <= iter) s += orig[i];                         // links: final
-        else if (i <= iter + WINDOW) s += hyChar(i, tick);   // kleines Fenster scramblen
-        else s += orig[i];                                   // rechts: schon Original
-      }
-      if (s !== lastStr) { el.textContent = s; lastStr = s; }  // nur bei Änderung ins DOM
-      if (t < 1) { el._raf = requestAnimationFrame(loop); }
-      else { el.textContent = orig; clearWidth(el); }
-    }
-    el._raf = requestAnimationFrame(loop);
-  }
-
-  function clearWidth(el) {
-    el.style.width = '';
-    el.style.display = '';
-    el.style.textAlign = '';
-    el.style.whiteSpace = '';
-  }
-
-  function unscramble(el) {
-    cancelAnimationFrame(el._raf || 0);
-    if (el.dataset.orig) el.textContent = el.dataset.orig;
-    clearWidth(el);
-  }
-
-  document.querySelectorAll('.svc-item').forEach(item => {
-    const name   = item.querySelector('.svc-name');
-    const skills = item.querySelector('.svc-skills');
-    const imgId  = item.dataset.img;
-    const skillEls = skills ? [...skills.querySelectorAll('.svc-skill')] : [];
-    skillEls.forEach(s => { s.dataset.t = s.textContent; });
-
-    name.addEventListener('mouseenter', () => {
-      const nameRect = name.getBoundingClientRect();
-      const itemRect = item.getBoundingClientRect();
-      showPanel(name, imgId);
-      if (skills) {
-        skills.style.left = (nameRect.right - itemRect.left + 24) + 'px';
-        gsap.set(skills, { opacity: 1, x: 0 });
-        /* Werkzeuge tippen sich nacheinander ein (Mono, wie die Überschrift) */
-        if (!PX_REDUCE) skillEls.forEach((s, i) => {
-          s._typeRun = (s._typeRun || 0) + 1;                       // laufendes Tippen abbrechen
-          s._typeOrig = s.dataset.t; s._typed = false;
-          s.textContent = s.dataset.t.replace(/\S/g, ' ');
-          const run = s._typeRun;
-          setTimeout(() => { if (run === s._typeRun) typeIn(s, 260); }, i * 70);
-        });
-      }
-      scramble(name);
+  /* Pin: je Leistung ein Schritt Scrollweg; das Wort wechselt in der Mitte jedes Schritts */
+  const STEP = PHONE ? 38 : 55;                                         // % Bildschirmhöhe je Schritt
+  if (typeof ScrollTrigger !== 'undefined' && !PX_REDUCE) {
+    ScrollTrigger.create({
+      trigger: stage, start: 'top top', end: '+=' + Math.round((N - 1) * STEP) + '%', pin: true, anticipatePin: 1,
+      onUpdate: (self) => set(Math.min(N - 1, Math.round(self.progress * (N - 1))))
     });
+  }
 
-    name.addEventListener('mouseleave', () => {
-      hidePanel();
-      if (skills) gsap.set(skills, { opacity: 0 });
-      unscramble(name);
-    });
+  /* Auftritt: Satz baut sich aus Pixeln auf, Feld wischt von links auf */
+  if (live) {
+    const lead = stage.querySelector('.svr-lead');
+    lead.style.clipPath = 'inset(50%)';
+    stage.classList.add('is-live');
+    onEnterOnce(stage, () => {
+      pxMeasure(lead, Math.max(8, parseFloat(getComputedStyle(lead).fontSize) * 0.08));
+      const t0 = performance.now();
+      (function frame(now) {
+        const k = Math.min(1, (now - t0) / 800);
+        pxClip(lead, 1 - Math.pow(1 - k, 3), 'build');
+        if (k < 1) requestAnimationFrame(frame); else lead.style.clipPath = '';
+      })(t0);
+      setTimeout(() => stage.classList.add('is-in'), 250);
+    }, '-15%');
+  }
+
+  /* Scroll-Anzeige rechts: über dem blauen Feld dunkel */
+  if (window.__accentPolys) window.__accentPolys.push(() => {
+    const r = field.getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight ? [[r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom]] : null;
   });
 })();
+
 
 /* ============================
    SCROLL-EINBLENDUNGEN — alles im Pixel-Stil der Seite, an den Scroll gekoppelt (rückwärts genauso)
@@ -1680,35 +1750,15 @@ window.__heroInit = heroInit;
     (function frame(now) {
       const k = Math.min(1, (now - t0) / D);
       pxClip(el, ease(k), 'build');
-      if (k < 1) requestAnimationFrame(frame);
+      if (k < 1) requestAnimationFrame(frame); else el.style.clipPath = '';
     })(t0);
   }
 
-  /* ── What I do ── */
+  /* ── What I do: Titel baut sich beim Hereinscrollen aus Pixeln auf (wie „Selected Work") ── */
   const eyebrow = document.querySelector('.svc-eyebrow-txt');
-  typePrepare(eyebrow);
-  onEnterOnce(eyebrow, () => typeIn(eyebrow, 650));
-
-  const items = [...document.querySelectorAll('.svc-item')];
-  const names = items.map(it => it.querySelector('.svc-name'));
-  if (live && names.length && !PHONE) {
-    const measureNames = () => names.forEach(n => pxMeasure(n, fontPx(n) * 0.09));
-    function updateNames() {
-      const vh = window.innerHeight, amp = Math.min(70, window.innerWidth * 0.05);
-      names.forEach((n, i) => {
-        const r = items[i].getBoundingClientRect();
-        if (r.bottom < -vh * 0.2 || r.top > vh * 1.2) return;               // weit weg → nichts tun
-        const inn = c01((vh - r.top) / (vh * 0.3));                          // kommt unten herein
-        if (inn < 1) pxClip(n, ease(inn), 'build');
-        else pxClip(n, ease(c01((r.bottom - 52) / (vh * 0.2))), 'dissolve'); // zerfällt unter der Nav
-        const k = (r.top + r.height / 2 - vh / 2) / vh;                     // −0.5 … 0.5 um die Bildmitte
-        n.style.translate = (k * amp * (i % 2 ? 1 : -1)).toFixed(1) + 'px 0';
-      });
-    }
-    measureNames(); updateNames();
-    lenis.on('scroll', updateNames);
-    window.addEventListener('resize', () => { measureNames(); updateNames(); });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureNames(); updateNames(); });
+  if (eyebrow && live) {
+    eyebrow.style.clipPath = 'inset(50%)';
+    onEnterOnce(eyebrow, () => buildOnce(eyebrow, Math.max(10, fontPx(eyebrow) * 0.07), 900), '-10%');
   }
 
   /* ── Footer (auf allen Seiten gleich: JCKY baut sich auf, Schreibmaschine, Leiste baut sich auf) ── */
@@ -1815,8 +1865,10 @@ window.__heroInit = heroInit;
     const regions = () => {
       const out = typeof window.__accentRegions === 'function' ? window.__accentRegions() : [];
       document.querySelectorAll('.sn-link:hover').forEach((a) => { const r = a.getBoundingClientRect(); out.push([[r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom]]); });
+      (window.__accentPolys || []).forEach((f) => { const pts = f(); if (pts) out.push(pts); });   // z. B. „Selected Work", Hover-Fläche „What I do"
       return out;
     };
+    const holes = () => (window.__accentHoles || []).map(f => f()).filter(Boolean);   // dunkle Flächen auf Blau (Hover „Selected Work")
     const inPoly = (x, y, pts) => { let c = false; for (let i = 0, k = pts.length - 1; i < pts.length; k = i++) { const [xi, yi] = pts[i], [xk, yk] = pts[k]; if ((yi > y) !== (yk > y) && x < (xk - xi) * (y - yi) / (yk - yi) + xi) c = !c; } return c; };
     const BS = 4, STEP = 7, X0 = 10;                                        // Blockgröße, Abstand, Abstand zum rechten Rand
     let CW = 0, CH = 0, dpr = 1, rows = 0, lim = 1, idle = 0, raf = 0;
@@ -1849,15 +1901,15 @@ window.__heroInit = heroInit;
       g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, CW, CH);
       const x = CW - X0 - BS, head = p * (rows - 1), speed = Math.min(1, Math.abs(vel) / 60);
       /* Farben: noch nicht gefüllt = Dunkelgrau · gefüllt / Kopf = Akzentfarbe; über einer Akzent-Fläche gefüllt = dunkel */
-      const regs = regions(), cvR = cv.getBoundingClientRect();
-      const onAcc = (bx, by) => regs.length && regs.some(pts => inPoly(cvR.left + bx, cvR.top + by, pts));
+      const regs = regions(), hls = holes(), cvR = cv.getBoundingClientRect();
+      const onAcc = (bx, by) => regs.length && regs.some(pts => inPoly(cvR.left + bx, cvR.top + by, pts)) && !hls.some(pts => inPoly(cvR.left + bx, cvR.top + by, pts));
       for (let i = 0; i < rows; i++) {
         const d = head - i, y = 12 + i * STEP;
         const filled = d >= -0.5;
         const near = Math.max(0, 1 - Math.abs(d) / 9);                        // Zittern rund um den Kopf
         const jit = near * speed * (pxRand(i, Math.floor(now / 60)) - 0.5) * 14;
         const acc = onAcc(x + BS / 2, y + BS / 2);
-        g.fillStyle = filled ? (acc ? '#1A1A1A' : ACC) : (acc ? 'rgba(26,26,26,0.35)' : '#4A4A4A');
+        g.fillStyle = filled ? (acc ? '#232323' : ACC) : (acc ? 'rgba(35,35,35,0.4)' : '#4A4A4A');
         g.globalAlpha = filled ? (d < 1.5 ? 1 : 0.8) : 1;
         if (Math.abs(d) < 3 && pxRand(i, 9) > 0.4) g.fillRect(Math.round(x - BS - 3 + jit), y, BS, BS);   // gezackter, breiterer Kopf
         g.fillRect(Math.round(x + jit), y, BS, BS);
@@ -1879,8 +1931,8 @@ window.__heroInit = heroInit;
       /* dunkle Lage genau dort zeigen, wo das Chip über einer Akzent-Fläche liegt */
       const lr = label.getBoundingClientRect();
       let dpath = '';
-      regs.forEach((pts) => { dpath += 'M' + pts.map(([px, py]) => (px - lr.left).toFixed(1) + ' ' + (py - lr.top).toFixed(1)).join('L') + 'Z'; });
-      alt.style.clipPath = dpath ? "path('" + dpath + "')" : 'inset(50%)';
+      regs.concat(hls).forEach((pts) => { dpath += 'M' + pts.map(([px, py]) => (px - lr.left).toFixed(1) + ' ' + (py - lr.top).toFixed(1)).join('L') + 'Z'; });
+      alt.style.clipPath = dpath ? (hls.length ? "path(evenodd, '" : "path('") + dpath + "')" : 'inset(50%)';   // Löcher per evenodd ausgespart
       vel *= Math.pow(0.86, f);                                              // Tempo klingt ab → Zittern beruhigt sich
       if (bits.length || Math.abs(vel) > 0.5 || wrap.classList.contains('is-on')) raf = requestAnimationFrame(draw);   // solange sichtbar: Flächen bewegen sich evtl. noch
     }
@@ -1903,437 +1955,97 @@ window.__heroInit = heroInit;
   }
 })();
 
-/* ============================
-   PIXEL WIPE — an die Services-Section gekoppelt (nicht mehr am Hero-Pin)
-   Der gepixelte Übergang läuft, während #work in den Viewport scrollt.
-============================ */
-(function initPixelTrigger() {
-  const work = document.querySelector('#mainContent > section');   // erste Section im Bottom-Sheet (What I do)
-  if (!work || PHONE) return;
-  window.__heroPixel = 0;
-  ScrollTrigger.create({
-    trigger: work,
-    start: 'top bottom',   // Oberkante von #work erreicht den unteren Viewport-Rand
-    end:   'top top',      // … bis sie oben ankommt
-    scrub: true,
-    onUpdate(self) { window.__heroPixel = self.progress; },
-    onLeaveBack()  { window.__heroPixel = 0; },
-    onLeave()      { window.__heroPixel = 0; },   // danach Section erreicht → Effekt aus
-  });
-})();
 
 /* ============================
-   STORY — „Von Pixeln zu Menschen"
-   Fixierte Bühne mit Pixel-Partikeln, die beim Scrollen durch drei Kapitel morphen:
-     01 Pixel-Avatar (Mosaik aus assets/jcky-3.jpg)  →  02 Skyline Salzburg (Festung, Dom, Salzach)
-     →  03 zurück zu Sternenstaub; die vier Projektbilder blenden sich ein (Klick → initWorkGrid)
-   · Aufbau: Grafik mittig, der Satz steht zentriert darüber und baut sich aus Pixeln auf
-   · Morph: jeder Partikel startet leicht versetzt, wird auf halbem Weg auseinandergewirbelt und setzt sich neu zusammen
-   · Tiefe: jeder Partikel hat z → Parallax zur Maus
-   · Sterne: wie auf „Me" — 1000 pro Bildschirm, 1–3 px, gleiche Helligkeit + gleiches Funkeln
-   · Interaktion: Partikel weichen dem Cursor aus, Klick schickt eine Schockwelle durch
-   · Übergang aus „What I do": der Sternenstaub blendet von oben weich ein, die Formation baut sich erst nach dem Einrasten auf
-   · Läuft im selben Takt wie Lenis + ScrollTrigger (gsap.ticker) → Scroll-Position und Bild nie um ein Frame versetzt
-   · Formen werden erst nach der Intro aufgebaut (afterIntro), damit die Intro flüssig bleibt
+   SELECTED WORK — Projekt-Index auf der Akzentfläche (index.html → #selectedWork)
+   · Fläche in --accent; oben und unten eine schräge Kante, die sich beim Hereinscrollen gerade zieht
+     (und beim Verlassen wieder schräg wird) — wie die schrägen Kanten auf „My Work"
+   · Titel baut sich beim Hereinscrollen aus Pixeln auf, die Spaltenköpfe tippen sich ein,
+     Zeilen: Linie zieht von links auf, Inhalt gleitet nacheinander hoch
+   · Hover wie auf „My Work": eine dunkle Fläche wandert zwischen den Zeilen — nach unten kommt sie von oben,
+     nach oben von unten (Kanten = gedämpfte Federn, schräg im Lauf) → auch bei sehr schnellem Wechsel stetig, ohne Lücken
+   · Schrift: dunkel auf Blau; auf der dunklen Fläche in Blau (umgekehrte Farben) — eine Kopie der Zeile (.sw-ink) wird genau
+     wie die Fläche beschnitten → Wechsel exakt an der Kante (gleiches Prinzip wie die Projekttitel auf „My Work")
+   · Maus: Vorschaubild sitzt direkt am Zeiger; beim Wechsel der Zeile wischt das neue Bild von unten herein
+   · Handy: kleines Vorschaubild in jeder Zeile; Drücken holt die Fläche (gleiche Richtungslogik)
 ============================ */
-(function initStory() {
-  const section = document.getElementById('storySection');
-  const stage = section && section.querySelector('.story-stage');
-  const linesWrap = document.getElementById('storyLines');
-  if (!section || !stage || !linesWrap) return;
-  const animate = !PX_REDUCE && PX_CLIP_OK && typeof ScrollTrigger !== 'undefined';
-  section.classList.add(animate ? 'is-live' : 'is-static');
+(function initSelectedWork() {
+  const sec = document.getElementById('selectedWork');
+  if (!sec) return;
+  const live = !PX_REDUCE && PX_CLIP_OK;
+  const rows = [...sec.querySelectorAll('.sw-row')];
+  const list = sec.querySelector('.sw-list');
+  const ease = v => 1 - Math.pow(1 - v, 3);
   const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
-  const eio = v => v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2;
-  const span = (t, w) => c01((t - w[0]) / (w[1] - w[0]));
 
-  /* ── Zeitachse: t in Bildschirmhöhen, 0 = Bühne oben angekommen (Pin-Beginn) ── */
-  const C = 1.5;                                         // Scrollweg pro Kapitel (inkl. Haltestrecke für den Scribble)
-  const DRAWLEN = 0.3, HOLD = 0.7;                       // Scribble zeichnet sich über 0,3 Bildschirmhöhen, steht dann noch 0,7
-  const LAST = 2;                                        // Kapitel 0 … 2 (Avatar, Salzburg, Work — Partikel werden wieder Sternenstaub)
-  const GRID = 2;                                        // Kapitel der Work-Kacheln
-  const ARRIVE = k => 0.75 + k * C;                      // ab hier steht Kapitel k
-  const PIN = ARRIVE(LAST) + 1.2;                        // Scribble + Bilder, dann steht das Raster noch etwas
-  const FORM = [-0.2, ARRIVE(0)];                        // Sternenstaub → Avatar: ruhig, erst nach dem Hereinscrollen
-  /* je Satz: aufbauen → Scribble zeichnen → halten → (Scribble zurück) zerfallen; der letzte Satz bleibt */
-  const LINES = [0, 1, 2].map((k) => {
-    const inn = k === 0 ? [0.15, 0.55] : [ARRIVE(k) - 0.4, ARRIVE(k) - 0.05];
-    const o = k < LAST ? inn[1] + DRAWLEN + HOLD : null;
-    return { inn, out: o ? [o, o + 0.2] : null };
+  /* ── Kanten: oben + unten schräg, ziehen sich beim Hereinscrollen gerade ── */
+  if (!PX_REDUCE) {
+    let lastClip = '';
+    const edges = () => {
+      const r = sec.getBoundingClientRect(), vh = window.innerHeight;
+      if (r.bottom < -vh || r.top > vh * 2) return;
+      const S = Math.min(vh * 0.13, 120);                                     // größte Schräge (px)
+      const kin = 1 - ease(c01((vh - r.top) / (vh * 0.75)));                  // oben: schräg → gerade
+      const kout = 1 - ease(c01(r.bottom / (vh * 0.75)));                     // unten: gerade → schräg beim Verlassen
+      const t = (S * kin).toFixed(1), b = (S * kout).toFixed(1);
+      const clip = 'polygon(0 ' + t + 'px, 100% 0, 100% calc(100% - ' + b + 'px), 0 100%)';
+      if (clip !== lastClip) { lastClip = clip; sec.style.clipPath = clip; }
+    };
+    edges();
+    lenis.on('scroll', edges);
+    window.addEventListener('resize', edges);
+  }
+
+  /* ── Auftritt ── */
+  const title = sec.querySelector('.sw-title-in');
+  const typed = [...sec.querySelectorAll('.sw-cols span')];
+  if (live) {
+    sec.classList.add('is-live');
+    typed.forEach(typePrepare);
+    title.style.clipPath = 'inset(50%)';
+    onEnterOnce(title, () => {
+      pxMeasure(title, Math.max(10, parseFloat(getComputedStyle(title).fontSize) * 0.07));
+      const t0 = performance.now();
+      (function frame(now) {
+        const k = Math.min(1, (now - t0) / 900);
+        pxClip(title, ease(k), 'build');
+        if (k < 1) requestAnimationFrame(frame); else title.style.clipPath = '';
+      })(t0);
+      typed.forEach((el, i) => setTimeout(() => typeIn(el, 420), 300 + i * 90));
+    }, '-10%');
+    rows.forEach((r) => onEnterOnce(r, () => r.classList.add('is-in'), '-6%'));
+    onEnterOnce(rows[rows.length - 1], () => list.classList.add('is-in'), '-6%');
+  } else {
+    rows.forEach(r => r.classList.add('is-in')); list.classList.add('is-in');
+  }
+
+  /* ── Hover: dunkle Fläche wandert zwischen den Zeilen (rowBand), Schrift darauf blau; Vorschaubild am Zeiger (rowPreview) ── */
+  const band = rowBand(list, rows, { bandClass: 'sw-band', inkClass: 'sw-ink' });
+  window.__accentPolys.push(() => {                                    // Abschnitt liegt auf --accent …
+    const q = sec.getBoundingClientRect();
+    return q.bottom > 0 && q.top < window.innerHeight ? [[q.left, q.top], [q.right, q.top], [q.right, q.bottom], [q.left, q.bottom]] : null;
   });
-  const MORPH = k => [LINES[k].out[0] + 0.05, ARRIVE(k + 1) - 0.05];   // Grafik wechselt erst, wenn der Satz geht
-  /* Kacheln: Bild k blendet sich weich ein, sobald sich Salzburg zu Sternenstaub aufgelöst hat (leicht gestaffelt) */
-  const IMG = k => [ARRIVE(GRID) - 0.1 + k * 0.1, ARRIVE(GRID) + 0.45 + k * 0.1];
+  window.__accentHoles.push(() => band.poly());                       // … die dunkle Hover-Fläche nicht
 
-  /* ── Bühne ── */
-  const cv = document.createElement('canvas'), ctx = cv.getContext('2d');
-  cv.className = 'story-canvas'; cv.setAttribute('role', 'img');
-  cv.setAttribute('aria-label', 'Pixel particles forming a pixel avatar of Jacob, then the Salzburg skyline');
-  stage.insertBefore(cv, stage.firstChild);
-  let W = 0, H = 0, dpr = 1;
+  /* Handy: Drücken holt die Fläche (bleibt, bis eine andere Zeile gedrückt wird) */
+  rows.forEach((r, i) => r.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') band.set(i, e.clientY); }));
 
-  /* ── Work-Collage: vier frei gesetzte Kacheln (Lage/Größe im CSS); je Kachel eigenes Scroll-Tempo und eigene Bild-Parallax-Stärke ── */
-  const wk = document.getElementById('wkGrid');
-  const cards = wk ? [...wk.querySelectorAll('.wk-item')] : [];
-  const cFrames = cards.map(c => c.querySelector('.wk-frame')), cImgs = cards.map(c => [...c.querySelectorAll('.wk-frame img')]);
-  const cMetas = cards.map(c => c.querySelector('.wk-meta'));
-  const CARD_V = [1.0, 0.8, 0.6, 0.9];                     // Scroll-Tempo: was oben liegt, zieht schneller → Abstände wachsen, nichts überlappt
-  const CARD_M = [1.0, 0.7, 0.85, 0.6];                    // Maus: wie weit der Bildinhalt im Rahmen gleitet
-  const RECTS = cards.map(() => ({ x: 0, y: 0, w: 0, h: 0, dy: 0 }));
-  /* Collage unter den dritten Satz setzen und vermessen */
-  function measureGrid() {
-    if (!wk) return;
-    const l3 = linesWrap.querySelectorAll('.story-line')[2], m = W <= 760;
-    if (animate && l3) {
-      const top = linesWrap.offsetTop + l3.offsetHeight + H * (m ? 0.035 : 0.045);
-      stage.style.setProperty('--wk-top', Math.round(top) + 'px');
-    }
-    cards.forEach((c, k) => {
-      const r = RECTS[k];
-      r.x = wk.offsetLeft + c.offsetLeft; r.y = wk.offsetTop + c.offsetTop;
-      r.w = cFrames[k].offsetWidth; r.h = cFrames[k].offsetHeight;
-    });
-  }
-  /* Scroll-Parallax je Kachel: wandert nach dem Ankommen unterschiedlich schnell nach oben */
-  const cardDY = (k, t) => -(t - ARRIVE(GRID)) * H * 0.035 * CARD_V[k];
-  const lineDY = t => -(t - ARRIVE(GRID)) * H * 0.06;      // der Satz darüber zieht noch schneller davon
-
-  function size() { W = stage.clientWidth; H = stage.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); measureGrid(); }
-  size();
-  window.addEventListener('resize', size);
-  /* Formation mittig unter dem Satz (S = Bildschirm-Pixel pro Formbreite) */
-  function layout() {
-    const m = W <= 760;
-    return { cx: W / 2, cy: H * (m ? 0.6 : 0.6), S: m ? W * 1.0 : Math.min(W * 0.8, H * 0.98) };
-  }
-  /* Drift: jede Form wandert in ihrem Kapitel beim Scrollen leicht nach oben (Parallax zum Satz).
-     Je Form berechnet und beim Morph überblendet → nie ein Sprung beim Kapitelwechsel. */
-  const drift = (s, t) => s < 0 ? 0 : -(t - ARRIVE(s)) * H * 0.04;
-
-  /* ============================
-     FORMEN
-     ============================ */
-  /* 01 — Avatar: einmalig aus assets/jcky-3.jpg erzeugt (Kopf + Hals; Wand und T-Shirt freigestellt:
-     Pixel mit Farbe oder dunkel = Person), als feines Mosaik: 64 Spalten, 6 Helligkeitsstufen („1"–„6", „." = leer).
-     Wird über seine belegten Pixel exakt zentriert → steht genau unter dem Satz. Das 4-MB-Foto muss nicht geladen werden. */
-  const PORTRAIT_COLS = 64;
-  const PORTRAIT = ".................................544.......................................................55554333445................................................55444333333333344..............................................544322222222222223445..........................................44332222121122211223344........................................3332322221211211112222334......................................333222222221111111122222234....................................433233222221111111122211112335.................................32333322222111111112222111112345...............................4222332212222211111121111111112345..............................3222322222222111111121111111111234.............................43222222222222111111111111111111223.............................322122222332222222212111111111111123...........................32221122333333222222222111111111111124..........................32222112334443333332222222111111111223..........................22222122344544444432233222222221111113.........................422222123445544444433333223332222211112.........................3222222245455444554344433333332222211124........................3222222345566555554444433343332332211123........................3222223456666666654454444444333333211123........................3232233456666666665554444444433444322122........................3333334566666666665555555555544454321123........................4333335666666666666655555555555554421123.........................323246666666666666655565555555555421124........................6333346666666666666655655555555555421124.......................6533335666665444455555565555555555553122.......................65643335666443321122345555443333345553123.......................65653345666555543222335554321111124553225.......................65664346666554333223455554322123322453125.......................666654566665433222334566542222233444531345......................666545666665555433335566542222122345532435.......................65455666666665544445666543222232345532435.......................6556556666665555556666654333233444553444........................6656556666666655666666655443344455553345........................666555666666666666666665544444455555324..........................66655666666666666666665544455555555335...........................6655666666666666656665544455555555445...........................665566666666655656666554444555555455.............................6555666666655656666655544455555545...............................656666666555665455544444445555545................................5566666555555445544334444555544.................................556666655555444444333344445554..................................556666655555554433333333345554..................................556666655555555433433333344445...................................5665565544555544444444334444....................................5555565555444333333333344444....................................4555555566555444333334344445....................................555455556666554444444434434.....................................655445455665544444444433333.....................................66445544555554434444433333......................................66544444555554444444322223......................................66654444455554444443322235.....................................666665444445555454433222356....................................66666665444445543443322234555..................................6666666666444444434433223455544................................666666666666444444333322345555544...............................6666666666666554333333345555555544..............................6666666666666666554444555555555544..............................6666666666666666655555555555555545...............................66666666666666666555555555555554.................................6666666666666666555555555555555.................................6666666666666665555555555555546..................................66666666666666555555555555546.....................................66666666666655555555555556.......................................666666666665555555555556..........................................66666666655555555556..............................................6666666556555556..................................................666655666666...........................";
-  function portraitPoints() {
-    const rows = PORTRAIT.length / PORTRAIT_COLS, WN = 0.5, cell = WN / PORTRAIT_COLS, pts = [];
-    const TONE = [0, 0.16, 0.32, 0.5, 0.68, 0.85, 1];
-    let c0 = PORTRAIT_COLS, c1 = 0, r0 = rows, r1 = 0;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < PORTRAIT_COLS; c++) {
-      if (PORTRAIT[r * PORTRAIT_COLS + c] === '.') continue;
-      if (c < c0) c0 = c; if (c > c1) c1 = c; if (r < r0) r0 = r; if (r > r1) r1 = r;
-    }
-    const mc = (c0 + c1) / 2, mr = (r0 + r1) / 2;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < PORTRAIT_COLS; c++) {
-      const ch = PORTRAIT[r * PORTRAIT_COLS + c];
-      if (ch === '.') continue;
-      const lv = +ch;
-      pts.push({ x: (c - mc) * cell, y: (r - mr) * cell, a: TONE[lv], z: (lv - 3.5) * 0.14, tag: 0, s: cell * 0.82 });
-    }
-    return pts;
-  }
-
-  /* Formen auf eine 1000 × 520-Leinwand zeichnen und im Pixelraster abtasten.
-     Rotkanal = Helligkeit, Blaukanal = Tiefe (0 hinten … 255 vorne), */
-  const DW = 1000, DH = 520;
-  function sample(draw, step) {
-    const c = document.createElement('canvas'); c.width = DW; c.height = DH;
-    const g = c.getContext('2d'); draw(g);
-    const d = g.getImageData(0, 0, DW, DH).data, pts = [];
-    for (let y = Math.floor(step / 2); y < DH; y += step) for (let x = Math.floor(step / 2); x < DW; x += step) {
-      const i = (y * DW + x) * 4, al = d[i + 3];
-      if (al < 90) continue;
-      pts.push({ x: (x - DW / 2) / DW, y: (y - DH / 2) / DW, a: (al / 255) * (0.3 + 0.7 * d[i] / 255), z: d[i + 2] / 127.5 - 1, tag: d[i] - d[i + 1] > 120 ? 1 : 0, s: 0 });
-    }
-    return pts;
-  }
-  const col = (lum, z, tag) => 'rgb(' + lum + ',' + (tag ? 0 : lum) + ',' + Math.round((z + 1) * 127.5) + ')';
-
-  /* 02 — Salzburg: Festungsberg mit Hohensalzburg, Dom mit Doppeltürmen + Kuppel, Kollegienkirche, Altstadt, Salzach */
-  function drawSalzburg(g) {
-    g.fillStyle = col(95, -0.6);                                         // Festungsberg (hinten, gedämpft)
-    g.beginPath(); g.moveTo(40, 434);
-    g.bezierCurveTo(180, 432, 290, 330, 400, 282); g.bezierCurveTo(470, 254, 700, 252, 770, 278);
-    g.bezierCurveTo(860, 312, 920, 402, 980, 434); g.closePath(); g.fill();
-    g.fillStyle = col(255, -0.1);                                        // Festung
-    g.fillRect(420, 206, 330, 60); g.fillRect(396, 238, 58, 42); g.fillRect(720, 236, 54, 44);
-    g.fillRect(540, 150, 78, 60);                                       // Hoher Stock
-    const roof = (x1, x2, y, top) => { g.beginPath(); g.moveTo(x1, y); g.lineTo(x2, y); g.lineTo((x1 + x2) / 2, top); g.closePath(); g.fill(); };
-    roof(532, 626, 150, 110);
-    g.fillRect(445, 170, 30, 40); roof(440, 480, 170, 140);              // Turm links
-    g.fillRect(690, 174, 26, 36); roof(686, 720, 174, 146);              // Turm rechts
-    g.fillRect(625, 180, 14, 30); roof(622, 642, 180, 150);              // Kapelle
-    for (let x = 420; x < 750; x += 18) g.fillRect(x, 198, 9, 8);        // Zinnen
-    g.globalCompositeOperation = 'destination-out';                     // Fenster als Lücken
-    for (let x = 440; x < 735; x += 26) g.fillRect(x, 224, 8, 12);
-    g.fillRect(560, 168, 9, 14); g.fillRect(590, 168, 9, 14);
-    g.globalCompositeOperation = 'source-over';
-    g.fillStyle = col(175, 0.2);                                         // Altstadt-Dächer (vorne, mittelhell)
-    const roofs = [[90, 30], [128, 40], [300, 34], [342, 44], [392, 30], [430, 38], [478, 28], [520, 42], [566, 32],
-                   [610, 40], [656, 30], [700, 36], [744, 28], [780, 40], [900, 32], [940, 26]];
-    roofs.forEach(([x, h]) => g.fillRect(x, 432 - h, 36, h));
-    g.fillStyle = col(255, 0.7);                                         // Dom (vorne)
-    const tower = (x) => { g.fillRect(x, 312, 36, 120); g.fillRect(x + 4, 290, 28, 22); g.beginPath(); g.arc(x + 18, 290, 15, Math.PI, 0); g.fill(); g.fillRect(x + 15, 256, 6, 22); };
-    tower(166); tower(248);
-    g.fillRect(202, 336, 46, 96);                                       // Fassade
-    g.fillRect(200, 326, 50, 14); g.beginPath(); g.arc(225, 326, 26, Math.PI, 0); g.fill(); g.fillRect(222, 288, 6, 14);   // Kuppel
-    g.fillRect(818, 362, 64, 70); g.beginPath(); g.arc(850, 362, 30, Math.PI, 0); g.fill(); g.fillRect(847, 318, 6, 16);   // Kollegienkirche
-    g.strokeStyle = col(120, -0.3); g.lineWidth = 5;                     // Salzach
-    [454, 474].forEach((y, k) => { g.beginPath(); for (let x = 30; x <= 970; x += 10) { const yy = y + Math.sin(x * 0.02 + k * 2) * 4; x === 30 ? g.moveTo(x, yy) : g.lineTo(x, yy); } g.stroke(); });
-  }
-
-  /* ============================
-     PARTIKEL
-     ============================ */
-  let N = 0, ready = false;
-  let SX, SY, SA, SZ, SS, AMB, TAG;                // je Form: Ziel (normiert), Helligkeit, Tiefe, Blockgröße, „Staub"-Flag, Dreh-Flag
-  let AX, AY, AZ, DL, SCA, SCR, PH, SP, MZ, SK;    // je Partikel: Staub-Position, Verzögerung, Streuung, Phase, Stern-Tiefe, Stern-Los
-  const STARS = 1000;                              // wie der Hintergrund auf „Me" (cv.js: N = 1000)
-  let SHOW = [];                                   // je Form (−1 = reiner Staub → Index 0): Anteil sichtbarer Staub-Partikel
-  function build() {
-    const shapes = [portraitPoints(), sample(drawSalzburg, 7), []];   // 03: leer → alle Partikel zurück in den Sternenstaub
-    N = Math.max.apply(null, shapes.map(s => s.length)) + 480;
-    const f32 = () => new Float32Array(N);
-    AX = f32(); AY = f32(); AZ = f32(); DL = f32(); SCA = f32(); SCR = f32(); PH = f32(); SP = f32(); MZ = f32(); SK = f32();
-    for (let i = 0; i < N; i++) {
-      AX[i] = pxRand(i, 1); AY[i] = pxRand(i, 2); AZ[i] = pxRand(i, 3) * 2 - 1;
-      DL[i] = pxRand(i, 4); SCA[i] = pxRand(i, 5) * 6.2832; SCR[i] = 0.4 + pxRand(i, 6) * 0.6;
-      PH[i] = pxRand(i, 7) * 6.2832; SP[i] = 0.6 + pxRand(i, 8);
-      MZ[i] = 0.18 + Math.pow(pxRand(i, 9), 2.2) * 0.82; SK[i] = pxRand(i, 61);
-    }
-    SX = []; SY = []; SA = []; SZ = []; SS = []; AMB = []; TAG = [];
-    shapes.forEach((pts, s) => {
-      /* zufällige, aber feste Zuordnung Partikel → Punkt: ergibt beim Morphen das wirbelnde Durcheinander */
-      const order = pts.map((p, k) => [pxRand(k, 40 + s), p]).sort((a, b) => a[0] - b[0]).map(x => x[1]);
-      const sx = f32(), sy = f32(), sa = f32(), sz = f32(), ss = f32(), amb = new Uint8Array(N), tag = new Uint8Array(N);
-      for (let i = 0; i < N; i++) {
-        const p = order[i];
-        if (p) {
-          sx[i] = p.x; sy[i] = p.y; sa[i] = p.a; tag[i] = p.tag || 0; ss[i] = p.s;
-          sz[i] = Math.max(-1, Math.min(1, p.z * 0.8 + (pxRand(i, 50 + s) - 0.5) * 0.4));
-        }
-        else amb[i] = 1;
-      }
-      SX.push(sx); SY.push(sy); SA.push(sa); SZ.push(sz); SS.push(ss); AMB.push(amb); TAG.push(tag);
-    });
-    SHOW = [Math.min(1, STARS / N)].concat(AMB.map(a => { let n = 0; for (let i = 0; i < N; i++) n += a[i]; return Math.min(1, STARS / Math.max(1, n)); }));
-    ready = true;
-  }
-
-  /* Ziel von Partikel i in Form s (s = −1 → Sternenstaub) */
-  const A = { x: 0, y: 0, a: 0, z: 0, s: 0 }, B = { x: 0, y: 0, a: 0, z: 0, s: 0 };
-  const zSize = z => z > 0.45 ? 4 : z > -0.35 ? 3 : 2;                    // nah = größer
-  function target(s, i, L, t, now, out) {
-    if (s < 0 || AMB[s][i]) {
-      out.x = AX[i] * W + Math.sin(now * 0.00012 * SP[i] + PH[i]) * 18;
-      out.y = AY[i] * H + Math.cos(now * 0.0001 * SP[i] + PH[i]) * 14;
-      const shown = SK[i] < SHOW[s + 1];                                    // nur so viele wie auf „Me"
-      out.a = shown ? (0.1 + MZ[i] * 0.55) * (0.72 + 0.28 * Math.sin(now * 0.0016 * SP[i] + PH[i])) : 0;
-      out.z = AZ[i]; out.s = MZ[i] > 0.82 ? 3 : MZ[i] > 0.5 ? 2 : 1;         // 1–3 px wie auf „Me"
-      return;
-    }
-    out.x = L.cx + SX[s][i] * L.S; out.y = L.cy + SY[s][i] * L.S + drift(s, t); out.a = SA[s][i]; out.z = SZ[s][i];
-    out.s = SS[s][i] ? SS[s][i] * L.S : zSize(out.z);
-  }
-
-  /* ── Maus, Klick, Neigung ── */
-  const mouse = { x: -9999, y: -9999 }, ripples = [];
-  let tx = 0, ty = 0, rx = 0, ry = 0, lastT = -9;
-  stage.addEventListener('mousemove', e => { const r = cv.getBoundingClientRect(); mouse.x = e.clientX - r.left; mouse.y = e.clientY - r.top; });
-  stage.addEventListener('mouseleave', () => { mouse.x = mouse.y = -9999; });
-  stage.addEventListener('click', e => {
-    if (e.target.closest && e.target.closest('.wk-card')) return;            // Klick auf ein Projekt öffnet es, keine Schockwelle
-    const r = cv.getBoundingClientRect(); ripples.push({ x: e.clientX - r.left, y: e.clientY - r.top, t: performance.now() });
+  if (PHONE || (window.matchMedia && !window.matchMedia('(pointer: fine)').matches)) return;
+  rows.forEach((r) => { const im = new Image(); im.decoding = 'async'; im.src = r.dataset.img; });   // vorladen
+  rowPreview({
+    scope: '#selectedWork .sw-row', rows, hideClass: 'sw-pv-on',
+    chip: '<span class="hp-chip sw-pv-chip">View project<svg viewBox="0 0 12 12"><path d="M3.5 2h6.5v6.5H8.5V4.56L3.06 10 2 8.94 7.44 3.5H3.5z"/></svg></span>',
+    make: (row) => { const img = document.createElement('img'); img.alt = ''; img.src = row.dataset.img; return img; },
+    onRow: (i, y) => band.set(i, y)
   });
-  if (!window.matchMedia || window.matchMedia('(pointer: fine)').matches)     // Touch: kein Maus-Parallax (ein Tipp würde Kacheln dauerhaft verschieben)
-    window.addEventListener('mousemove', e => { tx = e.clientX / window.innerWidth - 0.5; ty = e.clientY / window.innerHeight - 0.5; }, { passive: true });
-
-  /* ── Sätze: Pixel-Aufbau / -Zerfall nach Zeitfenster ── */
-  const lines = [...linesWrap.querySelectorAll('.story-line')];
-  const measureLines = () => lines.forEach(l => pxMeasure(l, Math.max(8, parseFloat(getComputedStyle(l).fontSize) * 0.16)));
-  /* Graffiti-Scribbles: zeichnen sich direkt nach dem Aufbau des Satzes beim Weiterscrollen (Strich für Strich),
-     kurz bevor der Satz zerfällt, ziehen sie sich zurück */
-  const scribbles = lines.map(l => [...l.querySelectorAll('.story-scribble path')]);
-  const DRAW = i => [LINES[i].inn[1], LINES[i].inn[1] + DRAWLEN];
-  const UNDRAW = i => LINES[i].out ? [LINES[i].out[0] - 0.12, LINES[i].out[0]] : null;
-  const measureScribbles = () => scribbles.forEach(scribbleMeasure);
-  measureScribbles();
-  window.addEventListener('resize', measureScribbles);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureScribbles);
-  if (!animate) scribbles.forEach(ps => ps.forEach(p => { p.style.strokeDashoffset = '0'; }));
-  function renderScribbles(t) {
-    scribbles.forEach((ps, i) => {
-      if (!ps.length) return;
-      const un = UNDRAW(i);
-      scribbleDraw(ps, span(t, DRAW(i)) * (un ? 1 - span(t, un) : 1));
-    });
-  }
-  function renderLines(t) {
-    renderScribbles(t);
-    lines.forEach((l, i) => {
-      const w = LINES[i] || LINES[LINES.length - 1];
-      if (w.out && t > w.out[0]) pxClip(l, 1 - span(t, w.out), 'dissolve');
-      else pxClip(l, span(t, w.inn), 'build');
-      if (i === GRID) l.style.transform = 'translate3d(0,' + lineDY(t).toFixed(2) + 'px,0)';
-    });
-  }
-
-  /* ── Kacheln: Bild blendet sich weich ein (und setzt sich von leicht vergrößert auf), Name gleitet hoch,
-     Kategorie tippt sich ein. Maus: nur der Bildinhalt gleitet im Rahmen — die Kachel selbst bleibt stehen.
-     Scrollen: jede Kachel wandert mit eigenem Tempo (Parallax) ── */
-  if (animate) cMetas.forEach(typePrepare);
-  const caps = cards.map(c => c.querySelector('.wk-cap'));
-  function renderGrid(t) {
-    if (!cards.length) return;
-    let all = 1;
-    for (let k = 0; k < cards.length; k++) {
-      const r = RECTS[k];
-      r.dy = animate ? cardDY(k, t) : 0;
-      const b = animate ? eio(span(t, IMG(k))) : 1;
-      all = Math.min(all, b);
-      if (animate) {
-        cFrames[k].style.opacity = b.toFixed(3);
-        caps[k].style.opacity = b.toFixed(3);
-        caps[k].style.transform = 'translate3d(0,' + ((1 - b) * 14).toFixed(2) + 'px,0)';
-        const m = cMetas[k];
-        if (m && m._typeOrig != null) {
-          if (b > 0.6 && !m._typed) typeIn(m, 520);
-          else if (b <= 0 && m._typed) { m._typed = false; m._typeRun = (m._typeRun || 0) + 1; m.textContent = m._typeOrig.replace(/\S/g, ' '); }   // zurückgescrollt → beim nächsten Mal neu eintippen
-        }
-      }
-      if (!PX_REDUCE) {
-        cards[k].style.transform = 'translate3d(0,' + r.dy.toFixed(2) + 'px,0)';
-        const f = CARD_M[k] * 0.1, sc = animate ? 1.08 - 0.08 * b : 1;
-        const tf = 'translate3d(' + (-rx * r.w * f).toFixed(2) + 'px,' + (-ry * r.h * f).toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
-        cImgs[k].forEach(im => { im.style.transform = tf; });
-      }
-    }
-    wk.classList.toggle('is-on', all > 0.97);                                  // klickbar erst, wenn alle Bilder stehen
-  }
-
-  /* ── Zeichnen (im gsap-Takt nach Lenis + ScrollTrigger) ── */
-  const BUCK = 8, SIZES = 9, groups = Array.from({ length: BUCK * SIZES }, () => []);   // Helligkeit × Blockgröße (1–9 px)
-  let story = null, visible = false, last = 0;
-  const storyT = () => story ? (window.scrollY - story.start) / (PHONE ? (story.end - story.start) / PIN : window.innerHeight) : PIN;   // Handy: Adressleiste verändert innerHeight → Pin-Länge ist stabil
-  function frame() {
-    const now = performance.now(), dt = Math.min(now - (last || now) || 16.7, 50) / 1000; last = now;
-    if (!visible) return;
-    const t = storyT(); lastT = t;
-    if (animate) renderLines(t);
-    rx = smoothTowards(rx, tx, 0.5, dt); ry = smoothTowards(ry, ty, 0.5, dt);
-    renderGrid(t);
-    if (!ready) return;
-    for (let i = ripples.length - 1; i >= 0; i--) if (now - ripples[i].t > 1600) ripples.splice(i, 1);
-
-    /* welches Kapitel / welcher Wechsel? */
-    let a = LAST, b = LAST, u = 1;
-    if (t < FORM[1]) { a = -1; b = 0; u = span(t, FORM); }
-    else for (let k = 0; k < LAST; k++) {
-      const w = MORPH(k);
-      if (t < w[0]) { a = b = k; break; }
-      if (t < w[1]) { a = k; b = k + 1; u = span(t, w); break; }
-    }
-    const L = layout();
-    const R = 90, swirl = Math.min(W, H) * 0.16;
-    /* Weicher Übergang aus „What I do": solange die Bühne hereinscrollt, blenden die Sterne von oben ein */
-    const entering = c01(-t), fadeTop = H * 0.55;
-
-    for (let g = 0; g < groups.length; g++) groups[g].length = 0;
-    for (let i = 0; i < N; i++) {
-      target(a, i, L, t, now, A);
-      let e = 1;
-      if (a !== b) { target(b, i, L, t, now, B); e = eio(c01((u - DL[i] * 0.4) / 0.6)); }
-      else { B.x = A.x; B.y = A.y; B.a = A.a; B.z = A.z; B.s = A.s; }
-      let x = A.x + (B.x - A.x) * e, y = A.y + (B.y - A.y) * e;
-      let al = A.a + (B.a - A.a) * e, z = A.z + (B.z - A.z) * e;
-      if (a !== b) { const sc = Math.sin(Math.PI * e) * SCR[i] * swirl; x += Math.cos(SCA[i]) * sc; y += Math.sin(SCA[i]) * sc; }   // auseinanderwirbeln
-      x += z * rx * 34 + Math.sin(now * 0.0013 * SP[i] + PH[i]) * (0.3 + z * 0.25);  // Parallax + leises Atmen
-      y += z * ry * 24 + Math.cos(now * 0.0011 * SP[i] + PH[i]) * (0.3 + z * 0.25);
-      const dx = x - mouse.x, dy = y - mouse.y, d2 = dx * dx + dy * dy;            // dem Cursor ausweichen
-      if (d2 < R * R) { const d = Math.sqrt(d2) || 1, f = (1 - d / R); x += dx / d * f * f * 28; y += dy / d * f * f * 28; }
-      for (const rp of ripples) {                                                  // Schockwelle
-        const age = (now - rp.t) / 1600, rad = age * Math.max(W, H) * 0.6, ex = x - rp.x, ey = y - rp.y, dd = Math.hypot(ex, ey) || 1, w = Math.abs(dd - rad);
-        if (w < 70) { const k = (1 - age) * (1 - w / 70); x += ex / dd * k * 22; y += ey / dd * k * 22; }
-      }
-      if (entering) al *= 1 - entering * (1 - c01(y / fadeTop));                  // oben noch unsichtbar → kein harter Schnitt
-      if (al < 0.03) continue;
-      let size = A.s + (B.s - A.s) * e;
-      if (a !== b) size *= 1 - 0.45 * Math.sin(Math.PI * e);                        // im Flug kleiner, landen als Block
-      if (z > 0.45 && size < 4 && !(B.s < 4 && A.s < 4 && (a < 0 || AMB[a][i]) && AMB[b][i])) size = 4;   // Sterne bleiben klein
-      const sz = Math.max(0, Math.min(SIZES - 1, Math.round(size) - 1));
-      groups[sz * BUCK + Math.min(BUCK - 1, Math.floor(al * BUCK))].push(x, y);
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = 'rgb(255,255,255)';
-    for (let g = 0; g < groups.length; g++) {
-      const p = groups[g]; if (!p.length) continue;
-      const s = Math.floor(g / BUCK) + 1;
-      ctx.globalAlpha = ((g % BUCK) + 0.5) / BUCK;
-      for (let k = 0; k < p.length; k += 2) ctx.fillRect(Math.round(p[k] - s / 2), Math.round(p[k + 1] - s / 2), s, s);
-    }
-    ctx.globalAlpha = 1;
-  }
-
-  /* ── Start ── */
-  if (animate) {
-    measureLines(); renderLines(-2);
-    story = ScrollTrigger.create({
-      trigger: section, start: 'top top', end: '+=' + Math.round(PIN * 100) + '%', pin: true, invalidateOnRefresh: true,
-      onRefresh: () => { size(); measureLines(); },
-    });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measureLines(); measureGrid(); });
-  }
-  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }, { threshold: 0 }).observe(stage);
-  afterIntro(() => {
-    const go = () => { try { build(); } catch (e) {} };
-    if (document.fonts && document.fonts.load) document.fonts.load('400 230px Anton').then(go, go); else go();
-  });
-  if (typeof gsap !== 'undefined') gsap.ticker.add(frame);                // gleicher Takt wie Lenis + ScrollTrigger
-  else (function loop() { requestAnimationFrame(loop); frame(); })();
 })();
 
 /* ============================
-   WORK — Kacheln im dritten Story-Kapitel, Projekt-Vorschau (#wkOpen) und die Wege weiter (#storyNext)
-   · Hover Kachel: Name rollt buchstabenweise um, „View"-Label folgt dem Cursor (direkt, ohne Nachziehen)
-   · Klick: das Bild wächst aus der Kachel in die Bildmitte (kein Vollbild), der Rest dunkelt ab;
-     danach wischt oben rechts ein Pfeil-Feld auf → Projektseite (data-href). Klick daneben, Esc oder Scrollen:
-     das Bild schrumpft zurück in seine Kachel
-   · „My work" / „More about me": Wörter gleiten beim Hereinscrollen aus der Maske, Label tippt sich ein;
-     Hover (CSS): Füllung zieht von unten auf, Buchstaben-Roll, Pfeil schießt raus und kommt nach
-   Einblenden / Parallax der Kacheln selbst: initStory (gleicher Takt wie die Partikel).
+   WEITER — „My work" / „More about me" (#storyNext)
+   · Wörter gleiten beim Hereinscrollen aus der Maske, Label tippt sich ein
+   · Hover (CSS): Füllung zieht von unten auf, Buchstaben-Roll, Pfeil schießt raus und kommt nach
 ============================ */
-(function initWorkGrid() {
-  const grid = document.getElementById('wkGrid'), box = document.getElementById('wkOpen');
-  if (!grid || !box) return;
-  const items = [...grid.querySelectorAll('.wk-item')];
-  const motion = !PX_REDUCE && typeof gsap !== 'undefined';
-
-  /* Buchstaben für den Hover-Roll (Kachelnamen + große Links) — splitRoll siehe oben */
-  items.forEach((it) => {
-    const n = it.querySelector('.wk-name'), name = n.dataset.t || n.textContent.trim();
-    splitRoll(n, name);
-    /* Hover: Detailbild zieht von unten auf (wie „My work"), beim Verlassen nach oben weg; danach still zurück nach unten */
-    const det = it.querySelector('.wk-detail'), card = it.querySelector('.wk-card');
-    if (det) {
-      const enter = () => {
-        if (it.classList.contains('is-leave')) { it.classList.add('is-reset'); it.classList.remove('is-leave'); void it.offsetWidth; it.classList.remove('is-reset'); }
-        it.classList.add('is-hover');
-      };
-      const leave = () => { if (!it.classList.contains('is-hover')) return; it.classList.remove('is-hover'); it.classList.add('is-leave'); };
-      card.addEventListener('mouseenter', enter); card.addEventListener('focus', enter);
-      card.addEventListener('mouseleave', leave); card.addEventListener('blur', leave);
-      det.addEventListener('transitionend', (e) => {
-        if (e.propertyName !== 'clip-path' || !it.classList.contains('is-leave')) return;
-        it.classList.add('is-reset'); it.classList.remove('is-leave'); void it.offsetWidth; it.classList.remove('is-reset');
-      });
-    }
-    it.querySelector('.wk-card').setAttribute('aria-label', 'Preview project ' + name + ' — ' + (it.dataset.cat || ''));
-  });
-
-
+(function initStoryNext() {
   /* Wege weiter: Wörter gleiten aus der Maske, Label tippt sich ein */
   const next = document.getElementById('storyNext');
   if (next) {
@@ -2394,99 +2106,6 @@ window.__heroInit = heroInit;
     const foot = document.getElementById('siteFooter');
     if ('ResizeObserver' in window && foot) new ResizeObserver(() => fitSoon()).observe(foot);   // Footer-Wort passt sich an → Differenz korrigieren
   }
-
-  /* „View"-Label folgt dem Cursor */
-  let chipOff = () => {};
-  if (!window.matchMedia || window.matchMedia('(pointer: fine)').matches) {
-    const chip = document.createElement('span');
-    chip.className = 'hero-play'; chip.setAttribute('aria-hidden', 'true');
-    chip.innerHTML = '<span class="hp-chip">View<svg viewBox="0 0 12 12"><path d="M5.25 1h1.5v4.25H11v1.5H6.75V11h-1.5V6.75H1v-1.5h4.25z"/></svg></span>';
-    document.body.appendChild(chip);
-    let mx = 0, my = 0, on = false, raf = 0;
-    const place = () => { raf = 0; chip.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0)'; };
-    const set = (v) => {
-      if (v === on) return;
-      on = v; if (on) place();
-      chip.classList.toggle('is-on', on);
-      document.documentElement.classList.toggle('wk-view-on', on);
-    };
-    const check = (el) => set(!!(box.hidden && el && el.closest && el.closest('.wk.is-on .wk-card')));
-    window.addEventListener('pointermove', (e) => { mx = e.clientX; my = e.clientY; check(e.target); if (on && !raf) raf = requestAnimationFrame(place); }, { passive: true });
-    lenis.on('scroll', () => check(document.elementFromPoint(mx, my)));   // Kachel fährt unter den stillstehenden Zeiger
-    chipOff = () => set(false);
-  }
-
-  /* ── Vorschau ── */
-  const fig = box.querySelector('.wkl-fig'), img = fig.querySelector('img'), go = box.querySelector('.wkl-go');
-  const bgEl = box.querySelector('.wkl-bg'), closeBtn = box.querySelector('.wkl-close');
-  let cur = null, busy = false;
-  const rectOf = (r) => ({ left: r.left, top: r.top, width: r.width, height: r.height });
-  /* Zielgröße: Bildformat behalten, mittig, etwa zwei Drittel des Bildschirms */
-  function target(src) {
-    const vw = window.innerWidth, vh = window.innerHeight, m = vw <= 760;
-    const ar = src.naturalWidth && src.naturalHeight ? src.naturalWidth / src.naturalHeight : 1.6;
-    const maxW = m ? vw - 32 : Math.min(vw * 0.6, 1100), maxH = vh * (m ? 0.6 : 0.66);
-    const w = Math.min(maxW, maxH * ar), h = w / ar;
-    return { left: (vw - w) / 2, top: (vh - h) / 2, width: w, height: h };
-  }
-  function open(item) {
-    if (busy || cur) return;
-    busy = true; cur = item; chipOff();
-    const frame = item.querySelector('.wk-frame'), src = item.classList.contains('is-hover') && frame.querySelector('.wk-detail') || frame.querySelector('img');
-    img.src = src.currentSrc || src.src; img.alt = src.alt;
-    go.href = item.dataset.href || 'projects.html';
-    go.setAttribute('aria-label', 'Open project page: ' + (item.querySelector('.wk-name').dataset.t || ''));
-    const from = rectOf(frame.getBoundingClientRect()), to = target(src);
-    Object.assign(fig.style, { left: from.left + 'px', top: from.top + 'px', width: from.width + 'px', height: from.height + 'px' });
-    box.classList.remove('is-on', 'is-landed');
-    box.hidden = false;
-    document.documentElement.classList.add('wko-lock');
-    lenis.stop();
-    frame.style.visibility = 'hidden';
-    void box.offsetWidth;
-    box.classList.add('is-on');
-    const landed = () => { box.classList.add('is-landed'); busy = false; go.focus({ preventScroll: true }); };
-    if (!motion) { Object.assign(fig.style, { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px' }); landed(); return; }
-    gsap.fromTo(img, { scale: 1.12 }, { scale: 1, duration: 0.9, ease: 'expo.inOut' });
-    gsap.to(fig, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.9, ease: 'expo.inOut', onComplete: landed });
-  }
-  function close() {
-    if (busy || !cur) return;
-    busy = true;
-    const item = cur, frame = item.querySelector('.wk-frame');
-    const done = () => {
-      box.hidden = true; box.classList.remove('is-on', 'is-landed');
-      frame.style.visibility = '';
-      document.documentElement.classList.remove('wko-lock');
-      lenis.start();
-      cur = null; busy = false;
-      item.querySelector('.wk-card').focus({ preventScroll: true });
-    };
-    box.classList.remove('is-landed', 'is-on');
-    if (!motion) { done(); return; }
-    const to = rectOf(frame.getBoundingClientRect());
-    gsap.to(img, { scale: 1.12, duration: 0.75, ease: 'expo.inOut' });
-    gsap.to(fig, { left: to.left, top: to.top, width: to.width, height: to.height, duration: 0.75, ease: 'expo.inOut', onComplete: done });
-  }
-
-  items.forEach(it => it.querySelector('.wk-card').addEventListener('click', () => open(it)));
-  bgEl.addEventListener('click', close);
-  closeBtn.addEventListener('click', close);
-  box.addEventListener('wheel', close, { passive: true });                  // Weiterscrollen schließt die Vorschau
-  box.addEventListener('touchmove', close, { passive: true });
-  document.addEventListener('keydown', (e) => {
-    if (box.hidden) return;
-    if (e.key === 'Escape') { e.preventDefault(); close(); }
-    else if (e.key === 'Tab') {                                               // Fokus bleibt in der Vorschau
-      e.preventDefault();
-      (document.activeElement === go ? closeBtn : go).focus();
-    }
-  });
-  window.addEventListener('resize', () => {                                 // offen + Fenstergröße ändert sich → neu mittig
-    if (!cur || busy) return;
-    const to = target(cur.querySelector('.wk-frame img'));
-    Object.assign(fig.style, { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px' });
-  });
 })();
 
 /* ============================

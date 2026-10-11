@@ -11,7 +11,14 @@
    · Scroll-Anzeige: schmale Pixel-Leiste oben (statt Spur mit Prozent-Chip rechts)
    ============================================================ */
 
-:root { --m-pad: 16px; }
+:root {
+  --m-pad: 16px;
+  /* einheitliche Schriftgrößen auf dem Handy (Desktop: style.css) */
+  --fs-title: 19vw;
+  --fs-list: clamp(2rem, 10.4vw, 3.2rem);
+  --fs-label: 10px;
+  --fs-roll: 12.4vw;
+}
 
 /* Farben exakt wie gesetzt: keine Papier-Körnung (multiply) über Nav, Chips und Flächen, kein grauer Tipp-Schleier */
 body::before { display: none; }
@@ -103,55 +110,33 @@ body::before { display: none; }
    START — What I do
    ============================ */
 .main-content .services-section { padding: 40px var(--m-pad) 28px; }
-.services-section::after {                           /* weicher Übergang: die Sterne der Story tauchen langsam aus dem Grau auf */
-  bottom: -150px; height: 150px;
-  background: linear-gradient(to bottom, var(--bg) 0%, rgba(35, 35, 35, 0.82) 30%, rgba(35, 35, 35, 0.4) 65%, rgba(35, 35, 35, 0) 100%);
-}
 .svc-preview-panel { display: none; }
-.svc-eyebrow { justify-content: flex-start; padding-bottom: 24px; }
-.services-list { align-items: stretch; text-align: left; border-top: 1px solid var(--ink-ghost); counter-reset: svc; }
-.services-list .svc-item .svc-name { color: var(--ink) !important; }   /* kein „hängender“ Hover nach dem Antippen (Desktop graut sonst die anderen aus) */
-.svc-item {
-  display: grid; grid-template-columns: 34px 1fr 22px; align-items: start; cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  padding: 18px 0 16px; border-bottom: 1px solid var(--ink-ghost);
-  counter-increment: svc;
-}
-.svc-item::before {                                   /* Nummer in Mono */
-  content: counter(svc, decimal-leading-zero);
-  padding-top: 0.5em;
-  font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; color: var(--accent);
-}
-.svc-name { font-size: clamp(2rem, 10.4vw, 3.2rem); line-height: 0.96; white-space: normal; }
-.svc-skills {
-  grid-column: 2;
-  position: static; transform: none; opacity: 1;
-  flex-direction: row; flex-wrap: wrap; gap: 4px 14px;
-  margin-top: 10px; white-space: normal;
-}
-.svc-skill { font-size: 10.5px; letter-spacing: 0.14em; }
-.svc-item:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
-/* Plus → Minus rechts in der Zeile: zeigt, dass man antippen kann (mobile.js) */
-.m-svc-ico { grid-column: 3; grid-row: 1; position: relative; width: 12px; height: 12px; margin: 0.9em 0 0 auto; }
-.m-svc-ico::before, .m-svc-ico::after { content: ''; position: absolute; left: 0; top: 5px; width: 12px; height: 2px; background: var(--ink); transition: transform 0.5s var(--ease-out-expo), background-color 0.3s ease; }
-.m-svc-ico::after { transform: rotate(90deg); }
-.svc-item.is-open .m-svc-ico::after { transform: rotate(0deg); }
-.svc-item.is-open .m-svc-ico::before, .svc-item.is-open .m-svc-ico::after { background: var(--accent); }
-/* Mini-Modal unter dem Service: klappt auf, Fläche wischt von oben herein, Satz tippt sich ein */
-.m-svc-more { grid-column: 2 / 4; display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.55s var(--ease-out-expo); }
-.svc-item.is-open .m-svc-more { grid-template-rows: 1fr; }
-.m-svc-clip { min-height: 0; overflow: hidden; }
-.m-svc-card {
-  position: relative; margin: 14px 0 4px; padding: 14px 16px 15px;
-  background: #2C2C2C; border-left: 2px solid var(--accent);
-  font-family: var(--font-mono); font-size: 12px; line-height: 1.6; letter-spacing: 0.01em; color: rgba(255,255,255,0.86);
-  white-space: pre-wrap;
-  clip-path: inset(0 0 100% 0); transition: clip-path 0.6s var(--ease-out-expo);
-}
-.svc-item.is-open .m-svc-card { clip-path: inset(0); transition-delay: 0.05s; }
+.svc-eyebrow { padding: 0; margin-bottom: 24px; }
+.svr { padding: 52px 0 0; }                              /* rollender Satz untereinander */
+.svr-in { grid-template-columns: minmax(0, 1fr); row-gap: 26px; }
+.svr-main { gap: 16px; }
+.svr-desc { font-size: 12.5px; min-height: 4.95em; }
 
-/* Story: Bühne so hoch wie der Bildschirm bei eingefahrener Adressleiste → unten bleibt kein Streifen frei */
-.story-stage { height: 100vh; height: 100lvh; }
+/* Selected Work (Handy): Titel zweizeilig, Zeile = Nr. · Name · Kategorie/Jahr · kleines Vorschaubild;
+   Drücken holt die dunkle Fläche (script.js, gleiche Richtungslogik wie am Desktop) */
+.sw { margin-top: 24px; padding: 56px 0 64px; }
+.sw-head { padding: 0 var(--m-pad); margin-bottom: 26px; }
+.sw-title { line-height: 0.92; }
+.sw-title-in { white-space: normal; max-width: calc((100vw - 2 * var(--m-pad)) / 1.18); }
+.sw-cols { display: none; }
+.sw-row {
+  grid-template-columns: 30px auto minmax(0, 1fr) 84px;
+  grid-template-areas: 'n name name thumb' 'n cat year thumb';
+  column-gap: 12px; row-gap: 6px;
+  min-height: 0; padding: 16px var(--m-pad);
+  -webkit-tap-highlight-color: transparent;
+}
+.sw-n { grid-area: n; align-self: start; padding-top: 0.7em; }
+.sw-name { grid-area: name; }
+.sw-cat { grid-area: cat; }
+.sw-year { grid-area: year; }
+.sw-arrow { display: none; }
+.sw-thumb { display: block; grid-area: thumb; width: 84px; aspect-ratio: 4 / 3; object-fit: cover; background: #2C2C2C; }
 
 /* ============================
    START — Weiter-Links + Footer
