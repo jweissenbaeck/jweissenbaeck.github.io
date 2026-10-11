@@ -20,7 +20,7 @@
   document.body.appendChild(bar);
   const bg = bar.getContext('2d');
   const BPX = 4, BGAP = 2;                                              // Pixelgröße · Abstand (CSS-px)
-  const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8B9DFF';
+  const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#B6BEC8';
   const OFF = getComputedStyle(document.documentElement).getPropertyValue('--ink-ghost').trim() || '#444444';
   let bw = 0, bdpr = 1, bn = 0, bOn = -1, idle = 0;
   function sizeBar() {

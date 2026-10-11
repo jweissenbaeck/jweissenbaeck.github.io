@@ -41,17 +41,21 @@
 </head>
 <body>
 
-<!-- LOADER — weiße Fläche wie beim Seitenwechsel: „My Portfolio“ / „by Jacky“, darunter Pixel, die sich füllen, + Prozent.
-     Ist die Seite geladen, teilt sie sich genau zwischen den beiden Zeilen: obere Hälfte nach oben, untere nach unten
-     (script.js → initLoader). -->
+<!-- LOADER — Fläche in --accent, in der Mitte das Logo „JCKY“; ist die Seite geladen, wird das Logo zum Fenster
+     (dahinter die Seite), man fliegt hinein, bis die Buchstaben den ganzen Bildschirm einnehmen (script.js → initLoader). -->
 <div id="pageLoader" aria-hidden="true">
-  <div class="ld-half ld-half--top">
-    <span class="ld-clip"><span class="ld-line">My Portfolio</span></span>
-  </div>
-  <div class="ld-half ld-half--bot">
-    <span class="ld-clip"><span class="ld-line">by Jacky</span></span>
-    <span class="ld-progress"><span class="ld-px"></span><span class="ld-pct"><span class="ld-num">000</span>%</span></span>
-  </div>
+  <svg class="ld-svg" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <text id="ldText" class="ld-t" x="0" y="0" font-size="200">JCKY</text>
+      <mask id="ldHole" maskUnits="userSpaceOnUse">
+        <rect class="ld-full" fill="#fff"/>
+        <g class="ld-tf"><use href="#ldText" class="ld-hole" fill="#000" stroke="#000" stroke-width="0" stroke-linejoin="round"/></g>
+      </mask>
+    </defs>
+    <rect class="ld-plate ld-full"/>
+    <g class="ld-logo ld-tf"><use href="#ldText" class="ld-ink"/></g>
+  </svg>
+  <p class="ld-label"><span>Loading Jacky</span><span class="ld-num">000</span></p>
 </div>
 
 <!-- CUSTOM CURSOR -->
@@ -73,18 +77,15 @@
 </nav>
 
 <!-- HERO — in Ebenen (script.js → heroInit, initHero): Wand hinten, Haarlinien, Person vorne (freigestellt).
-     Maus: die Person bewegt sich mit, die Wand kaum (gegenläufig) · Scrollen: beide Ebenen ziehen unterschiedlich schnell weg.
-     Links Alter + Name, rechts Zitat + Eckdaten, unten rechts Platzhaltertext. -->
+     Schwarz-Weiß; um den Cursor eine Bubble mit Trail, in der das Bild farbig wird (.hx-col, script.js → initHero).
+     Maus: die Person bewegt sich dezent mit, die Wand kaum (gegenläufig) · Scrollen: beide Ebenen ziehen unterschiedlich schnell weg.
+     Links unten Name + Text, rechts unten Rolle / Ort / Alter. -->
 <section class="hx" id="hero" aria-label="Jacob Weissenbäck — UI / UX Designer">
-  <div class="hx-bg" aria-hidden="true"><img src="assets/background_noperson.png" alt="" decoding="async" fetchpriority="high"></div>
+  <div class="hx-bg" aria-hidden="true"><img class="hx-bw" src="assets/background_noperson.png" alt="" decoding="async" fetchpriority="high"><img class="hx-col" src="assets/background_noperson.png" alt="" decoding="async"></div>
   <div class="hx-grid" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i></div>
-  <div class="hx-person" aria-hidden="true"><img src="assets/person_nobackground.png" alt="" decoding="async" fetchpriority="high"></div>
+  <div class="hx-person" aria-hidden="true"><img class="hx-bw" src="assets/person_nobackground.png" alt="" decoding="async" fetchpriority="high"><img class="hx-col" src="assets/person_nobackground.png" alt="" decoding="async"></div>
   <div class="hx-fade" aria-hidden="true"></div>
   <div class="hx-shade" aria-hidden="true"></div>
-
-  <ul class="hx-left" data-hx-speed="0.08">
-    <li class="hx-stat hx-rv" style="--r:0"><span class="hx-num" data-age>23</span><span class="hx-lab">Years old</span></li>
-  </ul>
 
   <div class="hx-bottom" data-hx-speed="0.1">
     <h1 class="hx-name"><span class="hx-mask"><span>Jacob</span></span><span class="hx-mask"><span>Weissenback</span></span></h1>
@@ -92,195 +93,36 @@
   </div>
 
   <ul class="hx-right" data-hx-speed="0.06">
-    <li class="hx-quote hx-rv" style="--r:1">Good design is clear before it is clever.</li>
-    <li class="hx-item hx-rv" style="--r:2"><span class="hx-v">Salzburg</span><span class="hx-k">Austria</span></li>
-    <li class="hx-item hx-rv" style="--r:3"><span class="hx-v">Websline</span><span class="hx-k">Junior UI / UX Designer</span></li>
-    <li class="hx-item hx-rv" style="--r:4"><span class="hx-v">13</span><span class="hx-k">Tools I work with</span></li>
+    <li class="hx-item hx-rv" style="--r:1"><b>Junior UI / UX Designer</b><span>at Websline</span></li>
+    <li class="hx-item hx-rv" style="--r:2"><b>Location</b><span>Salzburg, Austria</span></li>
+    <li class="hx-item hx-rv" style="--r:3"><b>Native language</b><span>German</span></li>
+    <li class="hx-item hx-rv" style="--r:4"><b data-age>23</b><span>Years old</span></li>
   </ul>
 
-  <div class="hx-reel" data-hx-speed="0.09">
-    <span class="hx-k hx-rv" style="--r:4">Placeholder</span>
-    <p class="hx-note hx-rv" style="--r:5">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.</p>
-  </div>
 </section>
 
 <div id="mainContent" class="main-content">
 
-<!-- WHAT I DO -->
-<section class="services-section" id="work">
-
-  <div class="svc-preview-panel" id="svcImgPanel" aria-hidden="true">
-    <div class="svc-preview-inner">
-      <div class="svc-preview-img" id="svc-preview-img-uiux">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#0f0f0f"/>
-          <rect x="28" y="22" width="224" height="146" rx="7" fill="#1a1a1a"/>
-          <rect x="38" y="38" width="88" height="12" rx="3" fill="#3a8fff" opacity="0.85"/>
-          <rect x="38" y="56" width="60" height="7" rx="2" fill="#2a2a2a"/>
-          <rect x="38" y="67" width="80" height="7" rx="2" fill="#222"/>
-          <rect x="38" y="78" width="52" height="7" rx="2" fill="#1e1e1e"/>
-          <rect x="148" y="38" width="88" height="106" rx="5" fill="#1f1f1f"/>
-          <circle cx="192" cy="82" r="19" fill="#3a8fff" opacity="0.12"/>
-          <circle cx="192" cy="82" r="11" fill="#3a8fff" opacity="0.35"/>
-          <rect x="160" y="107" width="64" height="7" rx="2" fill="#2a2a2a"/>
-          <rect x="38" y="98" width="80" height="20" rx="5" fill="#3a8fff" opacity="0.9"/>
-          <rect x="50" y="105" width="56" height="7" rx="2" fill="#fff" opacity="0.9"/>
-        </svg>
-      </div>
-      <div class="svc-preview-img" id="svc-preview-img-product">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#0d0d0d"/>
-          <rect x="70" y="22" width="140" height="140" rx="20" fill="#191919"/>
-          <circle cx="140" cy="88" r="33" fill="none" stroke="#e0c97a" stroke-width="2"/>
-          <circle cx="140" cy="88" r="19" fill="#e0c97a" opacity="0.12"/>
-          <line x1="140" y1="55" x2="140" y2="40" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
-          <line x1="140" y1="121" x2="140" y2="136" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
-          <line x1="107" y1="88" x2="92" y2="88" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
-          <line x1="173" y1="88" x2="188" y2="88" stroke="#e0c97a" stroke-width="2" stroke-linecap="round"/>
-          <rect x="92" y="128" width="96" height="12" rx="3" fill="#1f1f1f"/>
-          <rect x="102" y="132" width="76" height="4" rx="2" fill="#e0c97a" opacity="0.45"/>
-        </svg>
-      </div>
-      <div class="svc-preview-img" id="svc-preview-img-image">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#080808"/>
-          <rect x="28" y="22" width="224" height="136" rx="5" fill="#111"/>
-          <ellipse cx="105" cy="92" rx="50" ry="50" fill="#ff6b35" opacity="0.22"/>
-          <ellipse cx="175" cy="92" rx="47" ry="47" fill="#2a9fff" opacity="0.18"/>
-          <ellipse cx="140" cy="92" rx="35" ry="35" fill="#7b2fff" opacity="0.14"/>
-          <rect x="38" y="34" width="60" height="7" rx="2" fill="#1e1e1e"/>
-          <rect x="230" y="30" width="14" height="14" rx="2" fill="#ff6b35" opacity="0.6"/>
-        </svg>
-      </div>
-      <div class="svc-preview-img" id="svc-preview-img-color">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#060606"/>
-          <rect x="22" y="22" width="78" height="130" rx="5 0 0 5" fill="#1a2a40"/>
-          <rect x="100" y="22" width="80" height="130" fill="#2d1f10"/>
-          <rect x="180" y="22" width="78" height="130" rx="0 5 5 0" fill="#102818"/>
-          <rect x="22" y="134" width="236" height="18" rx="0 0 5 5" fill="#0a0a0a"/>
-          <rect x="34" y="140" width="36" height="5" rx="2" fill="#3a6fff" opacity="0.7"/>
-          <rect x="90" y="140" width="36" height="5" rx="2" fill="#ff8c42" opacity="0.7"/>
-          <rect x="148" y="140" width="36" height="5" rx="2" fill="#42c97a" opacity="0.7"/>
-          <rect x="206" y="140" width="36" height="5" rx="2" fill="#ff4a7a" opacity="0.7"/>
-        </svg>
-      </div>
-      <div class="svc-preview-img" id="svc-preview-img-video">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#090909"/>
-          <rect x="22" y="34" width="236" height="106" rx="5" fill="#111"/>
-          <polygon points="126,72 126,102 156,87" fill="#3a8fff" opacity="0.9"/>
-          <rect x="22" y="130" width="50" height="16" rx="3" fill="#1e1e1e"/>
-          <rect x="78" y="130" width="96" height="16" rx="3" fill="#3a8fff" opacity="0.55"/>
-          <rect x="180" y="130" width="42" height="16" rx="3" fill="#1e1e1e"/>
-          <rect x="34" y="139" width="24" height="3" rx="1" fill="#444"/>
-          <rect x="84" y="139" width="76" height="3" rx="1" fill="#fff" opacity="0.45"/>
-        </svg>
-      </div>
-      <div class="svc-preview-img" id="svc-preview-img-ads">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#0b0b0b"/>
-          <rect x="28" y="18" width="224" height="146" rx="7" fill="#141414"/>
-          <rect x="42" y="34" width="106" height="56" rx="4" fill="#1f1f1f"/>
-          <rect x="52" y="44" width="48" height="5" rx="2" fill="#e0c97a" opacity="0.65"/>
-          <rect x="52" y="54" width="80" height="4" rx="2" fill="#2a2a2a"/>
-          <rect x="52" y="72" width="36" height="10" rx="3" fill="#e0c97a" opacity="0.8"/>
-          <rect x="42" y="100" width="196" height="52" rx="4" fill="#1a1a1a"/>
-          <rect x="56" y="112" width="60" height="4" rx="2" fill="#333"/>
-          <rect x="56" y="120" width="98" height="4" rx="2" fill="#2a2a2a"/>
-          <rect x="164" y="104" width="60" height="44" rx="4" fill="#1f1f1f"/>
-          <rect x="172" y="114" width="44" height="4" rx="2" fill="#3a8fff" opacity="0.55"/>
-        </svg>
-      </div>
-      <div class="svc-preview-img" id="svc-preview-img-social">
-        <svg viewBox="0 0 280 190" xmlns="http://www.w3.org/2000/svg">
-          <rect width="280" height="190" fill="#090909"/>
-          <rect x="90" y="12" width="100" height="170" rx="14" fill="#111"/>
-          <rect x="100" y="28" width="80" height="58" rx="4" fill="#1a1a1a"/>
-          <circle cx="114" cy="44" r="7" fill="#3a8fff" opacity="0.45"/>
-          <rect x="124" y="40" width="46" height="4" rx="2" fill="#2a2a2a"/>
-          <rect x="124" y="48" width="32" height="4" rx="2" fill="#222"/>
-          <rect x="100" y="96" width="80" height="58" rx="4" fill="#1a1a1a"/>
-          <rect x="110" y="106" width="46" height="4" rx="2" fill="#e0c97a" opacity="0.55"/>
-          <rect x="110" y="116" width="62" height="4" rx="2" fill="#2a2a2a"/>
-          <rect x="110" y="132" width="26" height="9" rx="3" fill="#3a8fff" opacity="0.65"/>
-        </svg>
-      </div>
+<!-- WHAT I DO — Zitat in der Mitte (bleibt beim Scrollen stehen), links und rechts die Leistungen, die gegenläufig
+     vorbeiziehen (script.js → initWhatIDo). Wörter in <em> stehen in der Akzentfarbe. -->
+<section class="services-section wid" id="work" aria-labelledby="widTitle">
+  <div class="wid-stage">
+    <ul class="wid-col wid-col--l">
+      <li class="wid-item"><span class="wid-n">01</span><span class="wid-name">UI / UX Design</span><span class="wid-tools">Figma · Framer · Prototyping</span></li>
+      <li class="wid-item"><span class="wid-n">02</span><span class="wid-name">Product Design</span><span class="wid-tools">Systems · Components</span></li>
+      <li class="wid-item"><span class="wid-n">03</span><span class="wid-name">Image Editing</span><span class="wid-tools">Photoshop · Lightroom</span></li>
+      <li class="wid-item"><span class="wid-n">04</span><span class="wid-name">Colorgrading</span><span class="wid-tools">DaVinci · LUTs</span></li>
+    </ul>
+    <div class="wid-center">
+      <p class="wid-eyebrow" id="widTitle">What I do</p>
+      <h2 class="wid-quote">I turn complex ideas into <em>clear, bold interfaces</em> and visuals — work people understand at first glance and <em>remember long after.</em></h2>
     </div>
+    <ul class="wid-col wid-col--r">
+      <li class="wid-item"><span class="wid-n">05</span><span class="wid-name">Video Cutting</span><span class="wid-tools">DaVinci Resolve · Pacing</span></li>
+      <li class="wid-item"><span class="wid-n">06</span><span class="wid-name">Advertisements</span><span class="wid-tools">Motion · Copywriting</span></li>
+      <li class="wid-item"><span class="wid-n">07</span><span class="wid-name">Social Media</span><span class="wid-tools">Content · Strategy</span></li>
+    </ul>
   </div>
-
-  <div class="svc-eyebrow">
-    <span class="svc-eyebrow-txt">What I do</span>
-  </div>
-
-  <div class="services-list" id="servicesList">
-
-    <div class="svc-item" data-img="svc-preview-img-uiux" data-desc="I design interfaces people get at first glance — from research and wireframes to clickable prototypes in Figma and Framer.">
-      <span class="svc-name">UI / UX Design</span>
-      <div class="svc-skills">
-        <span class="svc-skill">Figma</span>
-        <span class="svc-skill">Framer</span>
-        <span class="svc-skill">Prototyping</span>
-        <span class="svc-skill">Research</span>
-      </div>
-    </div>
-
-    <div class="svc-item" data-img="svc-preview-img-product" data-desc="I shape products end to end: design systems, reusable components and flows that hold up from the first sketch to launch.">
-      <span class="svc-name">Product Design</span>
-      <div class="svc-skills">
-        <span class="svc-skill">Systems</span>
-        <span class="svc-skill">Figma</span>
-        <span class="svc-skill">Components</span>
-      </div>
-    </div>
-
-    <div class="svc-item" data-img="svc-preview-img-image" data-desc="I retouch and composite images in Photoshop and Lightroom — clean, natural and true to the brand.">
-      <span class="svc-name">Image Editing</span>
-      <div class="svc-skills">
-        <span class="svc-skill">Photoshop</span>
-        <span class="svc-skill">Lightroom</span>
-        <span class="svc-skill">Compositing</span>
-      </div>
-    </div>
-
-    <div class="svc-item" data-img="svc-preview-img-color" data-desc="I colorgrade footage in DaVinci Resolve and build custom LUTs that give every project its own mood.">
-      <span class="svc-name">Colorgrading</span>
-      <div class="svc-skills">
-        <span class="svc-skill">DaVinci</span>
-        <span class="svc-skill">LUTs</span>
-        <span class="svc-skill">Lightroom</span>
-      </div>
-    </div>
-
-    <div class="svc-item" data-img="svc-preview-img-video" data-desc="I cut videos in DaVinci Resolve with a feel for pacing, rhythm and sound — every second has to earn its place.">
-      <span class="svc-name">Video Cutting</span>
-      <div class="svc-skills">
-        <span class="svc-skill">DaVinci Resolve</span>
-        <span class="svc-skill">Pacing</span>
-        <span class="svc-skill">Audio</span>
-      </div>
-    </div>
-
-    <div class="svc-item" data-img="svc-preview-img-ads" data-desc="I create ads that stop the scroll: motion, copy and visuals working together to sell one clear idea.">
-      <span class="svc-name">Advertisements</span>
-      <div class="svc-skills">
-        <span class="svc-skill">Motion</span>
-        <span class="svc-skill">Copywriting</span>
-        <span class="svc-skill">Social Ads</span>
-      </div>
-    </div>
-
-    <div class="svc-item" data-img="svc-preview-img-social" data-desc="I plan and produce social content with a clear strategy and a consistent look across every channel.">
-      <span class="svc-name">Social Media</span>
-      <div class="svc-skills">
-        <span class="svc-skill">Content</span>
-        <span class="svc-skill">Strategy</span>
-        <span class="svc-skill">Branding</span>
-      </div>
-    </div>
-
-  </div>
-
 </section>
 
 <!-- SELECTED WORK — Projekt-Index auf der Akzentfläche (script.js → initSelectedWork).
@@ -290,10 +132,9 @@
   <header class="sw-head">
     <h2 class="sw-title" id="swTitle"><span class="sw-title-in">Selected Work</span></h2>
   </header>
-  <div class="sw-cols" aria-hidden="true"><span>No.</span><span>Project</span><span>Category</span><span>Year</span></div>
+  <div class="sw-cols" aria-hidden="true"><span>Project</span><span>Category</span><span>Year</span></div>
   <ol class="sw-list">
       <li><a class="sw-row" href="projects.html#lumina" data-img="https://picsum.photos/id/1015/1200/900">
-        <span class="sw-n">01</span>
         <span class="sw-name">Lumina</span>
         <span class="sw-cat">UI / UX Design</span>
         <span class="sw-year">2026</span>
@@ -301,7 +142,6 @@
         <img class="sw-thumb" src="https://picsum.photos/id/1015/480/360" alt="" loading="lazy" decoding="async">
       </a></li>
       <li><a class="sw-row" href="projects.html#kane" data-img="https://picsum.photos/id/1043/1200/900">
-        <span class="sw-n">02</span>
         <span class="sw-name">Kane</span>
         <span class="sw-cat">Video Editing</span>
         <span class="sw-year">2026</span>
@@ -309,7 +149,6 @@
         <img class="sw-thumb" src="https://picsum.photos/id/1043/480/360" alt="" loading="lazy" decoding="async">
       </a></li>
       <li><a class="sw-row" href="projects.html#flux" data-img="https://picsum.photos/id/1050/1200/900">
-        <span class="sw-n">03</span>
         <span class="sw-name">Flux</span>
         <span class="sw-cat">UI / UX Design</span>
         <span class="sw-year">2025</span>
@@ -317,7 +156,6 @@
         <img class="sw-thumb" src="https://picsum.photos/id/1050/480/360" alt="" loading="lazy" decoding="async">
       </a></li>
       <li><a class="sw-row" href="projects.html#vertex" data-img="https://picsum.photos/id/1074/1200/900">
-        <span class="sw-n">04</span>
         <span class="sw-name">Vertex</span>
         <span class="sw-cat">Photography</span>
         <span class="sw-year">2024</span>

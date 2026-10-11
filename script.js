@@ -383,59 +383,6 @@ function onEnterOnce(el, fn, margin) {
 })();
 
 
-/* ============================
-   HERO — Punktraster am Cursor
-   Ein unsichtbares Raster aus kleinen Pixelpunkten; rund um den Zeiger leuchten sie in --accent auf (nach außen
-   schwächer). Sitzt direkt am Zeiger, kein Nachlauf. Liegt unter Name, Bildern und Video. Nicht über der Nav.
-============================ */
-(function initHeroParticles() {
-  const hero = document.getElementById('hero');
-  if (!hero || PX_REDUCE || PHONE) return;
-  if (window.matchMedia && !window.matchMedia('(any-hover: hover)').matches) return;
-  const cv = document.createElement('canvas');
-  cv.className = 'hero-dust'; cv.setAttribute('aria-hidden', 'true');
-  hero.insertBefore(cv, hero.firstChild);
-  const ctx = cv.getContext('2d');
-  if (!ctx) return;
-  const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8B9DFF';
-  const G = 22, D = 3, R = 160;                                        // Rasterabstand · Punktgröße · Lichtradius
-  const nav = document.getElementById('mainNav');
-  let W = 0, H = 0, dpr = 1, x = 0, y = 0, a = 0, on = false, raf = 0, last = 0;
-  function size() { W = hero.clientWidth; H = hero.clientHeight; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
-  size();
-  window.addEventListener('resize', size);
-  function frame(now) {
-    raf = 0;
-    const dt = last ? now - last : 16; last = now;
-    a = on ? 1 : Math.max(0, a - dt / 220);                             // beim Verlassen kurz ausblenden
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-    if (a > 0) {
-      ctx.fillStyle = ACC;
-      const g0 = Math.max(0, Math.floor((x - R) / G)), g1 = Math.ceil((x + R) / G);
-      const h0 = Math.max(0, Math.floor((y - R) / G)), h1 = Math.ceil((y + R) / G);
-      for (let gy = h0; gy <= h1; gy++) for (let gx = g0; gx <= g1; gx++) {
-        const px = gx * G + G / 2, py = gy * G + G / 2, d = Math.hypot(px - x, py - y);
-        if (d >= R) continue;
-        const k = 1 - d / R;
-        ctx.globalAlpha = a * Math.pow(k, 1.4);
-        ctx.fillRect(Math.round(px - D / 2), Math.round(py - D / 2), D, D);
-      }
-      ctx.globalAlpha = 1;
-    }
-    if (on || a > 0) raf = requestAnimationFrame(frame); else last = 0;
-  }
-  function track(e) {
-    const hr = hero.getBoundingClientRect();
-    let ok = e.clientX >= hr.left && e.clientX <= hr.right && e.clientY >= hr.top && e.clientY <= hr.bottom && hr.bottom > 0 && !window.__playCursorActive;
-    if (ok && nav && e.clientY <= nav.getBoundingClientRect().bottom) ok = false;           // nicht über der Nav
-    if (ok) { const hit = document.elementFromPoint(e.clientX, e.clientY); if (hit && !hit.closest('#hero')) ok = false; }
-    if (ok) { if (hero.clientWidth !== W || hero.clientHeight !== H) size(); x = e.clientX - hr.left; y = e.clientY - hr.top; }
-    on = ok;
-    if (!raf && (on || a > 0)) raf = requestAnimationFrame(frame);
-  }
-  window.addEventListener('pointermove', track, { passive: true });
-  document.addEventListener('mouseleave', () => { on = false; });
-})();
 
 /* ============================
    FOOTER — Buchstaben-Explosion
@@ -575,11 +522,12 @@ function onEnterOnce(el, fn, margin) {
 })();
 
 /* ============================
-   PAGE LOADER — schlicht, wie der Seitenwechsel
-   Weiße Fläche, „My Portfolio“ / „by Jacky“ gleiten von der Mitte her herein; darunter füllen sich Pixel von links
-   nach rechts, daneben zählt die Prozentzahl. Echte Bereitschaft (load + Schriften) deckelt den Zähler bei 90 %.
-   Danach teilt sich die Fläche genau zwischen den beiden Zeilen: obere Hälfte (mit „My Portfolio“) nach oben,
-   untere (mit „by Jacky“) nach unten; dabei steigt der Hero-Name auf.
+   PAGE LOADER — nach dem Vorbild landonorris.com
+   Fläche in --accent, in der Mitte das Logo „JCKY“ (SVG-Text in Anton, gestreckt); unten zählt „Loading Jacky“ mit
+   (echte Bereitschaft: load + Schriften deckelt bei 90 %). Ist die Seite da, wird das Logo zum Fenster: die Fläche
+   bekommt ein Loch in Form des Logos (Maske), dahinter liegt schon die Seite. Man fliegt hinein — das Logo wächst genau
+   aus seiner Mitte (nichts wandert seitlich), und die Buchstaben werden dabei immer fetter, bis sie ineinanderlaufen
+   und den ganzen Bildschirm einnehmen. Die Fläche wird nie ausgeblendet, sie verschwindet einfach aus dem Bild.
    Volle Länge einmal pro Sitzung; bei erneutem Laden eine kurze Version. Zeit läuft Bild für Bild
    (max. 1/30 s pro Bild) → hängt der Browser kurz, springt nichts.
 ============================ */
@@ -602,17 +550,16 @@ function onEnterOnce(el, fn, margin) {
   document.documentElement.style.overflow = 'hidden';
   const quick = vtStoreGet('jcky:introSeen') === '1';                 // schon gesehen → kurze Version
   vtStoreSet('jcky:introSeen', '1');
-  const COUNT = PX_REDUCE ? 0 : quick ? 900 : 1900;                   // 000 → 100 (ms)
-  const SPLIT = PX_REDUCE ? 0 : 1100;                                 // Teilung (ms)
+  const COUNT = PX_REDUCE ? 0 : quick ? 700 : 1400;                   // Füllen (ms)
+  const ZOOM = PX_REDUCE ? 0 : 950;                                   // Hineinfliegen (ms)
 
-  const num = loader.querySelector('.ld-num'), row = loader.querySelector('.ld-px');
-  const N = 24;                                                        // Pixel der Ladeanzeige
-  row.innerHTML = '<i></i>'.repeat(N);
-  const cells = [...row.children];
-  requestAnimationFrame(() => requestAnimationFrame(() => loader.classList.add('is-in')));   // Zeilen gleiten herein
-
-  const fontsOk = (document.fonts && document.fonts.load)
-    ? Promise.race([document.fonts.load('500 10px "DM Mono"'), new Promise(r => setTimeout(r, 700))])
+  const FS = 200, SX = 1.18;                                          // Schriftgröße im SVG · Streckung wie die Überschriften
+  const plate = loader.querySelector('.ld-plate'), logo = loader.querySelector('.ld-logo');
+  const tfs = [...loader.querySelectorAll('.ld-tf')], fulls = [...loader.querySelectorAll('.ld-full')];
+  const hole = loader.querySelector('.ld-hole');
+  const num = loader.querySelector('.ld-num');
+  const fontOk = (document.fonts && document.fonts.load)
+    ? Promise.race([document.fonts.load('400 100px "Anton"'), new Promise(r => setTimeout(r, 900))])
     : Promise.resolve();
   /* echte Bereitschaft */
   const ready = new Promise((resolve) => {
@@ -621,176 +568,230 @@ function onEnterOnce(el, fn, margin) {
   });
   let isReady = false; ready.then(() => { isReady = true; });
 
-  let onShown = -1;
-  function render(p) {
-    num.textContent = String(Math.round(p)).padStart(3, '0');
-    const on = Math.floor(p / 100 * N + 1e-6);
-    if (on === onShown) return;
-    onShown = on;
-    cells.forEach((c, i) => c.classList.toggle('is-on', i < on));
+  /* ── Vermessen (per Canvas): Tinten-Box des Schriftzugs, O = ihre Mitte, K = Ziel im K ── */
+  let ink = null, O = null, K = null, W = 0, H = 0, k = 1, P = null, want = 0;
+  function measure() {
+    const x = document.createElement('canvas').getContext('2d');
+    x.font = '400 ' + FS + 'px Anton, Impact, sans-serif';
+    const m = x.measureText('JCKY');
+    ink = { l: -m.actualBoundingBoxLeft, r: m.actualBoundingBoxRight, t: -m.actualBoundingBoxAscent, b: m.actualBoundingBoxDescent };
+    O = { x: (ink.l + ink.r) / 2, y: (ink.t + ink.b) / 2 };
+    /* Ziel im K: die dickste Stelle des Buchstabens (Abstandskarte, zwei Durchläufe) → der Kreis darum liegt ganz im
+       Strich; fliegt man dort hinein, füllt das K am Ende den ganzen Bildschirm */
+    const kx0 = x.measureText('JC').width, kx1 = x.measureText('JCK').width;
+    const pad = 4, cw = Math.ceil(ink.r - ink.l) + pad * 2, ch = Math.ceil(ink.b - ink.t) + pad * 2;
+    const c = x.canvas; c.width = cw; c.height = ch;
+    x.font = '400 ' + FS + 'px Anton, Impact, sans-serif'; x.fillStyle = '#000';
+    x.fillText('JCKY', pad - ink.l, pad - ink.t);
+    const px = x.getImageData(0, 0, cw, ch).data, D = new Float32Array(cw * ch), R2 = Math.SQRT2;
+    for (let i = 0; i < cw * ch; i++) D[i] = px[i * 4 + 3] > 128 ? 1e9 : 0;
+    for (let j = 1; j < ch; j++) for (let i = 1; i < cw - 1; i++) {
+      const q = j * cw + i; if (D[q]) D[q] = Math.min(D[q], D[q - 1] + 1, D[q - cw] + 1, D[q - cw - 1] + R2, D[q - cw + 1] + R2);
+    }
+    for (let j = ch - 2; j >= 0; j--) for (let i = cw - 2; i > 0; i--) {
+      const q = j * cw + i; if (D[q]) D[q] = Math.min(D[q], D[q + 1] + 1, D[q + cw] + 1, D[q + cw + 1] + R2, D[q + cw - 1] + R2);
+    }
+    let best = { i: Math.round(pad - ink.l + (kx0 + kx1) / 2), j: Math.round(ch / 2), d: 0 };
+    const i0 = Math.max(1, Math.round(pad - ink.l + kx0)), i1 = Math.min(cw - 2, Math.round(pad - ink.l + kx1));
+    for (let j = 1; j < ch - 1; j++) for (let i = i0; i <= i1; i++) {
+      const d = D[j * cw + i] - Math.abs(j - ch / 2) * 0.01;          // bei Gleichstand: auf halber Höhe
+      if (d > best.d) best = { i, j, d };
+    }
+    K = { x: best.i - pad + ink.l, y: best.j - pad + ink.t, r: Math.max(4, D[best.j * cw + best.i] - 1) };
+  }
+  /* Bildschirm: Logo-Breite → Maßstab k; das Logo sitzt genau in der Mitte und wächst auch von dort */
+  function layout() {
+    W = window.innerWidth; H = PHONE ? phoneVH() : window.innerHeight;
+    fulls.forEach((r) => { r.setAttribute('width', W); r.setAttribute('height', H); });
+    want = PHONE ? Math.min(W * 0.62, 300) : Math.min(Math.max(W * 0.2, 220), 420);   // Breite des Logos (px)
+    k = want / ((ink.r - ink.l) * SX);
+    P = { x: W / 2, y: H / 2 };
+  }
+  /* z = Zoom · at = Bildschirmpunkt · L = Stelle im Logo, die dort liegt (Standard: Logo-Mitte) */
+  function place(z, at, L) {
+    L = L || O;
+    const tf = 'translate(' + at.x.toFixed(2) + ' ' + at.y.toFixed(2) + ') scale(' + (z * SX * k).toFixed(5) + ' ' + (z * k).toFixed(5) + ') translate(' + (-L.x).toFixed(2) + ' ' + (-L.y).toFixed(2) + ')';
+    tfs.forEach((g) => g.setAttribute('transform', tf));
   }
 
-  /* ── Zählen (Bild für Bild) ── */
-  const counted = new Promise((resolve) => {
-    if (!COUNT) { ready.then(() => { render(100); resolve(); }); return; }
-    let elapsed = 0, last = 0, shown = 0;
-    fontsOk.then(() => requestAnimationFrame(function frame(now) {
-      if (last) elapsed += Math.min(now - last, 1000 / 30);
-      last = now;
-      const k = Math.min(1, elapsed / COUNT);
-      const target = (1 - Math.pow(1 - k, 2.2)) * 100;                    // schnell an, ruhig aus
-      shown = Math.min(target, isReady ? 100 : 90);
-      render(shown);
-      if (shown < 100) requestAnimationFrame(frame); else resolve();
-    }));
+  function render(p) { num.textContent = String(Math.round(p * 100)).padStart(3, '0'); }
+
+  const filled = new Promise((resolve) => {
+    fontOk.then(() => {
+      measure(); layout(); place(1, P); render(0);
+      window.addEventListener('resize', onResize);
+      requestAnimationFrame(() => loader.classList.add('is-in'));   // Logo + Zähler blenden ein
+      if (!COUNT) { ready.then(() => { render(1); resolve(); }); return; }
+      let elapsed = 0, last = 0;
+      requestAnimationFrame(function frame(now) {
+        if (last) elapsed += Math.min(now - last, 1000 / 30);
+        last = now;
+        const t = Math.min(1, elapsed / COUNT);
+        const p = Math.min(1 - Math.pow(1 - t, 2.2), isReady ? 1 : 0.9);    // schnell an, ruhig aus
+        render(p);
+        if (p < 1) requestAnimationFrame(frame); else resolve();
+      });
+    });
   });
+  let zooming = false;
+  function onResize() { if (!zooming && ink) { layout(); place(1, P); } }
 
   function finish() {
+    window.removeEventListener('resize', onResize);
     loader.classList.add('is-hidden');
     loader.style.display = 'none';
     window.__introDone = true;
     window.dispatchEvent(new Event('jcky:intro-done'));             // jetzt darf die schwere Vorarbeit starten (afterIntro)
   }
-  /* ── Teilung in der Mitte: obere Hälfte nach oben, untere nach unten ── */
-  function split() {
+  /* ── Logo wird zum Fenster und wächst, bis die Seite frei ist ── */
+  function zoom() {
     document.documentElement.style.overflow = '';
-    if (!SPLIT) {
+    if (!ZOOM) {
       if (typeof window.__heroInit === 'function') window.__heroInit();
       loader.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, fill: 'forwards' }).finished.then(finish);
       return;
     }
-    const [top, bot] = loader.querySelectorAll('.ld-half');
-    const opts = { duration: SPLIT, easing: 'cubic-bezier(0.76, 0, 0.24, 1)', fill: 'forwards' };
-    top.animate([{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(0,-100%,0)' }], opts);
-    bot.animate([{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(0,100%,0)' }], opts)
-      .finished.then(finish, finish);
-    setTimeout(() => { if (typeof window.__heroInit === 'function') window.__heroInit(); }, SPLIT * 0.3);
+    zooming = true;
+    loader.classList.add('is-zoom');
+    plate.setAttribute('mask', 'url(#ldHole)');                     // Loch in Form des Logos → Seite scheint durch
+    logo.style.transition = 'opacity 0.14s ease'; logo.style.opacity = '0';   // dunkle Füllung gibt das Fenster frei
+    /* Hineinfliegen durchs K: der Schriftzug wächst (exponentiell → wirkt gleichmäßig; Kurve: ruhig los, in der Mitte
+       sehr schnell, weich aus) und wandert dabei nach links, bis die dickste Stelle des K in der Bildschirmmitte liegt —
+       man fliegt durch das K. Am Ende deckt der Strich des K den ganzen Bildschirm; zusätzlich werden die Buchstaben im
+       Loch zuletzt etwas fetter (Kontur in der Maske wächst) → Restkanten laufen zu, ausgeblendet wird nichts. */
+    const LZ = Math.log(Math.hypot(W, H) / 2 * 1.05 / (K.r * k));     // Kreis im K-Strich reicht bis in die Ecken
+    const SW = FS * 0.4;                                              // Endstärke der Kontur (in Schrift-Einheiten)
+    const bez = cubicBezier(0.7, 0, 0.2, 1), grow = cubicBezier(0.45, 0, 0.3, 1), pan = cubicBezier(0.5, 0, 0.3, 1);
+    const t0 = performance.now();
+    let heroDone = false;
+    requestAnimationFrame(function frame(now) {
+      const t = Math.min(1, (now - t0) / ZOOM);
+      const e = pan(t);                                             // 0 = Logo-Mitte · 1 = K in der Bildschirmmitte
+      place(Math.exp(LZ * bez(t)), P, { x: O.x + (K.x - O.x) * e, y: O.y + (K.y - O.y) * e });
+      hole.setAttribute('stroke-width', (SW * grow(Math.max(0, Math.min(1, (t - 0.55) / 0.4)))).toFixed(2));
+      if (!heroDone && t > 0.3) { heroDone = true; if (typeof window.__heroInit === 'function') window.__heroInit(); }
+      if (t < 1) requestAnimationFrame(frame); else finish();
+    });
+  }
+  /* cubic-bezier(x1, y1, x2, y2) als Funktion (wie in CSS) */
+  function cubicBezier(x1, y1, x2, y2) {
+    const f = (a, b, t) => 3 * a * t * (1 - t) * (1 - t) + 3 * b * t * t * (1 - t) + t * t * t;
+    return (x) => {
+      if (x <= 0) return 0; if (x >= 1) return 1;
+      let lo = 0, hi = 1, t = x;
+      for (let i = 0; i < 24; i++) { t = (lo + hi) / 2; if (f(x1, x2, t) < x) lo = t; else hi = t; }
+      return f(y1, y2, t);
+    };
   }
 
-  Promise.all([counted, ready]).then(() => setTimeout(split, PX_REDUCE ? 0 : quick ? 160 : 320));
+  Promise.all([filled, ready]).then(() => setTimeout(zoom, PX_REDUCE ? 0 : quick ? 100 : 200));
 })();
 /* ============================
-   PAGE TRANSITIONS — EDITORIAL PANEL (Aino-Stil)
-   Ruhiges Off-White-Panel wischt über den Seitenwechsel: Zielname (sauberer
-   Text) + Katalog-Code + kleine Eckmetadaten, weiche Expo-Easings.
-   Ein Panel „zieht durch": vorwärts nach oben, zurück nach unten.
-   Handoff via sessionStorage; Vanilla, alle modernen Browser.
+   PAGE TRANSITIONS — drei Schichten mit schräger Pixel-Kante
+   · Weg: kurz nacheinander rollen drei Flächen von unten herein: --accent, Weiß, Tiefschwarz. Ihre Oberkante ist schräg
+     (rechts voraus, wie die Kanten der Abschnitte) und pixelig ausgefranst → über den Bildschirm zieht ein Farbstreifen
+     Schiefer / Weiß, dahinter wird es schwarz. Darauf rollt der Zielname riesig (Anton, gestreckt) Buchstabe für Buchstabe
+     aus der Maske, darunter füllt sich eine Pixelreihe in --accent (wie im Intro), dann wird navigiert.
+   · Ankunft: der Name rollt nach oben weg, dann heben die Flächen in umgekehrter Reihenfolge ab (wieder mit Streifen).
+   · Rückwärts (zu einer Seite weiter links in der Nav) läuft alles gespiegelt von oben nach unten.
+   Handoff via sessionStorage (jcky:internalNav, jcky:vtDir); ohne Bewegung: sofort abdecken / ausblenden.
 ============================ */
-(function initEditorialTransition() {
+(function initPageTransition() {
   const PAGE = {
-    'index.html':    { name: 'Start',    code: 'A—01', order: 0 },
-    'projects.html': { name: 'My Work', code: 'A—02', order: 1 },
-    'cv.html':       { name: 'Me',       code: 'A—03', order: 2 },
+    'index.html':    { name: 'Start',   order: 0 },
+    'projects.html': { name: 'My Work', order: 1 },
+    'cv.html':       { name: 'Me',      order: 2 },
   };
   const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-  const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
-  const DUR = 820;
+  const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#B6BEC8';
+  const LAYERS = [ACC, '#F2F2F2', '#121212'];                         // unten → oben gezeichnet; die schwarze deckt zuletzt
+  const LAG = 0.1;                                                      // Versatz zwischen den Schichten (Anteil der Zeit)
+  const B = PHONE ? 12 : 22;                                            // Pixelgröße der Kante
+  const DOTS = 14;
 
   function pageKey(url) {
-    try {
-      const f = new URL(url, location.href).pathname.split('/').pop();
-      return f === '' ? 'index.html' : f;
-    } catch (e) { return null; }
+    try { const f = new URL(url, location.href).pathname.split('/').pop(); return f === '' ? 'index.html' : f; }
+    catch (e) { return null; }
   }
-  function metaFor(url) { return PAGE[pageKey(url)] || { name: '', code: '', order: 0 }; }
-  function dirBetween(fromU, toU) { return metaFor(toU).order < metaFor(fromU).order ? 'back' : 'forward'; }
+  const metaFor = (url) => PAGE[pageKey(url)] || { name: '', order: 0 };
+  const dirBetween = (fromU, toU) => metaFor(toU).order < metaFor(fromU).order ? 'back' : 'forward';
+  const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const eio = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  /* Zeit k (0…1) → Fortschritt der Schicht i; lead = welche Schicht vorausläuft (rein: Akzent zuerst · raus: Schwarz zuerst) */
+  const span = 1 - LAG * (LAYERS.length - 1);
+  const layerT = (k, i, enter) => eio(c01((k - LAG * (enter ? i : LAYERS.length - 1 - i)) / span));
 
-  const PANEL_COLOR = '#FFFFFF';
-  const PX_BLOCK = PHONE ? 16 : 72;      // gleiche Blockgröße wie der Scroll-Pixel-Wipe (Handy: feine Pixel)
-  const PX_BIAS  = PHONE ? 0.8 : 0.62;   // Anteil "von unten" (wie beim Scroll-Wipe; Handy: klarer von unten nach oben)
-  function pxRnd(gx, gy) {
-    let x = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
-    x = (x ^ (x >>> 13)) * 1274126177 >>> 0;
-    return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
-  }
-
+  /* Panel: Canvas (alle Schichten) + Name + Pixelreihe */
   function buildPanel(m) {
     const p = document.createElement('div');
-    p.id = 'ainoPanel';
-
-    const canvas = document.createElement('canvas');
-    canvas.className = 'aino-px';
-    canvas.setAttribute('aria-hidden', 'true');
-    p.appendChild(canvas);
-
-    const center = document.createElement('div');
-    center.className = 'aino-center';
-    center.innerHTML = '<span class="aino-clip"><span class="aino-name-inner">' + m.name + '</span></span>';   // nur der Seitenname
-    p.appendChild(center);
-
+    p.id = 'pgt';
+    p.setAttribute('aria-hidden', 'true');
+    const cv = document.createElement('canvas');
+    cv.className = 'pgt-cv';
+    p.appendChild(cv);
+    const box = document.createElement('div');
+    box.className = 'pgt-box';
+    box.innerHTML = '<span class="pgt-name"><span class="pgt-in">' + m.name.split('').map((ch, i) =>
+      '<span class="pgt-m"><span class="pgt-l" style="--i:' + i + '">' + (ch === ' ' ? '&nbsp;' : ch) + '</span></span>').join('') + '</span></span>' +
+      '<span class="pgt-px">' + '<i></i>'.repeat(DOTS) + '</span>';
+    p.appendChild(box);
     document.documentElement.appendChild(p);
 
-    /* Pixel-Engine: Fläche aus 72er-Blöcken. cover 0..1.
-       mode 'build' = von unten aufbauen · 'dissolve' = von unten abbauen (verschwindet nach oben). */
-    const ctx = canvas.getContext('2d');
-    let W = 0, H = 0, cols = 0, rows = 0, dpr = 1;
+    const ctx = cv.getContext('2d');
+    let W = 0, H = 0, dpr = 1, cols = 0, rows = 0;
     function resize() {
-      W = window.innerWidth; H = PHONE ? phoneVH() : window.innerHeight;     // Handy: bis unter die Browserleiste → kein Streifen, wenn sie ein-/ausfährt
+      W = window.innerWidth; H = PHONE ? phoneVH() : window.innerHeight;   // Handy: bis unter die Browserleiste
       dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      cols = Math.ceil(W / PX_BLOCK); rows = Math.ceil(H / PX_BLOCK);
+      cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+      cols = Math.ceil(W / B); rows = Math.ceil(H / B);
     }
     resize();
-    function draw(cover, mode) {
+    /* eine Schicht: t 0…1 = die Kante fährt einmal von unten nach oben über den Bildschirm.
+       enter: Fläche liegt hinter (unter) der Kante · exit: Fläche liegt vor (über) der Kante und weicht zurück. */
+    const J = B * 1.5;                                                  // wie weit die Pixel um die Kante ausfransen
+    function layer(color, t, enter, seed) {
+      if (enter ? t <= 0 : t >= 1) return;
+      ctx.fillStyle = color;
+      if (enter ? t >= 1 : t <= 0) { ctx.fillRect(0, 0, W, H); return; }
+      const s = Math.min(H * 0.24, 220);                                // Höhenunterschied links ↔ rechts
+      const y0 = H + J - t * (H + s + 2 * J);
+      for (let gx = 0; gx < cols; gx++) {
+        const edge = y0 + s * (1 - (gx + 0.5) / cols);                 // rechts voraus → schräge Kante
+        const g0 = Math.max(0, Math.floor((edge - J) / B)), g1 = Math.min(rows - 1, Math.floor((edge + J) / B));
+        /* sicher hinter / vor der Kante: ein Rechteck; im Fransenbereich Pixel für Pixel */
+        if (enter) { if (g1 + 1 < rows) ctx.fillRect(gx * B, (g1 + 1) * B, B + 1, H - (g1 + 1) * B + 1); }
+        else if (g0 > 0) ctx.fillRect(gx * B, 0, B + 1, g0 * B + 1);
+        for (let gy = g0; gy <= g1; gy++) {
+          const behind = gy * B + B / 2 + (pxRand(gx + seed, gy) - 0.5) * 2 * J > edge;
+          if (enter === behind) ctx.fillRect(gx * B, gy * B, B + 1, B + 1);
+        }
+      }
+    }
+    /* ts = Fortschritt je Schicht; up = vorwärts (nach oben) · sonst gespiegelt (nach unten) */
+    function draw(ts, enter, up) {
+      ctx.setTransform(dpr, 0, 0, up ? dpr : -dpr, 0, up ? 0 : H * dpr);
       ctx.clearRect(0, 0, W, H);
-      if (cover <= 0) return;
-      ctx.fillStyle = PANEL_COLOR;
-      if (cover >= 1) { ctx.fillRect(0, 0, W, H); return; }
-      for (let gy = 0; gy < rows; gy++) {
-        const rowBias = rows > 1 ? gy / (rows - 1) : 0;     // 0 = oben, 1 = unten
-        for (let gx = 0; gx < cols; gx++) {
-          const r = pxRnd(gx, gy);
-          const thr = (mode === 'dissolve')
-            ? rowBias * PX_BIAS + r * (1 - PX_BIAS)          // unten hoch → löst zuerst auf (nach oben)
-            : (1 - rowBias) * PX_BIAS + r * (1 - PX_BIAS);   // unten niedrig → füllt zuerst (von unten)
-          if (cover >= thr) ctx.fillRect(gx * PX_BLOCK, gy * PX_BLOCK, PX_BLOCK + 1, PX_BLOCK + 1);
-        }
-      }
+      LAYERS.forEach((c, i) => layer(c, ts[i], enter, i * 53));
     }
-    /* Text auf der Fläche mit demselben Blockmuster beschneiden → er verschwindet Pixel für Pixel mit der Fläche */
-    function clipTo(el, cover, mode) {
-      if (cover >= 1) { el.style.clipPath = ''; return; }
-      const r = el.getBoundingClientRect();
-      const g0 = Math.max(0, Math.floor(r.left / PX_BLOCK)), g1 = Math.min(cols - 1, Math.floor(r.right / PX_BLOCK));
-      const h0 = Math.max(0, Math.floor(r.top / PX_BLOCK)), h1 = Math.min(rows - 1, Math.floor(r.bottom / PX_BLOCK));
-      let d = '';
-      for (let gy = h0; gy <= h1; gy++) {
-        const rowBias = rows > 1 ? gy / (rows - 1) : 0;
-        for (let gx = g0; gx <= g1; gx++) {
-          const rn = pxRnd(gx, gy);
-          const thr = (mode === 'dissolve') ? rowBias * PX_BIAS + rn * (1 - PX_BIAS) : (1 - rowBias) * PX_BIAS + rn * (1 - PX_BIAS);
-          if (cover >= thr) d += 'M' + (gx * PX_BLOCK - r.left).toFixed(1) + ' ' + (gy * PX_BLOCK - r.top).toFixed(1) + 'h' + (PX_BLOCK + 1) + 'v' + (PX_BLOCK + 1) + 'h-' + (PX_BLOCK + 1) + 'Z';
-        }
-      }
-      el.style.clipPath = d ? "path('" + d + "')" : 'inset(50%)';
-    }
-    p._px = { draw, resize, clipTo };
+    p._draw = draw;
     window.addEventListener('resize', resize);
-    p._pxCleanup = () => window.removeEventListener('resize', resize);
+    p._cleanup = () => window.removeEventListener('resize', resize);
     return p;
   }
 
-  /* cover-Wert von 'from' → 'to' animieren (rAF, easeInOut); onFrame(cover) pro Frame */
-  function animateCover(p, from, to, dur, mode, onFrame) {
+  function run(dur, onFrame) {
     return new Promise((resolve) => {
       const t0 = performance.now();
       (function frame(now) {
-        const t = Math.min(1, (now - t0) / dur);
-        const e = -(Math.cos(Math.PI * t) - 1) / 2;                       // weich an + weich aus (Sinus)
-        const cover = from + (to - from) * e;
-        p._px.draw(cover, mode);
-        if (onFrame) onFrame(cover);
-        if (t < 1) requestAnimationFrame(frame); else resolve();
-      })(performance.now());
+        const k = Math.min(1, (now - t0) / dur);
+        onFrame(k);
+        if (k < 1) requestAnimationFrame(frame); else resolve();
+      })(t0);
     });
   }
+  const frameAt = (p, k, enter, up) => p._draw(LAYERS.map((_, i) => layerT(k, i, enter)), enter, up);
 
-  function anim(el, keyframes, opts) {
-    return el.animate(keyframes, Object.assign({ fill: 'forwards' }, opts));
-  }
-
-  /* ── OUTGOING: interne Links abfangen → Panel rein → navigieren ── */
+  /* ── WEG: interne Links abfangen → Schichten rein → navigieren ── */
   let transitioning = false;
   document.addEventListener('click', (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
@@ -805,90 +806,60 @@ function onEnterOnce(el, fn, margin) {
     if (transitioning) return;
     transitioning = true;
 
-    const dir = dirBetween(location.href, a.href);
+    const dir = dirBetween(location.href, a.href), up = dir !== 'back';
     vtStoreSet('jcky:internalNav', '1');
     vtStoreSet('jcky:vtDir', dir);
     try { if (typeof lenis !== 'undefined' && lenis && lenis.stop) lenis.stop(); } catch (_) {}
-
     const go = () => { window.location.href = a.href; };
     const p = buildPanel(metaFor(a.href));
+    p.classList.toggle('is-down', !up);
+    if (reduceMotion) { frameAt(p, 1, true, up); p.classList.add('is-name', 'is-full'); setTimeout(go, 200); return; }
 
-    if (reduceMotion) {
-      p._px.draw(1, 'build');
-      setTimeout(go, 200);
-      return;
-    }
-
-    const nameInner = p.querySelector('.aino-name-inner');
-    nameInner.style.transform = 'translateY(110%)';
-
-    /* Panel baut sich aus Pixeln von unten auf, dann navigieren */
-    animateCover(p, 0, 1, DUR, 'build').then(() => setTimeout(go, 110));
-
-    /* Name erscheint, sobald die Fläche großteils aufgebaut ist */
-    setTimeout(() => {
-      anim(nameInner, [{ transform: 'translateY(110%)' }, { transform: 'translateY(0%)' }], { duration: 520, easing: EASE });
-    }, DUR * 0.5);
+    const dots = [...p.querySelectorAll('.pgt-px i')];
+    run(1000, (k) => {
+      frameAt(p, k, true, up);
+      if (k > 0.6) p.classList.add('is-name');                          // Buchstaben rollen aus der Maske
+      const on = Math.round(c01((k - 0.62) / 0.38) * dots.length);
+      dots.forEach((d, i) => d.classList.toggle('is-on', i < on));
+    }).then(() => setTimeout(go, 140));
   }, true);
 
   /* ── Zurück-Button / bfcache: wiederhergestellte, noch verdeckte Seite befreien ── */
   window.addEventListener('pageshow', (e) => {
     if (!e.persisted) return;
-    const leftover = document.getElementById('ainoPanel');
+    const leftover = document.getElementById('pgt');
     if (leftover && leftover.parentNode) leftover.parentNode.removeChild(leftover);
     document.documentElement.classList.remove('vt-arriving');
     transitioning = false;
     try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
   });
 
-  /* ── INCOMING: Panel ausfahren ── */
+  /* ── ANKUNFT: Name rollt weg, Schichten heben ab ── */
   if (ARRIVED_VIA_INTERNAL_NAV) {
-    const dir = vtStoreGet('jcky:vtDir') || 'forward';
+    const dir = vtStoreGet('jcky:vtDir') || 'forward', up = dir !== 'back';
     vtStoreDel('jcky:vtDir');
-
     const cleanup = (p) => {
-      if (p && p._pxCleanup) p._pxCleanup();
+      if (p && p._cleanup) p._cleanup();
       if (p && p.parentNode) p.parentNode.removeChild(p);
       document.documentElement.classList.remove('vt-arriving');
       try { if (typeof lenis !== 'undefined' && lenis && lenis.start) lenis.start(); } catch (_) {}
     };
-
-    /* Ankommen: das weiße Panel (mit Seitenname) wird mit weicher Kurve nach rechts aus dem Bild gezogen. */
     const start = () => {
       const p = buildPanel(metaFor(location.href));
-      p._px.draw(1, 'build');               // deckt bereits (volle Pixel-Fläche)
-
-      if (reduceMotion) {
-        document.documentElement.classList.remove('vt-arriving');
-        p.style.transition = 'opacity 220ms';
-        requestAnimationFrame(() => { p.style.opacity = '0'; });
-        setTimeout(() => cleanup(p), 240);
-        return;
-      }
-      /* Handy: Seitenname blendet aus, die Fläche zerfällt weiter nach oben (unten zuerst frei) */
-      if (PHONE) {
-        requestAnimationFrame(() => {
-          document.documentElement.classList.remove('vt-arriving');
-          const label = p.querySelector('.aino-center');                   // bleibt stehen, bis die Pixel es mitnehmen
-          setTimeout(() => animateCover(p, 1, 0, 900, 'dissolve', (c) => p._px.clipTo(label, c, 'dissolve')).then(() => cleanup(p)), 180);
-        });
-        return;
-      }
-      /* die ganze weiße Fläche (samt Seitenname) wird weich nach rechts weggezogen */
+      p.classList.toggle('is-down', !up);
+      p.classList.add('is-name', 'is-still', 'is-full');               // steht schon (Name + volle Pixelreihe), ohne Einrollen
+      frameAt(p, 0, false, up);                                         // deckt komplett
       requestAnimationFrame(() => {
         document.documentElement.classList.remove('vt-arriving');
+        if (reduceMotion) { p.style.transition = 'opacity 220ms'; requestAnimationFrame(() => { p.style.opacity = '0'; }); setTimeout(() => cleanup(p), 240); return; }
         setTimeout(() => {
-          anim(p, [{ transform: 'translateX(0)' }, { transform: 'translateX(100%)' }], { duration: 1300, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' })
-            .finished.then(() => cleanup(p), () => cleanup(p));
-        }, 220);
+          p.classList.remove('is-still'); p.classList.add('is-out');   // Name rollt nach oben weg, Pixelreihe erlischt
+          setTimeout(() => run(1100, (k) => frameAt(p, k, false, up)).then(() => cleanup(p)), 300);
+        }, 160);
       });
     };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(start));
-    } else {
-      requestAnimationFrame(start);
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(start));
+    else requestAnimationFrame(start);
   }
 })();
 
@@ -1035,7 +1006,7 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
   const BIAS  = 0.6;         // Anteil "von unten"
   const SMOOTH = 0.11;       // Sekunden – Ein-/Ausblenden
   const INK = (() => { const m = (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '').trim().match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
-    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '139, 157, 255'; })();   // Akzentfarbe (--accent)
+    return m ? [1, 2, 3].map(i => parseInt(m[i], 16)).join(', ') : '182, 190, 200'; })();   // Akzentfarbe (--accent)
 
   function rnd(gx, gy) {
     let h = ((gx + 1) * 374761393 + (gy + 1) * 668265263) >>> 0;
@@ -1111,12 +1082,13 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
 /* ============================
    HERO — in Ebenen (index.html → #hero)
    · Wand (hinten, unscharf), feine senkrechte Haarlinien, Person (vorne, freigestellt); Lichtkegel auf der Person
-   · Maus: die Person bewegt sich dezent mit (max. ±4 px), die Wand kaum gegenläufig → leichte Tiefe (nur mit Maus)
-   · links Alter + Name, rechts Zitat + Eckdaten, unten rechts Platzhaltertext
+   · Maus: die Person bewegt sich dezent mit (max. ±4 px), die Wand kaum gegenläufig → leichte Tiefe (nur mit Maus);
+     Bild in Schwarz-Weiß, um den Cursor eine Bubble mit Trail, in der es farbig wird
+   · links unten Name + Text, rechts unten Rolle / Ort / Alter (fett / regular, gleich groß)
    · Auftritt (heroInit, nach der Intro): Linien wachsen von oben, Zahlen rollen hoch wie die Prozentanzeige,
      Name steigt aus der Maske, Text tippt sich ein, der Rest gleitet nacheinander herein; das Foto setzt sich aus
      leichtem Zoom
-   · Scrollen (Parallax): die Wand sinkt am langsamsten weg, die Person etwas schneller, die Texte am schnellsten;
+   · Scrollen (Parallax): die Wand sinkt deutlich langsamer weg als die Person (eigene Tempi), die Texte gleiten nach oben;
      und blenden aus; „What I do" schiebt sich mit schräger Oberkante darüber (panelEdge)
 ============================ */
 const heroInit = (instant) => {
@@ -1125,8 +1097,6 @@ const heroInit = (instant) => {
   setTimeout(() => window.dispatchEvent(new CustomEvent('jcky:hero-in', { detail: { instant: !!instant } })), 0);
   if (!hero) return;
   hero.classList.add(instant || PX_REDUCE ? 'is-still' : 'is-in');
-  /* Zahlen rollen auf ihren Wert */
-  hero.querySelectorAll('.hx-num').forEach((n, i) => setTimeout(() => n.classList.add('is-on'), instant ? 0 : 500 + i * 120));   // Alter rollt hoch
   /* Text tippt sich ein */
   const txt = hero.querySelector('.hx-text');
   if (txt && !instant && !PX_REDUCE) setTimeout(() => typeIn(txt, 1100), 900);
@@ -1139,14 +1109,7 @@ window.__heroInit = heroInit;
   /* Alter aus dem Geburtsdatum (17. Jänner 2003) */
   const born = new Date(2003, 0, 17), today = new Date();
   const age = today.getFullYear() - born.getFullYear() - ((today.getMonth() < born.getMonth() || (today.getMonth() === born.getMonth() && today.getDate() < born.getDate())) ? 1 : 0);
-  hero.querySelectorAll('[data-age]').forEach((el) => { el.dataset.value = String(age); });
-  /* Zahlen als rollende Ziffern (Spalten 0–9, wie die Prozentanzeige) */
-  const col = '0123456789'.split('').map(d => '<span>' + d + '</span>').join('');
-  hero.querySelectorAll('.hx-num').forEach((n) => {
-    const v = n.dataset.value || n.textContent.trim();
-    n.setAttribute('aria-label', v);
-    n.innerHTML = v.split('').map((d, k) => '<span class="hx-d" style="--d:' + d + ';--k:' + k + '" aria-hidden="true">' + col + '</span>').join('');
-  });
+  hero.querySelectorAll('[data-age]').forEach((el) => { el.textContent = String(age); });   // zählt jedes Jahr selbst weiter
   const txt = hero.querySelector('.hx-text');
   if (txt && !PX_REDUCE) typePrepare(txt);
 
@@ -1161,8 +1124,9 @@ window.__heroInit = heroInit;
     last = y;
     const k = c01(y / vh);
     if (!PX_REDUCE) {
-      bg.style.transform = 'translate3d(0,' + (y * 0.18).toFixed(1) + 'px,0) scale(' + (1 + k * 0.02).toFixed(4) + ')';   // dezent
-      person.style.transform = 'translate3d(0,' + (y * 0.1).toFixed(1) + 'px,0)';
+      /* Wand und Person mit eigenem Tempo: die Wand sinkt deutlich langsamer weg (Tiefe), die Person etwas schneller */
+      bg.style.transform = 'translate3d(0,' + (y * 0.55).toFixed(1) + 'px,0) scale(' + (1 + k * 0.08).toFixed(4) + ')';
+      person.style.transform = 'translate3d(0,' + (y * 0.32).toFixed(1) + 'px,0) scale(' + (1 + k * 0.03).toFixed(4) + ')';
       groups.forEach((g) => {
         const sp = parseFloat(g.dataset.hxSpeed) || 0.2;
         g.style.transform = 'translate3d(0,' + (-y * sp).toFixed(1) + 'px,0)';
@@ -1177,13 +1141,14 @@ window.__heroInit = heroInit;
 
   /* Maus-Parallax: Person folgt spürbar, Wand minimal gegenläufig (weich nachgeführt) */
   if (!PX_REDUCE && !PHONE && (!window.matchMedia || window.matchMedia('(pointer: fine)').matches)) {
-    const pImg = person.querySelector('img'), bImg = bg.querySelector('img');
+    const pImgs = [...person.querySelectorAll('img')], bImgs = [...bg.querySelectorAll('img')];
     let tx = 0, ty = 0, x = 0, yy = 0, raf = 0, lastT = 0;
     const loop = (now) => {
       const dt = Math.min(0.05, lastT ? (now - lastT) / 1000 : 0.016); lastT = now;
       x = smoothTowards(x, tx, 0.14, dt); yy = smoothTowards(yy, ty, 0.14, dt);
-      pImg.style.translate = (x * 8).toFixed(2) + 'px ' + (yy * 4).toFixed(2) + 'px';      // dezent: max. ±4 px
-      bImg.style.translate = (-x * 2).toFixed(2) + 'px ' + (-yy * 1).toFixed(2) + 'px';
+      const pt = (x * 8).toFixed(2) + 'px ' + (yy * 4).toFixed(2) + 'px', bt = (-x * 2).toFixed(2) + 'px ' + (-yy * 1).toFixed(2) + 'px';   // dezent: max. ±4 px
+      pImgs.forEach((im) => { im.style.translate = pt; });
+      bImgs.forEach((im) => { im.style.translate = bt; });
       if (Math.abs(tx - x) > 0.001 || Math.abs(ty - yy) > 0.001) raf = requestAnimationFrame(loop); else { raf = 0; lastT = 0; }
     };
     hero.addEventListener('pointermove', (e) => {
@@ -1192,6 +1157,42 @@ window.__heroInit = heroInit;
       if (!raf) raf = requestAnimationFrame(loop);
     }, { passive: true });
     hero.addEventListener('pointerleave', () => { tx = ty = 0; if (!raf) raf = requestAnimationFrame(loop); });
+
+    /* Farb-Bubble mit Trail: das Bild ist Schwarz-Weiß, um den Cursor wird es farbig. Die Farbkopien (.hx-col) liegen
+       deckungsgleich über den grauen Ebenen und sind per mask-image nur in den Kreisen sichtbar: Kopf direkt am Zeiger
+       (ohne Nachziehen), dahinter Kreise, die über ~0,7 s schrumpfen; alle Kreise mit scharfer Kante. */
+    const cols = [...hero.querySelectorAll('.hx-col')];
+    const R = 120, LIFE = 700, trail = [];
+    let cx = -1, cy = -1, inside = false, mraf = 0;
+    const nav = document.getElementById('mainNav');
+    const draw = (now) => {
+      mraf = 0;
+      if (inside) trail.push({ x: cx, y: cy, t: now });
+      while (trail.length && now - trail[0].t > LIFE) trail.shift();
+      if (trail.length > 48) trail.splice(0, trail.length - 48);
+      cols.forEach((im) => {
+        const r = im.getBoundingClientRect(), sx = im.offsetWidth / r.width, sy = im.offsetHeight / r.height;
+        const layers = [];
+        for (let i = trail.length - 1; i >= 0; i -= (i === trail.length - 1 ? 1 : 2)) {          // Kopf + jeder zweite Trail-Punkt
+          const p = trail[i], k = 1 - (now - p.t) / LIFE, rad = R * Math.pow(Math.max(0, k), 0.6);
+          if (rad < 2) continue;
+          layers.push('radial-gradient(circle ' + (rad * sx).toFixed(1) + 'px at ' + ((p.x - r.left) * sx).toFixed(1) + 'px ' + ((p.y - r.top) * sy).toFixed(1) + 'px, #000 calc(100% - 1px), transparent 100%)');   // harte, scharfe Kante (1px Kantenglättung)
+        }
+        const m = layers.length ? layers.join(',') : 'linear-gradient(transparent, transparent)';
+        im.style.webkitMaskImage = m; im.style.maskImage = m;
+      });
+      if (trail.length || inside) mraf = requestAnimationFrame(draw);
+    };
+    const kick = () => { if (!mraf) mraf = requestAnimationFrame(draw); };
+    window.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const r = hero.getBoundingClientRect();
+      cx = e.clientX; cy = e.clientY;
+      inside = cx >= r.left && cx <= r.right && cy >= r.top && cy <= r.bottom && !(nav && cy <= nav.getBoundingClientRect().bottom);
+      kick();
+    }, { passive: true });
+    document.addEventListener('mouseleave', () => { inside = false; kick(); });
+    lenis.on('scroll', () => { if (cx >= 0) { const r = hero.getBoundingClientRect(); inside = cy >= r.top && cy <= r.bottom && !(nav && cy <= nav.getBoundingClientRect().bottom); kick(); } });
   }
 
   /* „What I do" schiebt sich mit weicher, schräger Oberkante über das Foto und zieht sich beim Hereinscrollen gerade */
@@ -1374,137 +1375,52 @@ window.__accentPolys = window.__accentPolys || [];
 window.__accentHoles = window.__accentHoles || [];
 
 /* ============================
-   WHAT I DO — rollender Satz (Desktop + Handy)
-   „I'm your go-to for" + ein Wort in einem Feld in --accent. Der Abschnitt bleibt beim Scrollen kurz stehen (Pin);
-   je Schritt rollt das Wort Buchstabe für Buchstabe zur nächsten Leistung (alte Buchstaben rollen nach oben weg, neue
-   kommen von unten — wie der Hover-Roll der Nav), das Feld passt seine Breite weich an. Dazu: Satz tippt sich ein,
-   Werkzeuge als Chips, Mockup setzt sich aus Pixeln neu zusammen, Fortschritt als Pixel-Reihe mit rollender Zahl.
-   Inhalte aus der Liste in index.html (.svc-item: Name, Werkzeuge, data-desc, data-img); die Liste bleibt für
-   Screenreader erhalten (unsichtbar), die Bühne ist Dekoration.
+   WHAT I DO — Zitat in der Mitte, Leistungen links und rechts (index.html → #work)
+   · man scrollt ganz normal (nichts hält fest); das Zitat läuft mit, die beiden Listen fliegen in eigenem Tempo vorbei
+     (Parallax): links schneller als der Scroll, rechts langsamer
+   · die Wörter des Zitats hellen sich nacheinander auf, während es zur Bildschirmmitte wandert
+   · Handy: Zitat oben, die beiden Listen darunter nebeneinander (ohne Stehenbleiben)
 ============================ */
-(function initServices() {
-  const section = document.querySelector('.services-section');
-  const list = document.getElementById('servicesList');
-  if (!section || !list) return;
-  const items = [...list.querySelectorAll('.svc-item')];
-  const N = items.length;
-  const live = !PX_REDUCE && PX_CLIP_OK;
-  const data = items.map(it => ({
-    name: it.querySelector('.svc-name').textContent.trim(),
-    tools: [...it.querySelectorAll('.svc-skill')].map(s => s.textContent.trim()),
-    desc: it.dataset.desc || '', img: it.dataset.img
-  }));
+(function initWhatIDo() {
+  const sec = document.getElementById('work');
+  if (!sec || !sec.classList.contains('wid')) return;
+  const quote = sec.querySelector('.wid-quote');
+  const cols = [...sec.querySelectorAll('.wid-col')];
+  const c01 = v => v < 0 ? 0 : v > 1 ? 1 : v;
 
-  /* Bühne */
-  const digit = '<span class="svr-d">' + '0123456789'.split('').map(d => '<span>' + d + '</span>').join('') + '</span>';
-  const stage = document.createElement('div');
-  stage.className = 'svr'; stage.setAttribute('aria-hidden', 'true');
-  stage.innerHTML =
-    '<div class="svr-in">' +
-      '<div class="svr-main">' +
-        '<p class="svr-lead">I\'m your go-to for</p>' +
-        '<div class="svr-field"><span class="svr-sizer"></span></div>' +
-        '<p class="svr-desc"></p>' +
-        '<ul class="svr-tools"></ul>' +
-        '<div class="svr-prog"><span class="svr-dots">' + data.map(() => '<i></i>').join('') + '</span>' +
-          '<span class="svr-count"><span class="svr-num">' + digit + digit + '</span> / ' + String(N).padStart(2, '0') + '</span></div>' +
-      '</div>' +
-      '<div class="svr-mock"></div>' +
-    '</div>';
-  list.after(stage);
-  const field = stage.querySelector('.svr-field'), sizer = stage.querySelector('.svr-sizer');
-  const desc = stage.querySelector('.svr-desc'), tools = stage.querySelector('.svr-tools');
-  const dots = [...stage.querySelectorAll('.svr-dots i')], digits = [...stage.querySelectorAll('.svr-d')];
-  const mockBox = stage.querySelector('.svr-mock');
-  const mocks = data.map((d) => {
-    const m = document.createElement('div');
-    m.className = 'svr-mk';
-    const svg = (document.getElementById(d.img) || document.createElement('i')).querySelector('svg');
-    if (svg) { const c = svg.cloneNode(true); c.setAttribute('preserveAspectRatio', 'xMidYMid slice'); m.appendChild(c); }
-    mockBox.appendChild(m);
-    return m;
-  });
-
-  /* Wort: Buchstaben rollen (alt nach oben weg, neu von unten), Feldbreite folgt weich */
-  const letters = (txt) => txt.split('').map((ch, i) => '<span class="svr-l" style="--i:' + i + '">' + (ch === ' ' ? '&nbsp;' : ch) + '</span>').join('');
-  let layer = null;
-  function setWord(txt, instant) {
-    const old = layer;
-    layer = document.createElement('span');
-    layer.className = 'svr-w';
-    layer.innerHTML = letters(txt);
-    field.appendChild(layer);
-    sizer.textContent = txt;                                            // misst die Breite des neuen Worts
-    field.style.width = Math.ceil(sizer.getBoundingClientRect().width) + 'px';
-    if (instant || PX_REDUCE) { layer.classList.add('is-in'); if (old) old.remove(); return; }
-    void layer.offsetWidth;
-    layer.classList.add('is-in');
-    if (old) { old.classList.remove('is-in'); old.classList.add('is-out'); setTimeout(() => old.remove(), 900); }
-  }
-
-  let active = -1, run = 0;
-  function set(i, instant) {
-    if (i === active) return;
-    const prev = active; active = i;
-    const d = data[i];
-    setWord(d.name, instant);
-    dots.forEach((x, k) => x.classList.toggle('is-on', k <= i));
-    const n = String(i + 1).padStart(2, '0');
-    digits.forEach((x, k) => x.style.setProperty('--d', n[k]));
-    tools.innerHTML = d.tools.map((t, k) => '<li style="--k:' + k + '">' + t + '</li>').join('');
-    if (instant || PX_REDUCE) desc.textContent = d.desc;
-    else { desc._typeOrig = d.desc; desc._typed = false; desc.textContent = d.desc.replace(/\S/g, ' '); setTimeout(() => { if (active === i) typeIn(desc, 650); }, 180); }
-    /* Mockup: das neue setzt sich aus Pixeln über das alte zusammen */
-    const id = ++run, m = mocks[i];
-    mocks.forEach((x, k) => { x.classList.toggle('is-top', k === i); if (k !== i && k !== prev) x.classList.remove('is-shown'); });
-    m.classList.add('is-shown');
-    if (!live || instant || prev < 0) { m.style.clipPath = ''; return; }
-    pxMeasure(m, Math.max(10, Math.round(m.offsetWidth / 22)));
-    const t0 = performance.now();
-    (function frame(now) {
-      if (id !== run) return;
-      const k = Math.min(1, (now - t0) / 650);
-      pxClip(m, 1 - Math.pow(1 - k, 3), 'build');
-      if (k < 1) requestAnimationFrame(frame);
-      else { m.style.clipPath = ''; if (prev >= 0 && prev !== active) mocks[prev].classList.remove('is-shown'); }
-    })(t0);
-  }
-  set(0, true);
-  const refit = () => { sizer.textContent = data[Math.max(0, active)].name; field.style.width = Math.ceil(sizer.getBoundingClientRect().width) + 'px'; };
-  window.addEventListener('resize', refit);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(refit);
-
-  /* Pin: je Leistung ein Schritt Scrollweg; das Wort wechselt in der Mitte jedes Schritts */
-  const STEP = PHONE ? 38 : 55;                                         // % Bildschirmhöhe je Schritt
-  if (typeof ScrollTrigger !== 'undefined' && !PX_REDUCE) {
-    ScrollTrigger.create({
-      trigger: stage, start: 'top top', end: '+=' + Math.round((N - 1) * STEP) + '%', pin: true, anticipatePin: 1,
-      onUpdate: (self) => set(Math.min(N - 1, Math.round(self.progress * (N - 1))))
+  /* Zitat in Wörter teilen (Akzent-Wörter behalten ihre Farbe) */
+  const words = [];
+  quote.setAttribute('aria-label', quote.textContent.replace(/\s+/g, ' ').trim());
+  [...quote.childNodes].forEach((node) => {
+    const accent = node.nodeType === 1, text = node.textContent;
+    const frag = document.createDocumentFragment();
+    text.split(/(\s+)/).forEach((part) => {
+      if (!part) return;
+      if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(' ')); return; }
+      const w = document.createElement('span');
+      w.className = 'wid-w' + (accent ? ' is-acc' : ''); w.setAttribute('aria-hidden', 'true'); w.textContent = part;
+      frag.appendChild(w); words.push(w);
     });
-  }
-
-  /* Auftritt: Satz baut sich aus Pixeln auf, Feld wischt von links auf */
-  if (live) {
-    const lead = stage.querySelector('.svr-lead');
-    lead.style.clipPath = 'inset(50%)';
-    stage.classList.add('is-live');
-    onEnterOnce(stage, () => {
-      pxMeasure(lead, Math.max(8, parseFloat(getComputedStyle(lead).fontSize) * 0.08));
-      const t0 = performance.now();
-      (function frame(now) {
-        const k = Math.min(1, (now - t0) / 800);
-        pxClip(lead, 1 - Math.pow(1 - k, 3), 'build');
-        if (k < 1) requestAnimationFrame(frame); else lead.style.clipPath = '';
-      })(t0);
-      setTimeout(() => stage.classList.add('is-in'), 250);
-    }, '-15%');
-  }
-
-  /* Scroll-Anzeige rechts: über dem blauen Feld dunkel */
-  if (window.__accentPolys) window.__accentPolys.push(() => {
-    const r = field.getBoundingClientRect();
-    return r.bottom > 0 && r.top < window.innerHeight ? [[r.left, r.top], [r.right, r.top], [r.right, r.bottom], [r.left, r.bottom]] : null;
+    quote.replaceChild(frag, node);
   });
+
+  if (PX_REDUCE || PHONE) { words.forEach(w => w.classList.add('is-lit')); return; }
+
+  function update() {
+    const r = sec.getBoundingClientRect(), vh = window.innerHeight;
+    if (r.bottom < -vh * 0.3 || r.top > vh * 1.3) return;
+    /* d > 0: Abschnitt liegt noch unter der Bildschirmmitte · < 0: schon darüber */
+    const d = r.top + r.height / 2 - vh / 2;
+    cols[0].style.transform = 'translate3d(0,' + (d * 0.24).toFixed(1) + 'px,0)';   // links: etwas schneller als der Scroll (ruhig)
+    cols[1].style.transform = 'translate3d(0,' + (d * -0.32).toFixed(1) + 'px,0)';  // rechts: hängt hinterher
+    /* Wörter hellen sich auf, während das Zitat vom unteren Rand zur Mitte wandert */
+    const q = quote.getBoundingClientRect();
+    const lit = c01((vh * 0.95 - q.top) / (vh * 0.5 + q.height * 0.5)) * words.length;
+    words.forEach((w, i) => w.classList.toggle('is-lit', i < lit));
+  }
+  update();
+  lenis.on('scroll', update);
+  window.addEventListener('resize', update);
 })();
 
 
@@ -1531,13 +1447,6 @@ window.__accentHoles = window.__accentHoles || [];
       pxClip(el, ease(k), 'build');
       if (k < 1) requestAnimationFrame(frame); else el.style.clipPath = '';
     })(t0);
-  }
-
-  /* ── What I do: Titel baut sich beim Hereinscrollen aus Pixeln auf (wie „Selected Work") ── */
-  const eyebrow = document.querySelector('.svc-eyebrow-txt');
-  if (eyebrow && live) {
-    eyebrow.style.clipPath = 'inset(50%)';
-    onEnterOnce(eyebrow, () => buildOnce(eyebrow, Math.max(10, fontPx(eyebrow) * 0.07), 900), '-10%');
   }
 
   /* ── Footer (auf allen Seiten gleich: JCKY baut sich auf, Schreibmaschine, Leiste baut sich auf) ── */
@@ -1639,7 +1548,7 @@ window.__accentHoles = window.__accentHoles || [];
     alt.appendChild(label.querySelector('.psl-pct').cloneNode(true));
     label.appendChild(alt);
     const digits = [...wrap.querySelectorAll('.psl-d')];
-    const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#8B9DFF';
+    const ACC = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#B6BEC8';
     /* Akzent-Flächen (Projekte: window.__accentRegions, Startseite: gehoverte große Links) als Polygone */
     const regions = () => {
       const out = typeof window.__accentRegions === 'function' ? window.__accentRegions() : [];
@@ -1737,8 +1646,8 @@ window.__accentHoles = window.__accentHoles || [];
 
 /* ============================
    SELECTED WORK — Projekt-Index auf der Akzentfläche (index.html → #selectedWork)
-   · Fläche in --accent; oben und unten eine schräge Kante, die sich beim Hereinscrollen gerade zieht
-     (und beim Verlassen wieder schräg wird) — wie die schrägen Kanten auf „My Work"
+   · Fläche in --accent; oben eine schräge Kante, die sich beim Hereinscrollen gerade zieht; unten immer schräg
+     (beim Verlassen noch etwas mehr) — wie die schrägen Kanten auf „My Work"
    · Titel baut sich beim Hereinscrollen aus Pixeln auf, die Spaltenköpfe tippen sich ein,
      Zeilen: Linie zieht von links auf, Inhalt gleitet nacheinander hoch
    · Hover wie auf „My Work": eine dunkle Fläche wandert zwischen den Zeilen — nach unten kommt sie von oben,
@@ -1764,9 +1673,9 @@ window.__accentHoles = window.__accentHoles || [];
       const r = sec.getBoundingClientRect(), vh = window.innerHeight;
       if (r.bottom < -vh || r.top > vh * 2) return;
       const S = Math.min(vh * 0.13, 120);                                     // größte Schräge (px)
-      const kin = 1 - ease(c01((vh - r.top) / (vh * 0.75)));                  // oben: schräg → gerade
-      const kout = 1 - ease(c01(r.bottom / (vh * 0.75)));                     // unten: gerade → schräg beim Verlassen
-      const t = (S * kin).toFixed(1), b = (S * kout).toFixed(1);
+      const kin = 1 - ease(c01((vh - r.top) / (vh * 1.3)));                   // oben: schräg → gerade (bleibt länger schräg)
+      const kout = 1 - ease(c01(r.bottom / (vh * 0.75)));                     // beim Verlassen: noch etwas schräger
+      const t = (S * kin).toFixed(1), b = (S * (0.7 + 0.3 * kout)).toFixed(1);  // unten immer schräg
       const clip = 'polygon(0 ' + t + 'px, 100% 0, 100% calc(100% - ' + b + 'px), 0 100%)';
       if (clip !== lastClip) { lastClip = clip; sec.style.clipPath = clip; }
     };

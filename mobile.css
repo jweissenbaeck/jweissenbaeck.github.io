@@ -17,16 +17,16 @@
   --fs-title: 19vw;
   --fs-list: clamp(2rem, 10.4vw, 3.2rem);
   --fs-label: 10px;
-  --fs-roll: 12.4vw;
 }
 
 /* Farben exakt wie gesetzt: keine Papier-Körnung (multiply) über Nav, Chips und Flächen, kein grauer Tipp-Schleier */
 body::before { display: none; }
 * { -webkit-tap-highlight-color: transparent; }
 
-/* Seitenwechsel: Schrift auf der weißen Fläche schwarz */
-#ainoPanel .aino-name-inner { color: #000; }
-#ainoPanel { bottom: auto; height: 100vh; height: 100lvh; }   /* bis unter die Browserleiste → kein Streifen beim Ein-/Ausfahren */
+/* Intro: Logo-Größe siehe initLoader (Handy etwas größer) */
+
+/* Seitenwechsel: Fläche bis unter die Browserleiste */
+#pgt { bottom: auto; height: 100vh; height: 100lvh; }   /* bis unter die Browserleiste → kein Streifen beim Ein-/Ausfahren */
 
 /* ── Scroll-Anzeige: Pixel-Leiste oben am Bildschirmrand (mobile.js) ── */
 .px-scroll, .px-track { display: none !important; }
@@ -49,29 +49,30 @@ body::before { display: none; }
 .hx-bg img, .hx-person img { object-position: 49% 26%; }
 .hx-bg::after {
   background:
-    radial-gradient(ellipse 60% 52% at 50% 42%, rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 0.4) 60%, rgba(20, 20, 20, 0.85) 100%),
-    linear-gradient(to bottom, rgba(20, 20, 20, 0.7) 0%, rgba(20, 20, 20, 0) 24%);
+    radial-gradient(ellipse 60% 52% at 50% 42%, rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 0.15) 60%, rgba(20, 20, 20, 0.5) 100%),
+    linear-gradient(to bottom, rgba(20, 20, 20, 0.45) 0%, rgba(20, 20, 20, 0) 24%);
 }
-.hx-fade { background: linear-gradient(to top, rgba(20, 20, 20, 0.95) 0%, rgba(20, 20, 20, 0) 45%); }
+.hx-fade { background: linear-gradient(to top, rgba(20, 20, 20, 0.85) 0%, rgba(20, 20, 20, 0) 45%); }
 .hx-grid i:nth-child(even) { display: none; }
-.hx-left { top: calc(52px + 22px); }
-.hx-num { font-size: 2.1rem; }
 .hx-right { display: none; }
 .hx-bottom { right: var(--m-pad); bottom: 24px; max-width: none; }
 .hx-name { font-size: 12.4vw; margin-bottom: 12px; }
 .hx-text { font-size: 12px; }
-.hx-reel { display: none; }                               /* Platzhaltertext nur am Desktop (kein Platz neben dem Namen) */
 
 /* ============================
    START — What I do
    ============================ */
-.main-content .services-section { padding: 40px var(--m-pad) 28px; }
-.svc-preview-panel { display: none; }
-.svc-eyebrow { padding: 0; margin-bottom: 24px; }
-.svr { padding: 52px 0 0; }                              /* rollender Satz untereinander */
-.svr-in { grid-template-columns: minmax(0, 1fr); row-gap: 26px; }
-.svr-main { gap: 16px; }
-.svr-desc { font-size: 12.5px; min-height: 4.95em; }
+/* Zitat oben, die beiden Listen darunter nebeneinander (kein Stehenbleiben) */
+.services-section.wid { padding: 76px var(--m-pad) 40px; }
+.wid-stage { padding: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 16px; row-gap: 40px; align-items: start; }
+.wid-center { grid-column: 1 / -1; grid-row: 1; text-align: left; }
+.wid-eyebrow { margin-bottom: 18px; }
+.wid-quote { font-size: 9.2vw; }
+.wid-col { grid-row: 2; gap: 24px; }
+.wid-col--l { grid-column: 1; }
+.wid-col--r { grid-column: 2; align-items: flex-start; text-align: left; }
+.wid-col--r .wid-item { align-items: flex-start; }
+.wid-name { font-size: 1.3rem; }
 
 /* Selected Work (Handy): Titel zweizeilig, Zeile = Nr. · Name · Kategorie/Jahr · kleines Vorschaubild;
    Drücken holt die dunkle Fläche (script.js, gleiche Richtungslogik wie am Desktop) */
@@ -81,13 +82,12 @@ body::before { display: none; }
 .sw-title-in { white-space: normal; max-width: calc((100vw - 2 * var(--m-pad)) / 1.18); }
 .sw-cols { display: none; }
 .sw-row {
-  grid-template-columns: 30px auto minmax(0, 1fr) 84px;
-  grid-template-areas: 'n name name thumb' 'n cat year thumb';
+  grid-template-columns: auto minmax(0, 1fr) 84px;
+  grid-template-areas: 'name name thumb' 'cat year thumb';
   column-gap: 12px; row-gap: 6px;
   min-height: 0; padding: 16px var(--m-pad);
   -webkit-tap-highlight-color: transparent;
 }
-.sw-n { grid-area: n; align-self: start; padding-top: 0.7em; }
 .sw-name { grid-area: name; }
 .sw-cat { grid-area: cat; }
 .sw-year { grid-area: year; }
