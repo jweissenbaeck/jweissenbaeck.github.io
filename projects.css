@@ -1,6 +1,3 @@
-/* ============================
-   PROJECTS — Titel-Preview + Sticky-Filter + 2-Spalten-Grid
-============================ */
 .projects-page { background: var(--bg); }
 
 .pj {
@@ -9,7 +6,7 @@
   background: var(--bg);
 }
 
-/* ── große Titel-Preview ── */
+/* hero marquee */
 .pj-hero {
   height: calc(100vh - var(--filter-h));
   display: flex;
@@ -24,12 +21,11 @@
   font-size: clamp(3.5rem, 17vw, 18rem);
   text-transform: uppercase; color: var(--ink);
   width: 100%; overflow: hidden;
-  padding: 0.06em 0;                    /* Puffer → Glyphen nicht abgeschnitten */
+  padding: 0.06em 0;
 }
-/* Endlosschleife nach links */
 .pj-hero-marquee {
   display: flex; width: max-content;
-  transform: scaleX(1.18);              /* horizontal gestretcht */
+  transform: scaleX(1.18);
   will-change: transform;
   animation: pj-marquee 26s linear infinite;
 }
@@ -44,31 +40,25 @@
   .pj-filter-menu, .pj-filter-caret { transition: none; }
 }
 
-
-/* ── Filter-Leiste: startet unten, rastet oben sticky ein ──
-   Liegt UNTER der Nav und bildet mit ihr optisch eine Einheit: kein eigener
-   Top-Rand (die Nav-Unterkante ist die interne Trennlinie), gleicher Rahmenton. */
+/* filter */
 .pj-filter {
-  position: sticky; top: 52px; z-index: 990;    /* unter der Nav (z 1000); top steuert JS synchron */
+  position: sticky; top: 52px; z-index: 990;
   height: var(--filter-h);
   display: flex; align-items: stretch;
-  padding: 0 28px;              /* bündig zur Nav → Einheit */
+  padding: 0 28px;
   background: var(--bg);
-  border-top: 1px solid var(--stroke);           /* deckend: bleibt sichtbar, auch wenn der Titel dahinter vorbeizieht */
+  border-top: 1px solid var(--stroke);
   border-bottom: 1px solid var(--stroke);
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
   transition: opacity 0.35s ease;
 }
-.filter-stuck:not(.nav-shown) .pj-filter { border-top-color: transparent; }   /* Nav weg, Filter ganz oben: keine helle Linie am Bildschirmrand */
-/* „Filter“ als eingefasste Zelle mit rechtem Stroke (volle Höhe) */
+.filter-stuck:not(.nav-shown) .pj-filter { border-top-color: transparent; }
 .pj-filter-group {
   display: flex; align-items: center; gap: clamp(16px, 2vw, 28px);
   padding-right: clamp(20px, 3vw, 40px);
   border-right: 1px solid var(--stroke);
 }
-/* Filter-Top-Stroke ist immer sichtbar. Sitzt die Nav direkt auf dem oben
-   geklemmten Filter, wird stattdessen die Nav-Unterkante ausgeblendet → nur EINE Linie. */
-.nav-shown.filter-stuck:not(.at-page-end) .nav { box-shadow: none; }   /* ganz unten ist der Filter aus → Nav behält ihre Unterlinie */
+.nav-shown.filter-stuck:not(.at-page-end) .nav { box-shadow: none; }
 
 .pj-filter-field { position: relative; align-self: stretch; display: flex; align-items: center; }
 .pj-filter-btn {
@@ -77,18 +67,16 @@
   color: var(--ink); font: inherit; letter-spacing: 0.18em; text-transform: uppercase;
   padding: 0;
 }
-/* Chevron im Strichstil der Seite (wie Hover-Pfeil und Close-X) */
 .pj-filter-caret { width: 12px; height: 12px; flex: none; transition: transform 0.45s var(--ease-out-expo); }
 .pj-filter-field.is-open .pj-filter-caret { transform: rotate(180deg); }
 .pj-filter-btn:focus-visible { outline: 1px solid var(--accent); outline-offset: 6px; }
 
-/* Dropdown: bündig unter der Filterzelle, dunkler Panel, gedämpfte Einträge */
 .pj-filter-menu {
   position: absolute; top: 100%; left: 0;
   min-width: 240px; margin: 0; padding: 12px 0 18px; list-style: none;
   background: var(--bg);
   border: 1px solid rgba(255,255,255,0.10);
-  border-top: 1px solid rgba(255,255,255,0.16);   /* Top-Rand sichtbar (war none) */
+  border-top: 1px solid rgba(255,255,255,0.16);
   opacity: 0; visibility: hidden; transform: translateY(-6px);
   transition: opacity 0.22s ease, transform 0.4s var(--ease-out-expo), visibility 0s linear 0.22s;
   z-index: 40;
@@ -98,11 +86,10 @@
   display: flex; align-items: center; gap: 12px;
   padding: 11px 26px; cursor: pointer;
   font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.04em;
-  text-transform: none;                       /* Einträge in Normalschreibung wie in der Inspo */
+  text-transform: none;
   color: rgba(255,255,255,0.45);
   transition: color 0.2s ease;
 }
-/* Pixel-Quadrat wie bei den Listen der CV-Seite: umrandet, aktiv = gefüllt */
 .pj-filter-menu li::before {
   content: ''; flex: none; width: 6px; height: 6px; box-sizing: border-box;
   border: 1px solid rgba(255,255,255,0.35);
@@ -111,64 +98,52 @@
 .pj-filter-menu li:hover { color: var(--ink); }
 .pj-filter-menu li:hover::before { border-color: var(--accent); }
 .pj-filter-menu li.is-active { color: var(--ink); }
-.pj-filter-menu li.is-active::before { background: var(--accent); border-color: var(--accent); }   /* aktiver Filter: Quadrat in Akzentfarbe */
+.pj-filter-menu li.is-active::before { background: var(--accent); border-color: var(--accent); }
 
-/* ── Projekt-Liste: pro Projekt Kopf oben links + Reihe aus 3 Bildern ── */
+/* projects */
 .pj-grid {
   display: block;
   padding: clamp(28px, 3.5vw, 52px) 28px 140px;
 }
-.pj-project { position: relative; isolation: isolate; padding: var(--pad-y) 0; }   /* Frames stoßen ohne Lücke aneinander */
-/* Aktives Projekt nach Scrollposition (das, das die Bildschirmmitte kreuzt; projects.js setzt .is-hot und animiert .pj-fill):
-   Fläche in --accent über die volle Seitenbreite steigt von unten auf, eine Seite schneller (zufällig, schräge Kante);
-   beim Verlassen zieht sie sich nach oben zurück. Titel + Tag: eine dunkle Kopie (.pj-ink) liegt darüber und wird genau
-   wie die Fläche beschnitten → wo die Fläche den Text berührt, ist er dunkel; Übergang exakt an der Kante. */
-.pj-project { --pad-y: clamp(30px, 3.8vw, 64px); }
+.pj-project { --pad-y: clamp(30px, 3.8vw, 64px); position: relative; isolation: isolate; padding: var(--pad-y) 0; cursor: pointer; }
 .pj-fill, .pj-ink {
   position: absolute; pointer-events: none;
-  left: -28px; right: -28px; top: -8px; bottom: -8px;            /* 8px Überlappung → an der Grenze zum Nachbarn scheint nie Hintergrund durch */
+  left: -28px; right: -28px; top: -8px; bottom: -8px;
   clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
 }
 .pj-fill { z-index: -1; }
 .pj-ink { z-index: 3; }
 .pj-ink .pj-project-head { position: absolute; left: 28px; right: 28px; top: calc(var(--pad-y) + 8px); }
-.pj-ink .pj-project-name { mix-blend-mode: normal; color: var(--bg-dark); -webkit-text-stroke: 0.6px var(--bg-dark); }   /* Rand deckt das helle Original exakt ab */
+.pj-ink .pj-project-name { mix-blend-mode: normal; color: var(--bg-dark); -webkit-text-stroke: 0.6px var(--bg-dark); }
 .pj-ink .pj-tag { background: var(--accent); color: var(--bg-dark); border-color: rgba(26, 26, 26, 0.55); }
 .pj-ink .pj-year { background: var(--accent); color: rgba(26, 26, 26, 0.7); }
-.pj-fill {
-  background: var(--accent);
-}
+.pj-fill { background: var(--accent); }
 .pj-project.is-hot .pj-view { color: var(--bg-dark); border-color: rgba(26, 26, 26, 0.4); }
 .pj-project.is-hot .pj-view::before { background: var(--bg-dark); }
 .pj-project.is-hot .pj-view:hover, .pj-project.is-hot .pj-view:focus-visible { color: var(--accent); border-color: var(--bg-dark); }
-/* Label am Cursor baut sich von links nach rechts auf */
 .pj-chip .hp-chip { clip-path: inset(0 100% 0 0); transition: clip-path 0.7s var(--ease-out-expo); }
 .pj-chip.is-on .hp-chip { clip-path: inset(0); }
 .pj-project.is-hidden { display: none; }
 
-/* Kopf — einmal oben links */
 .pj-project-head {
   display: flex; align-items: baseline; gap: 16px;
   margin-bottom: clamp(14px, 1.6vw, 24px);
 }
-/* Name + Meta liegen über den Bildern (Parallax schiebt sie teils darunter) und invertieren sich gegen sie */
 .pj-project-name, .pj-project-meta { position: relative; z-index: 2; }
-.pj-project-name { mix-blend-mode: difference; }
 .pj-project-name {
+  mix-blend-mode: difference;
   font-family: 'Anton', Impact, sans-serif;
   font-weight: 400; letter-spacing: 0.03em; line-height: 1;
   font-size: clamp(1.3rem, 2.4vw, 2.1rem);
   text-transform: uppercase; color: #ffffff;
 }
-/* Tag als Chip (Kategorie) + Jahr daneben; beide hinterlegt → auch über Bildern lesbar */
 .pj-project-meta { display: inline-flex; align-items: center; gap: 8px; align-self: center; }
 .pj-tag, .pj-year { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; white-space: pre; }
 .pj-tag { padding: 5px 10px 4px; border: 1px solid rgba(255,255,255,0.38); border-radius: 999px; background: var(--bg); color: var(--ink); }
 .pj-year { padding: 5px 4px 4px; background: var(--bg); color: rgba(255,255,255,0.55); }
 
-/* „View project": Zelle wie Nav/Footer; Hover wie „My work": Fläche in Akzentfarbe zieht von unten auf, Pfeil schießt raus und kommt nach */
 .pj-view {
-  position: relative; z-index: 2; overflow: hidden; margin-left: auto; align-self: center;   /* über den Bildern, ohne Blend */
+  position: relative; z-index: 2; overflow: hidden; margin-left: auto; align-self: center;
   display: inline-flex; align-items: center; gap: 12px;
   padding: 10px 14px 10px 16px; border: 1px solid rgba(255,255,255,0.22);
   font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
@@ -184,35 +159,30 @@
 .pj-view-a svg + svg { transform: translate(-110%, 110%); }
 .pj-view:hover .pj-view-a svg:first-child, .pj-view:focus-visible .pj-view-a svg:first-child { animation: arrow-out 0.42s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
 .pj-view:hover .pj-view-a svg + svg, .pj-view:focus-visible .pj-view-a svg + svg { animation: arrow-in 0.7s var(--ease-out-expo) 0.28s both; }
-.pj-view-on .pj-project, .pj-view-on .pj-project * { cursor: none !important; }   /* Label am Cursor ersetzt den Zeiger — auch über den Bildern (Links) */
-.pj-project { cursor: pointer; }
-/* Label am Cursor: über Bildern in --accent mit dunkler Schrift, über der Akzent-Fläche dunkel mit Schrift in --accent.
-   Zwei deckungsgleiche Lagen; die helle ist auf die Bildflächen beschnitten (projects.js) → Farbwechsel genau an der Bildkante */
+.pj-view-on .pj-project, .pj-view-on .pj-project * { cursor: none !important; }
 .pj-chip .pj-chip-dark { background: var(--bg-dark); color: var(--accent); }
 .pj-chip-img { position: absolute; left: 0; top: 0; width: 0; height: 0; }
-/* Button oben rechts nur noch für die Tastatur (erscheint beim Tab-Fokus) */
 .pj-view:not(:focus-visible) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
-/* Reihe aus 3 Bildern (16:9), unterschiedliche Breiten, oben ausgerichtet */
 .pj-project-row {
   display: flex; align-items: flex-start;
   gap: clamp(12px, 1.8vw, 28px);
 }
 .pj-shot {
   display: block; flex-basis: 0; min-width: 0;
-  clip-path: inset(100% 0 0 0);                    /* Auftritt: wischt von unten herein (projects.js setzt .is-in am Projekt) */
+  clip-path: inset(100% 0 0 0);
   transition: clip-path 0.65s var(--ease-out-expo);
   overflow: hidden; background: #2C2C2C;
-  will-change: translate;                          /* Parallax: projects.js setzt translate je nach Bildgröße */
+  will-change: translate;
 }
 .pj-shot img {
   width: 100%; aspect-ratio: 16 / 9;
   object-fit: cover; display: block;
   filter: grayscale(12%);
-  scale: 1.12;                                     /* Überstand, damit das Bild im Rahmen gleiten kann */
+  scale: 1.12;
   transition: scale 1s var(--ease-out-expo), filter 0.5s ease;
 }
-.pj-shot:hover img { scale: 1.18; filter: none; }  /* Hover: sanft hinein, volle Farbe */
+.pj-shot:hover img { scale: 1.18; filter: none; }
 .pj-project.is-in .pj-shot { clip-path: inset(0); }
 .pj-project.is-in .pj-shot:nth-child(2) { transition-delay: 0.08s; }
 .pj-project.is-in .pj-shot:nth-child(3) { transition-delay: 0.16s; }
@@ -221,7 +191,6 @@
   .pj-shot { clip-path: none; transition: none; }
 }
 
-/* ── MOBILE ── */
 @media (max-width: 720px) {
   .pj-project-head { flex-wrap: wrap; row-gap: 10px; }
   .pj-project-row { flex-direction: column; gap: 12px; }

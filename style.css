@@ -1,9 +1,4 @@
-/* ============================
-   LOCAL FONTS
-============================ */
-
-/* Anton — weight 400
-   Verwendet für: JACOB WEISSENBÄCK, Find me here, CV-Titles */
+/* fonts */
 @font-face {
   font-family: 'Anton';
   src: url('assets/fonts/anton-v27-latin-regular.woff2') format('woff2');
@@ -12,8 +7,6 @@
   font-display: swap;
 }
 
-
-/* DM Mono — weight 400 (body, nav, Labels, --font-mono Elemente) */
 @font-face {
   font-family: 'DM Mono';
   src: url('assets/fonts/dm-mono-v16-latin-regular.woff2') format('woff2');
@@ -22,7 +15,6 @@
   font-display: swap;
 }
 
-/* DM Mono — weight 500–700 (Mono-Überschriften, z. B. „What I do") */
 @font-face {
   font-family: 'DM Mono';
   src: url('assets/fonts/dm-mono-v16-latin-500.woff2') format('woff2');
@@ -31,58 +23,39 @@
   font-display: swap;
 }
 
-
-
-
-/* ============================
-   DESIGN TOKENS
-============================ */
+/* tokens */
 :root {
-  --bg:          #232323;            /* neutrales Anthrazit */
-  --bg-dark:     #1A1A1A;            /* dunkle Schrift auf Weiß */
+  --bg:          #232323;
+  --bg-dark:     #1A1A1A;
 
   --ink:         #FFFFFF;
-  --ink-muted:   #8C8C8C;            /* Labels, Kategorien */
-  --ink-ghost:   #444444;            /* Haarlinien */
-  --stroke:      var(--ink-ghost);   /* Linien von Nav, Footer und Filter — gleich hell wie die Felder „My work / More about me“ */
-  color-scheme: dark;                /* Seite ist selbst dunkel → Handy-Browser färben helle Flächen (--accent) nicht automatisch um */
-  --accent:      #B6BEC8;            /* Primärfarbe für Interaktion (ruhiges, kühles Schiefergrau): Hover-Flächen, Cursor-Chips, aktiv, Fokus, Auswahl */
-
-
-
-  --shadow-lg: 0 12px 40px rgba(255,255,255,0.15), 0 2px 8px rgba(255,255,255,0.08);
+  --ink-muted:   #8C8C8C;
+  --ink-ghost:   #444444;
+  --stroke:      var(--ink-ghost);
+  --accent:      #B6BEC8;
 
   --font-mono:    'DM Mono', monospace;
 
-  /* Einheitliche Schriftgrößen (überall diese Tokens verwenden; Handy-Werte in mobile.css) */
-  --fs-title:     clamp(3.4rem, 12.4vw, 13rem);   /* Abschnitts-Überschrift (Anton, gestreckt) — Maß: „Selected Work" */
-  --fs-list:      clamp(2.6rem, 6vw, 7.8rem);     /* große Listen-Begriffe (Anton): „What I do", „Selected Work" */
-  --fs-label:     11px;                           /* Mono-Beschriftungen in Listen und Tabellen */
+  --fs-title:     clamp(3.4rem, 12.4vw, 13rem);
+  --fs-list:      clamp(2.6rem, 6vw, 7.8rem);
+  --fs-label:     11px;
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  color-scheme: dark;
 }
 
-/* Die Seite hat selbst ein dunkles Design → Browser mit eigenem Dunkelmodus (Chrome, Samsung Internet) erkennen das an
-   dieser Abfrage und färben Akzent-Flächen und Text nicht nachträglich um */
-@media (prefers-color-scheme: dark) { :root { color-scheme: dark; } }
-
-/* ============================
-   RESET + BASE
-============================ */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 ::selection { background: var(--accent); color: var(--bg-dark); }
-html { scroll-behavior: auto; scrollbar-width: none; }   /* Scrollbar unsichtbar (Firefox); gescrollt wird weiter normal, Lenis glättet */
-html::-webkit-scrollbar { display: none; }                /* Scrollbar unsichtbar (Chrome, Safari, Edge) */
+html { scroll-behavior: auto; scrollbar-width: none; }
+html::-webkit-scrollbar { display: none; }
 
 body {
   font-family: var(--font-mono);
   background: var(--bg);
   color: var(--ink);
   overflow-x: hidden;
-
 }
 
-/* Paper grain overlay */
 body::before {
   content: "";
   position: fixed; inset: 0;
@@ -93,18 +66,15 @@ body::before {
   mix-blend-mode: multiply;
 }
 
-/* ============================
-   NAV
-============================ */
-/* ── NAV — segmentierte Leiste (Look wie Footer-Bar) ── */
+/* nav */
 .nav {
   position: fixed; top: 0; left: 0; right: 0;
   z-index: 1000;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch;
   height: 52px;
   background: var(--bg);
-  box-shadow: inset 0 -1px 0 var(--stroke);           /* Unterlinie innen → Zellen füllen volle Höhe */
-  pointer-events: none;                 /* nur die Zellen sind klickbar */
+  box-shadow: inset 0 -1px 0 var(--stroke);
+  pointer-events: none;
   font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase;
   transition: background-color 0.28s ease, box-shadow 0.28s ease;
 }
@@ -114,7 +84,7 @@ body::before {
 .nav-right  { grid-column: 3; justify-self: end;    display: flex; align-items: stretch; }
 
 .nav-cell {
-  position: relative; overflow: hidden;   /* Basis für Pixel-Hover */
+  position: relative; overflow: hidden;
   display: flex; align-items: center;
   padding: 0 clamp(16px, 2vw, 30px);
   color: rgba(255,255,255,0.6);
@@ -124,11 +94,9 @@ body::before {
   pointer-events: auto;
   transition: color 0.5s ease;
 }
-.nav-txt { position: relative; z-index: 1; }            /* Text über der Hover-Füllung */
-.nav-cell:hover { color: var(--bg-dark, #1A1A1A); }     /* invertiert (helle Füllung zieht auf) */
+.nav-txt { position: relative; z-index: 1; }
+.nav-cell:hover { color: var(--bg-dark); }
 
-/* ── NAV + FOOTER HOVER — wie „My work / More about me": Fläche in --accent zieht ruhig von unten auf
-   (beim Verlassen nach oben weg), Schrift kippt auf dunkel, Buchstaben rollen nacheinander um (.wk-l, script.js → splitRoll) ── */
 .nav-cell:not(.nav-brand)::before, .sf-link::before {
   content: ''; position: absolute; inset: 0; z-index: 0;
   background: var(--accent);
@@ -141,25 +109,19 @@ body::before {
 }
 .nav-cell:not(.nav-brand) .nav-txt, .sf-txt { display: inline-flex; overflow: hidden; line-height: 1.25; }
 .nav-cell:hover .wk-l, .nav-cell:focus-visible .wk-l, .sf-link:hover .wk-l, .sf-link:focus-visible .wk-l, .sf-right:hover .wk-l { transform: translateY(-100%); }
-.nav-cell:focus-visible, .sf-link:focus-visible { outline: none; color: var(--bg-dark, #1A1A1A); }
+.nav-cell:focus-visible, .sf-link:focus-visible { outline: none; color: var(--bg-dark); }
 @media (prefers-reduced-motion: reduce) { .nav-cell::before, .sf-link::before, .sf-right::before { transition: none; } }
 
-/* Trennlinien */
 .nav-left  .nav-cell { border-right: 1px solid var(--stroke); }
 .nav-left  .nav-cell:first-child { padding-left: 28px; }
 .nav-center .nav-cell { border-left: 1px solid var(--stroke); }
 .nav-center .nav-cell:last-child { border-right: 1px solid var(--stroke); }
 .nav-right .nav-cell { border-left: 1px solid var(--stroke); }
 .nav-right .nav-cell:last-child { padding-right: 28px; }
-.nav-brand, .nav-brand:hover { letter-spacing: 0.04em; color: var(--ink); pointer-events: auto; cursor: default; }   /* Logo: Hover = Linie dahinter (script.js), kein Klick, bleibt hell */
-/* ── Easter Egg: Klick auf JCKY (Logo oben links) ── */
+.nav-brand, .nav-brand:hover { letter-spacing: 0.04em; color: var(--ink); pointer-events: auto; cursor: default; }
+
+/* footer word */
 .egg-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000; }
-/* Footer: Klick auf einen Buchstaben → er explodiert (sofort weg) und blendet danach sanft wieder ein */
-.ftp-ch { cursor: pointer; transition: opacity 0.7s var(--ease-out-expo); }
-.ftp-ch.is-gone { opacity: 0; transition: none; }
-@media (prefers-reduced-motion: reduce) {
-}
-/* JCKY-Logo oben links — Wortmarke in Anton (wie der JCKY-Schriftzug im Footer) */
 .nav-logo-text {
   font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
   font-weight: 400;
@@ -168,16 +130,11 @@ body::before {
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-/* JCKY im Footer — Textwort in Anton (wie im Hero), per JS randlos über die volle Breite
-   gestreckt (transform: scale). Der 28px-Seitenabstand kommt von .site-footer-text. */
-/* Wort-Bühne: volle Breite (innerhalb 28px Padding), Höhe = Buchstabenhöhe */
 .ftp-word {
   position: relative;
   width: 100%;
   height: clamp(160px, 22vw, 460px);
 }
-/* Fallback ohne JS: schon groß. JS (initFooterWord) setzt Größe, Lage und
-   horizontale Streckung exakt auf die Tinten-Kanten. */
 .ftp-word-inner {
   position: absolute;
   left: 0; bottom: 0;
@@ -192,7 +149,6 @@ body::before {
   color: var(--ink);
   transform-origin: 0 0;
 }
-/* Nach dem Fit: Container füllt die Bühne, Buchstaben einzeln positioniert (gleiche Abstände) */
 .ftp-word-inner.is-fit { top: 0; right: 0; bottom: 0; left: 0; line-height: 1; }
 .ftp-ch {
   position: absolute;
@@ -201,26 +157,19 @@ body::before {
   line-height: 1;
   white-space: nowrap;
   transform-origin: 0 0;
+  cursor: pointer;
+  transition: opacity 0.7s var(--ease-out-expo);
 }
+.ftp-ch.is-gone { opacity: 0; transition: none; }
 
-/* Schmal: Sprungmarken (Start / What I do / Find me here) ausblenden – sonst läuft die Leiste über.
-   Logo + Seiten bleiben. */
 @media (max-width: 900px) {
   .nav-center { display: none; }
 }
 
-/* aktive Sektion: weißer Text + weißer Bottom-Stroke */
-.nav-cell.is-active { pointer-events: none; }
+.nav-cell.is-active { pointer-events: none; box-shadow: inset 0 -2px 0 var(--accent); }
 .nav-cell.is-active .nav-txt { color: var(--ink); }
-.nav-cell.is-active { box-shadow: inset 0 -2px 0 var(--accent); }
 
-
-
-
-
-/* ── ALL PROJECTS — eigenständiger Section-CTA ──
-   Schrift: DM Mono (wie Navigation + Labels);
-   radiale Ink-Füllung, die vom Cursor-Eintritt aufgeht. */
+/* buttons */
 .projects-cta {
   position: relative;
   display: inline-flex;
@@ -230,7 +179,6 @@ body::before {
   border: 1px solid rgba(255, 255, 255, 0.35);
   color: var(--ink);
   text-decoration: none;
-
   overflow: hidden;
   transition: color 0.35s ease, border-color 0.5s var(--ease-out-expo);
 }
@@ -244,7 +192,6 @@ body::before {
   text-transform: uppercase;
   line-height: 1;
 }
-.projects-cta-fill { display: none; }   /* radiale Füllung → durch Pixel-Hover ersetzt */
 .projects-cta:hover,
 .projects-cta:focus-visible {
   color: var(--bg-dark);
@@ -252,14 +199,9 @@ body::before {
 }
 .projects-cta:focus-visible { outline: 1px solid var(--accent); outline-offset: 4px; }
 
-
-/* ============================
-   HERO — Porträt als Hintergrund (script.js → heroInit, initHero)
-   Foto bildschirmfüllend, abgedunkelt; Lichtkegel auf der Person in der Mitte, Ränder dunkler → Schrift rundherum lesbar.
-   Feine senkrechte Haarlinien; links Kennzahlen + Name, rechts Zitat + Eckdaten, unten rechts „Showreel".
-============================ */
+/* hero */
 .hx {
-  --hx-x: var(--edge, 28px);                           /* gleicher Seitenrand wie alle anderen Abschnitte */
+  --hx-x: var(--edge, 28px);
   position: relative; z-index: 1;
   height: 100vh; height: 100svh; min-height: 620px;
   overflow: hidden; background: #141414; color: var(--ink);
@@ -267,35 +209,28 @@ body::before {
 .hx-bg { position: absolute; inset: 0; z-index: 0; will-change: transform; transform-origin: 50% 0; }
 .hx-bg img, .hx-person img {
   display: block; width: 100%; height: 100%; object-fit: cover; object-position: 49% 30%;
-  transform: scale(1.04);                              /* blendet den hellen Rand der Wand aus */
+  transform: scale(1.04);
   will-change: transform, translate;
 }
-/* Schwarz-Weiß ohne Abdunkeln; die Farbkopie liegt deckungsgleich darüber und ist nur in der Bubble sichtbar (script.js) */
 .hx-bg img.hx-bw, .hx-person img.hx-bw { filter: grayscale(1); }
 .hx-bg img.hx-col, .hx-person img.hx-col {
   position: absolute; inset: 0;
   -webkit-mask-image: linear-gradient(transparent, transparent); mask-image: linear-gradient(transparent, transparent);
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
 }
-/* Person: eigene Ebene vor Wand + Linien */
 .hx-person { position: absolute; inset: 0; z-index: 3; pointer-events: none; will-change: transform; transform-origin: 50% 100%; }
-.hx-fade {                                             /* unten dunkler für Name + Text (liegt auch über der Person) */
+.hx-fade {
   position: absolute; inset: 0; z-index: 4; pointer-events: none;
   background: linear-gradient(to top, rgba(20, 20, 20, 0.78) 0%, rgba(20, 20, 20, 0) 32%);
 }
-/* Lichtkegel hinter der Person, dunkle Ränder (nur auf der Wand) */
 .hx-bg::after {
   content: ''; position: absolute; inset: 0;
   background:
     radial-gradient(ellipse 40% 76% at 49% 46%, rgba(20, 20, 20, 0) 0%, rgba(20, 20, 20, 0.12) 55%, rgba(20, 20, 20, 0.5) 100%),
     linear-gradient(to bottom, rgba(20, 20, 20, 0.35) 0%, rgba(20, 20, 20, 0) 20%);
 }
-.hx-shade { position: absolute; inset: 0; z-index: 4; background: #141414; opacity: 0; pointer-events: none; }   /* dunkelt beim Wegscrollen ab */
-.hx-grid { position: absolute; inset: 0; z-index: 1; display: flex; justify-content: space-evenly; pointer-events: none; }
-.hx-grid i { width: 1px; height: 100%; background: rgba(255, 255, 255, 0.09); transform-origin: 50% 0; }
+.hx-shade { position: absolute; inset: 0; z-index: 4; background: #141414; opacity: 0; pointer-events: none; }
 
-/* Inhalte */
-/* Inhalte */
 .hx-right, .hx-bottom { position: absolute; z-index: 5; }
 .hx-bottom { left: var(--hx-x); bottom: clamp(28px, 6vh, 64px); max-width: min(46vw, 640px); }
 .hx-name { margin: 0 0 18px; font-family: 'Anton', Impact, sans-serif; font-weight: 400; font-size: clamp(2.8rem, 5.4vw, 6.6rem); line-height: 0.92; letter-spacing: 0.005em; text-transform: uppercase; }
@@ -304,34 +239,25 @@ body::before {
 .hx-text { margin: 0; max-width: 46ch; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.65; color: rgba(255, 255, 255, 0.82); white-space: pre-wrap; }
 
 .hx-right { right: var(--hx-x); bottom: clamp(28px, 6vh, 64px); display: flex; flex-direction: column; align-items: flex-end; gap: clamp(16px, 2.6vh, 26px); margin: 0; padding: 0; list-style: none; text-align: right; }
-/* rechts + unten rechts: Überschrift fett, Text darunter regular — gleich groß, alles weiß */
 .hx-item { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; text-align: right; font-family: var(--font-mono); font-size: 13.5px; line-height: 1.5; color: #fff; }
 .hx-item b { font-weight: 700; }
 .hx-item span { font-weight: 400; }
 
-
-/* Auftritt (heroInit setzt .is-in; .is-still = sofort, z. B. nach dem Seitenwechsel) */
 .hx-bg img { transition: transform 2.2s var(--ease-out-expo); }
 .hx:not(.is-in):not(.is-still) .hx-bg img { transform: scale(1.16); }
 .hx-person img { transition: transform 1.8s var(--ease-out-expo) 0.15s, opacity 1s ease 0.15s; }
 .hx:not(.is-in):not(.is-still) .hx-person img { transform: scale(1.04) translateY(6%); opacity: 0; }
-.hx .hx-grid i { transform: scaleY(0); transition: transform 1.6s var(--ease-out-expo); transition-delay: calc(var(--i) * 70ms); }
-.hx.is-in .hx-grid i, .hx.is-still .hx-grid i { transform: none; }
 .hx-mask > span { transform: translateY(105%); transition: transform 1.1s var(--ease-out-expo); }
 .hx-mask + .hx-mask > span { transition-delay: 0.08s; }
 .hx.is-in .hx-mask > span, .hx.is-still .hx-mask > span { transform: none; }
 .hx-rv { opacity: 0; transform: translateY(18px); transition: opacity 0.8s ease, transform 1.1s var(--ease-out-expo); transition-delay: calc(0.35s + var(--r, 0) * 0.1s); }
 .hx.is-in .hx-rv, .hx.is-still .hx-rv { opacity: 1; transform: none; }
-.hx.is-still .hx-rv, .hx.is-still .hx-mask > span, .hx.is-still .hx-grid i, .hx.is-still .hx-bg img, .hx.is-still .hx-person img { transition: none; }
+.hx.is-still .hx-rv, .hx.is-still .hx-mask > span, .hx.is-still .hx-bg img, .hx.is-still .hx-person img { transition: none; }
 @media (prefers-reduced-motion: reduce) {
-  .hx-bg img, .hx-person img, .hx-grid i, .hx-mask > span, .hx-rv { transition: none !important; }
+  .hx-bg img, .hx-person img, .hx-mask > span, .hx-rv { transition: none !important; }
 }
 
-
-/* ============================
-   PLAY REEL — Label folgt dem Cursor über dem Hero-Video (script.js → initPlayReel)
-   Sitzt mittig auf dem Zeiger (der System-Zeiger wird dort ausgeblendet), wischt beim Erscheinen von oben auf.
-============================ */
+/* cursor chip */
 .hero-play {
   position: fixed; left: 0; top: 0; z-index: 100000;
   pointer-events: none;
@@ -344,23 +270,18 @@ body::before {
   background: var(--accent); color: var(--bg-dark);
   font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap;
   transform: translate(-50%, -50%);
-  clip-path: inset(0 0 100% 0);                          /* wischt von oben herunter auf */
+  clip-path: inset(0 0 100% 0);
   transition: clip-path 0.4s var(--ease-out-expo);
 }
 .hp-chip svg { width: 9px; height: 9px; flex: none; }
 .hp-chip path { fill: currentColor; }
 .hero-play.is-on .hp-chip { clip-path: inset(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) { .hp-chip { transition: none; } }
-/* ============================
-   SCROLL-ANZEIGE rechts (script.js → initScrollReveals)
-   · Pixel-Spur (.px-track, eigenes Element): Blöcke füllen sich von oben, gezackter Kopf, bei schnellem Scrollen
-     sprühen Pixel ab. mix-blend-mode: difference → invertiert sich gegen den Untergrund (über dem hellen Showreel dunkel)
-   · Label (.psl): Chip in --accent wie „Play reel" / „View" — auf jedem Untergrund lesbar. Wischt beim Scrollen von rechts auf,
-     hängt mit einer feinen Linie am Kopf der Spur. Nur die Prozentzahl, sie rollt wie ein Zählwerk.
-============================ */
+
+/* scroll indicator */
 .px-track {
-  position: fixed; top: 52px; right: 0; z-index: 1001;                  /* top / height setzt script.js (weicht Nav + Filter aus) */
-  width: 140px; height: calc(100% - 52px);                         /* Platz links für abgesprühte Pixel */
+  position: fixed; top: 52px; right: 0; z-index: 1001;
+  width: 140px; height: calc(100% - 52px);
   pointer-events: none;
   opacity: 0; transition: opacity 0.6s ease;
 }
@@ -372,39 +293,34 @@ body::before {
   padding: 5px 7px;
   background: var(--accent); color: var(--bg-dark);
   font-family: var(--font-mono); font-weight: 500; text-transform: uppercase; white-space: nowrap;
-  clip-path: inset(0 0 0 100%);                                    /* wischt von rechts auf */
+  clip-path: inset(0 0 0 100%);
   transition: clip-path 0.5s var(--ease-out-expo);
   will-change: transform;
 }
-.psl::after { content: ''; position: absolute; left: 100%; top: 50%; width: 14px; height: 1px; background: var(--accent); }   /* Linie zum Kopf der Spur */
+.psl::after { content: ''; position: absolute; left: 100%; top: 50%; width: 14px; height: 1px; background: var(--accent); }
 .px-scroll.is-on .psl { clip-path: inset(0 -16px 0 0); transition-duration: 0.45s; }
-.psl-alt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--accent); clip-path: inset(50%); }   /* dunkle Lage über Akzent-Flächen (script.js) */
+.psl-alt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--accent); clip-path: inset(50%); }
 .psl-pct { display: inline-flex; height: 1em; overflow: hidden; font-size: 10px; line-height: 1; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 .psl-d { display: flex; flex-direction: column; transform: translateY(calc(var(--d, 0) * -1em)); transition: transform 0.6s var(--ease-out-expo); }
 .psl-d > span, .psl-u { display: block; height: 1em; line-height: 1; }
 @media (max-width: 760px) { .px-track { width: 100px; } .psl { right: 24px; } }
 @media (prefers-reduced-motion: reduce) { .psl, .psl-d { transition: none; } }
-/* ============================
-   BOTTOM SHEET
-============================ */
+
+/* content */
 .main-content {
   position: relative;
   background: var(--bg);
   overflow: visible; z-index: 10;
-  will-change: clip-path;                            /* schräge Oberkante beim Hereinscrollen: script.js → panelEdge */
+  will-change: clip-path;
 }
 
 .main-content .services-section { max-height: none; overflow: visible; overflow-x: clip; }
 
-/* ============================
-   WHAT I DO (script.js → initWhatIDo)
-   Zitat in der Mitte (scrollt normal mit, Wörter hellen sich auf), darüber klein „What I do";
-   links und rechts die Leistungen als Liste — sie fliegen in eigenem Tempo vorbei (Parallax), etwas weiter innen.
-============================ */
-.services-section.wid { position: relative; background: var(--bg); padding: 34vh 0 30vh; overflow: clip; }   /* Listen fliegen über den Rand hinaus → abschneiden */
+/* what i do */
+.services-section.wid { position: relative; background: var(--bg); padding: 34vh 0 30vh; overflow: clip; }
 .wid-stage {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 46vw) minmax(0, 1fr); align-items: center; column-gap: 3vw;
-  padding: 0 calc(var(--edge, 28px) + 6vw);            /* Listen etwas weiter innen als der Seitenrand */
+  padding: 0 calc(var(--edge, 28px) + 6vw);
 }
 .wid-center { grid-column: 2; grid-row: 1; text-align: center; }
 .wid-eyebrow { margin: 0 0 26px; font-family: var(--font-mono); font-weight: 700; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink); }
@@ -418,7 +334,6 @@ body::before {
 .wid-w.is-acc { color: rgba(182, 190, 200, 0.22); }
 .wid-w.is-lit { color: var(--ink); }
 .wid-w.is-acc.is-lit { color: var(--accent); }
-/* Listen links + rechts */
 .wid-col { grid-row: 1; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: clamp(26px, 6vh, 64px); will-change: transform; }
 .wid-col--l { grid-column: 1; align-items: flex-start; text-align: left; }
 .wid-col--r { grid-column: 3; align-items: flex-end; text-align: right; }
@@ -429,16 +344,9 @@ body::before {
 .wid-tools { font-family: var(--font-mono); font-size: var(--fs-label); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-muted); }
 @media (prefers-reduced-motion: reduce) { .wid-w { transition: none; } }
 
-/* ============================
-   SELECTED WORK — Projekt-Index auf der Akzentfläche (script.js → initSelectedWork)
-   Die einzige Fläche in --accent: dunkle Schrift, Haarlinien in Dunkel; oben + unten eine schräge Kante, die sich beim
-   Hereinscrollen gerade zieht (clip-path, script.js). Titel wie das Laufband auf „My Work" (Anton, gestreckt).
-   Zeilen = Tabelle (Nr. · Projekt · Kategorie · Jahr · Pfeil). Hover wie auf „My Work", nur mit umgekehrten Farben:
-   eine dunkle Fläche (.sw-band) wandert zwischen den Zeilen, die Schrift ist darauf blau (.sw-ink = Kopie der Zeile,
-   gleich beschnitten → Wechsel genau an der Kante). Vorschaubild am Zeiger.
-============================ */
+/* selected work */
 .sw {
-  --sw-ink: var(--bg);                                 /* Schrift auf Blau = Dunkelgrau des Seitenhintergrunds */
+  --sw-ink: var(--bg);
   --sw-muted: rgba(35, 35, 35, 0.62);
   --sw-line: rgba(35, 35, 35, 0.32);
   position: relative; z-index: 10;
@@ -447,7 +355,6 @@ body::before {
   background: var(--accent); color: var(--sw-ink);
 }
 
-/* Kopf: großer Titel links */
 .sw-head { padding: 0 var(--edge, 28px); margin-bottom: clamp(40px, 8vh, 96px); }
 .sw-title {
   margin: 0;
@@ -455,12 +362,11 @@ body::before {
   font-size: var(--fs-title); line-height: 0.9; letter-spacing: -0.02em;
   text-transform: uppercase;
 }
-.sw-title-in { display: inline-block; transform: scaleX(1.18); transform-origin: 0 50%; white-space: nowrap; }   /* gestreckt wie auf „My Work" */
+.sw-title-in { display: inline-block; transform: scaleX(1.18); transform-origin: 0 50%; white-space: nowrap; }
 
-/* Tabelle */
 .sw-cols, .sw-row {
   display: grid; align-items: center; column-gap: 24px;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 240px) 72px 44px;   /* Projekt · Kategorie · Jahr · Pfeil (ohne Nummer) */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 240px) 72px 44px;
   padding: 0 var(--edge, 28px);
 }
 .sw-cols { padding-bottom: 14px; font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-label); letter-spacing: 0.18em; text-transform: uppercase; color: var(--sw-muted); }
@@ -472,11 +378,9 @@ body::before {
   min-height: clamp(96px, 14vh, 150px);
   color: var(--sw-ink); text-decoration: none;
 }
-.sw-row::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--sw-line); }   /* Linie über jeder Zeile */
-/* eine dunkle Fläche für die ganze Liste (script.js setzt clip-path: Kanten folgen dem Hover als gedämpfte Federn) */
+.sw-row::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: var(--sw-line); }
 .sw-band { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: var(--bg); clip-path: inset(50%); }
 .sw-row > :not(.sw-ink) { position: relative; z-index: 1; }
-/* Kopie der Zeile in Blau über der Fläche: gleiches Raster wie die Zeile, gleich beschnitten wie die Fläche */
 .sw-ink {
   position: absolute; left: 0; right: 0; top: -1px; bottom: -1px; z-index: 2; pointer-events: none;
   display: grid; align-items: inherit; column-gap: inherit; row-gap: inherit;
@@ -484,11 +388,10 @@ body::before {
   color: var(--accent);
   clip-path: polygon(0% 100%, 100% 100%, 100% 100%, 0% 100%);
 }
-.sw-ink .sw-thumb { visibility: hidden; }                                      /* Bild bleibt das Original darunter */
+.sw-ink .sw-thumb { visibility: hidden; }
 .sw-row:focus-visible { outline: 2px solid var(--sw-ink); outline-offset: -2px; }
 
-.sw-cat, .sw-year { font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-label); letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
-.sw-cat, .sw-year { opacity: 0.62; }
+.sw-cat, .sw-year { font-family: var(--font-mono); font-weight: 500; font-size: var(--fs-label); letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; opacity: 0.62; }
 .sw-name {
   display: inline-flex; overflow: hidden; justify-self: start;
   font-family: 'Anton', Impact, sans-serif; font-weight: 400; text-transform: uppercase;
@@ -501,7 +404,6 @@ body::before {
 .sw-row:hover .sw-arrow svg + svg, .sw-row:focus-visible .sw-arrow svg + svg { animation: arrow-in 0.7s var(--ease-out-expo) 0.28s both; }
 .sw-thumb { display: none; }
 
-/* Auftritt (script.js setzt .is-in): Linie zieht von links auf, Inhalt gleitet nacheinander hoch */
 .sw.is-live .sw-row::after, .sw.is-live .sw-list::after { transform: scaleX(0); transform-origin: 0 50%; transition: transform 1.2s var(--ease-out-expo); }
 .sw.is-live .sw-row.is-in::after, .sw.is-live .sw-list.is-in::after { transform: none; }
 .sw.is-live .sw-row > :not(.sw-ink) { opacity: 0; transform: translateY(40%); transition: opacity 0.5s ease, transform 0.9s var(--ease-out-expo); }
@@ -512,11 +414,10 @@ body::before {
 .sw.is-live .sw-row.is-in > .sw-year { transition-delay: 0.16s; }
 .sw.is-live .sw-row.is-in > .sw-arrow { transition-delay: 0.2s; }
 
-/* Vorschaubild am Zeiger: öffnet von unten, schließt nach oben; neues Bild wischt von unten über das alte */
 .sw-pv {
   position: fixed; left: 0; top: 0; z-index: 900; pointer-events: none;
   width: clamp(240px, 21vw, 360px); aspect-ratio: 4 / 3;
-  margin: calc(clamp(240px, 21vw, 360px) * -0.375) 0 0 calc(clamp(240px, 21vw, 360px) * -0.5);   /* mittig auf dem Zeiger */
+  margin: calc(clamp(240px, 21vw, 360px) * -0.375) 0 0 calc(clamp(240px, 21vw, 360px) * -0.5);
   will-change: transform;
 }
 .sw-pv-in {
@@ -540,43 +441,28 @@ body::before {
   .sw-arrow svg { animation: none !important; }
 }
 
-/* Graffiti-Scribbles in --accent um „JCKY", „Salzburg", „my work" — zeichnen sich beim Scrollen (script.js → initStory).
-   Rauer Marker-Rand über #scribbleRough; Lage je Wort über die Modifier. Die Wörter selbst bleiben weiß. */
+/* scribbles + hover lines */
 .story-mark { position: relative; display: inline-block; }
-.story-nb { white-space: nowrap; }                                   /* Wort + Satzzeichen bleiben zusammen */
 .story-scribble { position: absolute; overflow: visible; pointer-events: none; }
-.story-scribble--jcky { left: -14%; top: -80%; width: 128%; height: 210%; }
-.story-scribble--salzburg { left: -6%; top: -60%; width: 112%; height: 190%; }
-.story-scribble--work { left: -12%; top: -55%; width: 124%; height: 260%; }
 .story-scribble--design { left: -10%; top: -40%; width: 120%; height: 180%; }
 .story-scribble path {
   fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  stroke-dasharray: 2000 2000; stroke-dashoffset: 2000;          /* echte Länge setzt script.js */
+  stroke-dasharray: 2000 2000; stroke-dashoffset: 2000;
 }
-/* Hover-Linie (script.js → hoverLine) */
 .hv-line { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
 .hv-line path { fill: none; stroke: var(--accent); stroke-linecap: round; stroke-linejoin: round; }
 .hv-line-a { stroke-width: 2.6; }
 .hv-line-b { stroke-width: 1.1; opacity: 0.55; }
-.story-scribble g { filter: none; }                          /* kein rauer Marker-Rand → klare Stift-Skizze */
+.story-scribble g { filter: none; }
 .story-scribble .s-thick { stroke-width: 2.4; }
 .story-scribble .s-thin { stroke-width: 1.2; opacity: 0.7; }
 
-
-/* Buchstaben-Roll (Kachelnamen + große Links): beim Hover rollt jeder Buchstabe nach oben, die Kopie rollt nach */
+/* bottom links */
 .wk-l { position: relative; display: inline-block; transition: transform 0.55s var(--ease-out-expo) calc(var(--i, 0) * 22ms); }
 .wk-l::after { content: attr(data-c); position: absolute; left: 0; top: 100%; }
-.wk-card:hover .wk-l, .wk-card:focus-visible .wk-l,
 .sn-link:hover .wk-l, .sn-link:focus-visible .wk-l { transform: translateY(-100%); }
 
-
-/* ============================
-   WEITER — zwei große Wege aus der Story: „My work" · „More about me"
-   Zellen wie Navigation und Footer-Leiste (Haarlinien); Hover: helle Füllung zieht ruhig von unten auf
-   (beim Verlassen nach oben weg), Schrift kippt auf dunkel, Buchstaben rollen um, der Pfeil schießt nach oben rechts raus und kommt nach.
-   Beim Hereinscrollen gleiten die Wörter aus ihrer Maske, das Label tippt sich ein.
-============================ */
 .sn {
   position: relative; z-index: 2;
   display: grid; grid-template-columns: 1fr 1fr;
@@ -598,7 +484,7 @@ body::before {
 }
 .sn-link:hover::before, .sn-link:focus-visible::before { transform: scaleY(1); transform-origin: 50% 100%; transition-duration: 0.95s; }
 .sn-link + .sn-link { border-left: 1px solid var(--ink-ghost); }
-.sn-k, .sn-t { position: relative; z-index: 1; }                                   /* über dem Pixel-Canvas */
+.sn-k, .sn-t { position: relative; z-index: 1; }
 .sn-link:hover, .sn-link:focus-visible { color: var(--bg-dark); outline: none; }
 .sn-k { font-family: var(--font-mono); font-weight: 500; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-muted); white-space: pre; transition: color 0.5s ease; }
 .sn-link:hover .sn-k, .sn-link:focus-visible .sn-k { color: var(--bg-dark); }
@@ -611,8 +497,6 @@ body::before {
 .sn.is-in .sn-in { transform: none; }
 .sn.is-in .sn-link + .sn-link .sn-in { transition-delay: 0.12s; }
 .sn-arrow { position: absolute; z-index: 1; top: 22px; right: var(--edge, 28px); width: clamp(28px, 2.6vw, 40px); aspect-ratio: 1; overflow: hidden; }
-/* Pfeil (Linie): beim Betreten schießt er nach oben rechts raus, eine Kopie gleitet von unten links nach.
-   Nur Animation beim Betreten — beim Verlassen springt er unsichtbar zurück (beide stehen dann deckungsgleich). */
 .sn-arrow svg {
   position: absolute; inset: 0; width: 100%; height: 100%;
   fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: square; stroke-linejoin: miter;
@@ -636,33 +520,22 @@ body::before {
   .sn-arrow svg { animation: none !important; }
   .sn-in { transform: none; }
 }
-/* Hover im Pixel-Stil: Ink-Blöcke steigen verstreut von unten auf (Canvas .gc-pixels) */
-               /* alten Radial-Fill stilllegen */
 .gc-pixels {
   position: absolute;
   inset: 0;
-  width: 100%; height: 100%;             /* Canvas immer auf Feldgröße strecken – sonst gilt seine interne Auflösung (bei Zoom ≠ 100 % zu klein) */
-  z-index: 0;                             /* hinter Index/Text (z-index 1) */
+  width: 100%; height: 100%;
+  z-index: 0;
   pointer-events: none;
-  border-radius: inherit;                /* respektiert den Button-Radius */
+  border-radius: inherit;
 }
 
-
-/* Body: Label oben (klein/mono), Wert darunter (größer) */
-
-
-
-/* ============================
-   PAGE LOADER (script.js → initLoader) — nach dem Vorbild landonorris.com
-   Fläche in --accent, in der Mitte das Logo „JCKY“ (Anton, gestreckt, dunkel). Danach wird das Logo zum Fenster: die
-   Fläche hat ein Loch in Form des Logos (SVG-Maske), dahinter liegt schon die Seite — man fliegt hinein, bis die
-   Buchstaben den ganzen Bildschirm einnehmen.
-   Unten klein „Loading Jacky“ + Zähler.
-============================ */
+/* intro */
 #pageLoader {
   position: fixed; inset: 0; z-index: 99999;
   pointer-events: all; overflow: hidden;
+  background: var(--accent);
 }
+#pageLoader.is-zoom { background: transparent; }
 #pageLoader.is-hidden { pointer-events: none; }
 .ld-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .ld-plate { fill: var(--accent); }
@@ -670,27 +543,16 @@ body::before {
 .ld-logo { opacity: 0; transition: opacity 0.45s ease; }
 #pageLoader.is-in .ld-logo { opacity: 1; }
 .ld-ink { fill: #121212; }
-.ld-label {
-  position: absolute; left: 0; right: 0; bottom: clamp(22px, 4vh, 36px); margin: 0;
-  display: flex; justify-content: center; gap: 1.6em;
-  font-family: var(--font-mono); font-size: 11px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase;
-  color: #121212; font-variant-numeric: tabular-nums;
-  opacity: 0; transition: opacity 0.5s ease 0.15s;
-}
-#pageLoader.is-in .ld-label { opacity: 1; }
-#pageLoader.is-zoom .ld-label { opacity: 0; transition-delay: 0s; transition-duration: 0.25s; }
 @media (prefers-reduced-motion: reduce) {
-  .ld-logo, .ld-label { transition: none; }
+  .ld-logo { transition: none; }
 }
-/* ============================
-   PAGE TRANSITIONS — drei Schichten mit schräger Pixel-Kante (Akzent · Weiß · Schwarz)
-   Flächen werden in script.js auf ein Canvas gemalt; hier Name + Pixelreihe + Flash-Schutz bei interner Ankunft.
-============================ */
+
+/* page transition */
 html.vt-arriving { background: #121212; }
 html.vt-arriving body { visibility: hidden; }
 
 #pgt {
-  position: fixed; inset: 0; z-index: 2147483646;
+  position: fixed; inset: 0; z-index: 100010;
   display: flex; align-items: center; justify-content: center;
   pointer-events: none;
 }
@@ -700,28 +562,22 @@ html.vt-arriving body { visibility: hidden; }
   font-family: 'Anton', Impact, 'Arial Narrow', sans-serif; font-weight: 400;
   font-size: var(--fs-title); line-height: 0.9; text-transform: uppercase; color: #F2F2F2; white-space: nowrap;
 }
-#pgt .pgt-in { display: inline-block; transform: scaleX(1.18); }            /* gestreckt wie die Überschriften */
+#pgt .pgt-in { display: inline-block; transform: scaleX(1.18); }
 #pgt .pgt-m { display: inline-block; overflow: hidden; padding: 0.04em 0 0.02em; vertical-align: top; }
-/* Buchstaben: rollen einzeln aus der Maske (vorwärts von unten, rückwärts von oben) und beim Ankommen weiter hinaus */
 #pgt .pgt-l {
   display: inline-block; transform: translate3d(0, 108%, 0) rotate(6deg); transform-origin: 0 100%;
-  transition: transform 640ms cubic-bezier(0.16, 1, 0.3, 1); transition-delay: calc(var(--i) * 42ms);
+  transition: transform 640ms var(--ease-out-expo); transition-delay: calc(var(--i) * 42ms);
 }
 #pgt.is-down .pgt-l { transform: translate3d(0, -108%, 0) rotate(-6deg); transform-origin: 0 0; }
 #pgt.is-name .pgt-l { transform: none; }
 #pgt.is-still .pgt-l { transition: none; }
 #pgt.is-out .pgt-l { transform: translate3d(0, -108%, 0) rotate(-6deg); transition-duration: 420ms; transition-timing-function: cubic-bezier(0.7, 0, 0.84, 0); transition-delay: calc(var(--i) * 30ms); }
 #pgt.is-down.is-out .pgt-l { transform: translate3d(0, 108%, 0) rotate(6deg); }
-/* Pixelreihe: füllt sich in --accent */
 #pgt .pgt-px { display: flex; gap: 4px; opacity: 0; transition: opacity 240ms; }
 #pgt.is-name .pgt-px { opacity: 1; }
 #pgt .pgt-px i { width: 8px; height: 8px; background: #2E2E2E; }
 #pgt .pgt-px i.is-on, #pgt.is-full .pgt-px i { background: var(--accent); }
 #pgt.is-out .pgt-px { opacity: 0; }
-/* ============================
-   REDUCED MOTION — globaler Fallback
-   Neutralisiert Bewegungs-Animationen für Nutzer mit prefers-reduced-motion.
-============================ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
@@ -730,69 +586,62 @@ html.vt-arriving body { visibility: hidden; }
     scroll-behavior: auto !important;
   }
 }
-/* ============================
-   SITE FOOTER — Pixel-Particle "JCKY"
-============================ */
+
+/* footer */
 .site-footer {
-  --footer-bg: #232323;                 /* dunkel wie die anderen Sections */
-  --footer-pad: 28px;                   /* identisch zum mainNav-Seitenpadding */
+  --footer-bg: #232323;
+  --footer-pad: 28px;
   position: relative;
   z-index: 20;
-  margin-top: -1px;                     /* überdeckt die feine Naht zur Section darüber */
+  margin-top: -1px;
   background: var(--footer-bg);
-  padding: 0;
   overflow: hidden;
 }
 .site-footer-bar {
   display: flex;
-  align-items: stretch;                      /* Links füllen Bar-Höhe → hohe Trennlinien */
+  align-items: stretch;
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
   min-height: 52px;
-  margin-top: 0;                                  /* Bar direkt unter JCKY */
-  border-top: 1px solid var(--stroke);            /* durchgezogene Linie über die volle Breite */
-  padding: 0;
+  border-top: 1px solid var(--stroke);
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 12px;                           /* wie .nav-cell */
+  font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: rgba(255,255,255,0.6);
 }
-.sf-links { display: flex; align-items: stretch; gap: 0; }
+.sf-links { display: flex; align-items: stretch; }
 .sf-link, .sf-right {
-  position: relative; overflow: hidden;            /* Basis für Pixel-Hover */
+  position: relative; overflow: hidden;
   display: flex; align-items: center;
   padding: 0 clamp(16px, 2vw, 30px);
   color: rgba(255,255,255,0.6);
   text-decoration: none;
   transition: color 0.5s ease;
 }
-.sf-link { border-left: 1px solid var(--stroke); }          /* Trennlinie vor jedem Link */
-.sf-links .sf-link:first-child { border-left: none; padding-left: var(--footer-pad); }  /* Einzug links (fix) */
-.sf-links .sf-link:last-child { border-right: 1px solid var(--stroke); }  /* rechts von Email */
-.sf-right { border-left: 1px solid var(--stroke); padding-right: var(--footer-pad); }  /* Einzug rechts (fix) + Linie links */
-.sf-txt { position: relative; z-index: 1; }                          /* Text über der Hover-Füllung */
-/* Hover: Text invertiert (helle Füllung zieht von unten auf, siehe NAV + FOOTER HOVER) */
-.sf-link:hover { color: var(--bg-dark, #1A1A1A); }
-.sf-right { cursor: default; }                                      /* „made with love": Hover = Linie mit Herz (script.js), keine Fläche */
+.sf-link { border-left: 1px solid var(--stroke); }
+.sf-links .sf-link:first-child { border-left: none; padding-left: var(--footer-pad); }
+.sf-links .sf-link:last-child { border-right: 1px solid var(--stroke); }
+.sf-right { border-left: 1px solid var(--stroke); padding-right: var(--footer-pad); cursor: default; }
+.sf-txt { position: relative; z-index: 1; }
+.sf-link:hover { color: var(--bg-dark); }
 
 .site-footer-text {
   position: relative;
   width: 100%;
-  padding: 28px;                       /* 28px rundherum: links, rechts, oben, unten */
+  padding: 28px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
-/* Dankestext oben links — jetzt im Fluss, in derselben Box wie der JCKY-Schriftzug */
 .ftp-note {
   position: absolute;
-  top: 28px; left: 28px;               /* = Ecke der Wort-Box → sitzt im freien Feld oben links im J */
+  top: 28px; left: 28px;
   z-index: 2;
-  width: clamp(150px, 12vw, 210px);    /* JS passt die Breite exakt an die J-Aussparung an */
+  width: clamp(150px, 12vw, 210px);
   font-family: var(--font-mono);
   font-size: clamp(11px, 1.05vw, 15px);
   letter-spacing: 0.12em;
@@ -800,7 +649,6 @@ html.vt-arriving body { visibility: hidden; }
   line-height: 1.5;
   color: rgba(255,255,255,0.5);
 }
-/* Schreibmaschine (script.js): Satz tippt sich weg, nächster tippt sich hin — Cursor in --accent, blinkt in den Pausen */
 .ftp-caret { display: inline-block; width: 0.62em; height: 1.1em; margin-left: 3px; vertical-align: -0.2em; background: var(--accent); animation: ftp-blink 1s steps(1) infinite; }
 .ftp-note.is-typing .ftp-caret { animation: none; }
 @keyframes ftp-blink { 50% { opacity: 0; } }
@@ -808,6 +656,5 @@ html.vt-arriving body { visibility: hidden; }
 
 @media (max-width: 720px) {
   .site-footer-bar { justify-content: center; text-align: center; }
-  /* schmal: die J-Aussparung ist zu klein → Notiz steht über dem Schriftzug; feste Höhe, damit der Satzwechsel nichts verschiebt */
   .ftp-note { position: static; width: auto !important; max-height: none !important; min-height: 3em; margin-bottom: 18px; }
 }

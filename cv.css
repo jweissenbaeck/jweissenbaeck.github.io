@@ -1,24 +1,14 @@
-/* ============================================================
-   CV — Hero (Name + abgerissenes Portrait) und Scroll-Story
-   · Hero: Name oben, Portrait mit Schnittmarken + Bildunterschrift (Hover zoomt ins Bild);
-     untere Zeile: Position links, „View my work“ + CV mittig, Social-Bubbles rechts (Pixel-Hover)
-   · Story: fixiert (GSAP ScrollTrigger, pin); Szenen bauen sich aus
-     Pixelblöcken auf und zerfallen wieder (cv.js)
-   Schrift der großen Zeilen wie auf My Work: Anton, horizontal gestreckt
-   ============================================================ */
-
-.cv-page { background: var(--bg); color: var(--ink); }   /* auch von projects.html genutzt */
+.cv-page { background: var(--bg); color: var(--ink); }
 
 .cv {
   --pad:   clamp(20px, 2.2vw, 40px);
   --line:  rgba(255, 255, 255, 0.14);
   --muted: rgba(255, 255, 255, 0.55);
-  --paper: #FFFFFF;                                       /* Papierrand + Sticker */
+  --paper: #FFFFFF;
   --nav:   52px;
-  --wide:  1.18;                                          /* Streckung wie das My-Work-Laufband */
+  --wide:  1.18;
 }
 
-/* Große Zeilen: Anton, gestreckt, mit Luft zwischen den Zeilen (wie My Work) */
 .cvs-wide, .cvh-name-inner {
   font-family: 'Anton', Impact, sans-serif; font-weight: 400;
   letter-spacing: -0.02em; line-height: 1.12;
@@ -26,15 +16,12 @@
   display: inline-block;
   transform: scaleX(var(--wide)); transform-origin: center;
 }
-.cvs-wide { max-width: calc(100% / var(--wide)); text-wrap: balance; }   /* gestreckt nie breiter als der Platz → bricht sauber um */
+.cvs-wide { max-width: calc(100% / var(--wide)); text-wrap: balance; }
 
-/* Hintergrund-Animation hinter Hero + Story: Universum → Funke → Spiralgalaxie → Wellen (cv.js, scrollgesteuert) */
 .cv-bgfx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-.cvh, .cvs { z-index: 1; }                               /* Inhalte liegen über der Animation */
+.cvh, .cvs { z-index: 1; }
 
-/* ============================
-   HERO
-   ============================ */
+/* hero */
 .cvh {
   position: relative;
   height: 100vh; height: 100svh; min-height: 600px;
@@ -44,16 +31,14 @@
   position: absolute; left: 0; right: 0; top: calc(var(--nav) + 2vh);
   margin: 0; z-index: 1;
   text-align: center; white-space: nowrap;
-  font-size: 10.6vw;                                       /* cv.js passt es exakt an die Breite an */
+  font-size: 10.6vw;
   line-height: 1;
 }
 .cvh-name-inner { line-height: 1; color: var(--ink); }
 
-/* Portrait: harte Kanten, feine Schnittmarken in den Ecken, Bildunterschrift in Mono;
-   beim Hover zoomt das Bild sanft hinein, der Rahmen bleibt gleich groß */
 .cvh {
-  --d:  min(48vh, 36vw);                                     /* Höhe des Fotos */
-  --cy: max(56vh, calc(var(--nav) + 6vh + 10.6vw + var(--d) / 2));   /* Mitte: immer unter dem Namen */
+  --d:  min(48vh, 36vw);
+  --cy: max(56vh, calc(var(--nav) + 6vh + 10.6vw + var(--d) / 2));
 }
 .cvh-portrait {
   position: absolute; left: 50%; top: var(--cy); z-index: 3;
@@ -67,8 +52,8 @@
   object-fit: cover; object-position: 50% 22%;
   transform: scale(1.001); transition: transform 1.1s var(--ease-out-expo);
 }
-.cvh-portrait:hover .cvh-portrait-img { transform: scale(1.09); }   /* sanft hineinzoomen */
-.cvh-crop::before, .cvh-crop::after {                       /* Schnittmarken: kleine Winkel außerhalb der Ecken */
+.cvh-portrait:hover .cvh-portrait-img { transform: scale(1.09); }
+.cvh-crop::before, .cvh-crop::after {
   content: ''; position: absolute; width: 14px; height: 14px;
   border: 0 solid rgba(255, 255, 255, 0.55);
 }
@@ -82,7 +67,6 @@
   font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.04em; color: var(--muted);
 }
 
-/* Aktuelle Position unten links */
 .cvh-now { position: absolute; z-index: 5; left: var(--pad); bottom: var(--pad); will-change: opacity, transform; isolation: isolate; }
 .cvh-now p { margin: 0; }
 .cvh-now-role {
@@ -95,26 +79,26 @@
   padding: 4px 10px; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 999px;
   font-size: 11px; letter-spacing: 0.03em; color: var(--ink);
 }
-.cvh-chip i { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }   /* „aktuell": Punkt in Akzentfarbe */
-.cvh-chip i::after {                                         /* leiser Puls = „aktuell“ */
+.cvh-chip i { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.cvh-chip i::after {
   content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1px solid var(--accent);
   animation: cvh-live 2.2s ease-out infinite;
 }
 @keyframes cvh-live { from { transform: scale(0.6); opacity: 0.8; } to { transform: scale(2); opacity: 0; } }
 @supports (text-box: trim-both cap alphabetic) { .cvh-chip { text-box: trim-both cap alphabetic; padding: 7px 10px; } }
 
-.cvh-cta-wrap {                                              /* mittig, auf Höhe von Position + Links; so breit wie das Foto */
+.cvh-cta-wrap {
   position: absolute; z-index: 5; left: 50%; bottom: var(--pad); transform: translateX(-50%);
   display: flex; gap: 10px; width: calc(var(--d) * 0.76);
 }
 .cvh-cta, .cvh-cv { background: var(--bg); white-space: nowrap; padding: 14px clamp(12px, 1.1vw, 18px); }
 .cvh-cta { flex: 1 1 auto; justify-content: center; min-width: 0; }
-.cvh-cv { flex: none; gap: 8px; }                            /* Mini-Button: CV + Download-Icon */
-.cvh-cta-push { display: flex; flex: 1 1 auto; min-width: 0; will-change: transform; }   /* Hüllen: schieben sich gegenseitig weg, */
+.cvh-cv { flex: none; gap: 8px; }
+.cvh-cta-push { display: flex; flex: 1 1 auto; min-width: 0; will-change: transform; }
 .cvh-cta-push > .cvh-cta { flex: 1 1 auto; }
-.cvh-cv-push { display: flex; flex: none; will-change: transform; }                          /* wenn ein Button magnetisch zieht (cv.js) */
-.cvh-cta .projects-cta-label, .cvh-cv .projects-cta-label { font-size: 12px; letter-spacing: 0.16em; }   /* wie die Navigation */
-.cvh-cv svg { position: relative; z-index: 1; width: 14px; height: 14px; flex: none; }   /* über den Hover-Pixeln, wird beim Hover dunkel */
+.cvh-cv-push { display: flex; flex: none; will-change: transform; }
+.cvh-cta .projects-cta-label, .cvh-cv .projects-cta-label { font-size: 12px; letter-spacing: 0.16em; }
+.cvh-cv svg { position: relative; z-index: 1; width: 14px; height: 14px; flex: none; }
 .cvh-social { position: absolute; z-index: 5; right: var(--pad); bottom: var(--pad); display: flex; gap: 10px; }
 .cvh-bubble {
   position: relative; overflow: hidden;
@@ -124,46 +108,37 @@
   background: var(--bg); color: var(--ink);
   transition: color 0.35s ease, border-color 0.5s var(--ease-out-expo);
 }
-.cvh-bubble svg { position: relative; z-index: 1; width: 20px; height: 20px; }   /* über den Hover-Pixeln */
-.cvh-bubble:hover, .cvh-bubble:focus-visible { color: var(--bg-dark, #1A1A1A); border-color: transparent; outline: none; }   /* Pixel füllen den Kreis (script.js) */
+.cvh-bubble svg { position: relative; z-index: 1; width: 20px; height: 20px; }
+.cvh-bubble:hover, .cvh-bubble:focus-visible { color: var(--bg-dark); border-color: transparent; outline: none; }
 
-/* Laden: Name baut sich aus Pixeln auf (cv.js), Foto gleitet hoch, Sticker poppen aus dem Kopf */
 .cvh.is-intro .cvh-name-inner { clip-path: inset(50%); }
 .cvh.is-intro .cvh-portrait { animation: cvh-rise 1.1s 0.35s var(--ease-out-expo) both; }
-/* Position, Buttons und Links sind sofort da (gleichzeitig mit dem CV-Button) – keine verzögerte Einblendung */
 @keyframes cvh-rise { from { transform: translate(-50%, -38%) scale(0.82); opacity: 0; } to { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
 
-/* ============================
-   STORY
-   ============================ */
+/* story */
 .cvs { position: relative; }
 .cvs-stage { position: relative; height: 100vh; height: 100svh; min-height: 560px; }
 .cvs-scene {
   position: absolute; inset: var(--nav) var(--pad) var(--pad); z-index: 1;
   display: grid; place-items: center; text-align: center;
-  pointer-events: none;                                    /* nur die gerade sichtbare Szene ist bedienbar */
+  pointer-events: none;
 }
 .cvs-scene.is-active { pointer-events: auto; }
 .cvs-inner { display: flex; flex-direction: column; align-items: center; max-width: 100%; }
-.cvs.is-live .cvs-clip { clip-path: inset(50%); }        /* cv.js gibt Blöcke frei */
+.cvs.is-live .cvs-clip { clip-path: inset(50%); }
 
-/* 1 — Einstieg: erscheint beim Scrollen Wort für Wort */
 .cvs-word { display: inline-block; will-change: transform, opacity; }
-.cvs-word.story-mark--world { isolation: isolate; }                                /* Globus liegt hinter dem Wort */
+.cvs-word.story-mark--world { isolation: isolate; }
 .story-scribble--globe { left: 50%; top: 50%; width: 2.25em; height: 2.25em; transform: translate(-50%, -50%); z-index: -1; }
 .cvs-big { margin: 0; max-width: min(16ch, calc(100% / var(--wide))); font-size: clamp(2.4rem, 5.4vw, 6.6rem); text-wrap: balance; }
 .cvs-intro .cvs-big { font-size: clamp(2.2rem, 4.6vw, 5.6rem); max-width: min(20ch, calc(100% / var(--wide))); }
 
-/* Überschrift der Szenen 3 + 4 (fett wie der Einstieg) */
 .cvs-title { margin: 0 0 clamp(26px, 5vh, 56px); font-size: clamp(2.4rem, 5.4vw, 6.2rem); }
 
-/* 3 — Tools: 3D-Icons ploppen verstreut auf (ohne Hintergrund). Tiefe entsteht durch gestapelte Ebenen
-   desselben Logos (cv.js). Beim Erscheinen flippen sie herein wie eine geworfene Münze; beim Hover
-   drehen sie sich einmal um die eigene Achse (Münzwurf); sonst schweben sie leise */
-.cvs-tools { will-change: transform, opacity; }               /* fährt beim Weiterscrollen leicht hoch und blendet aus */
+.cvs-tools { will-change: transform, opacity; }
 .cvs-cloud {
   position: relative; list-style: none; margin: 0; padding: 0;
-  width: min(1240px, 92vw); height: min(56vh, 560px);          /* mehr Fläche → mehr Abstand zwischen den Icons */
+  width: min(1240px, 92vw); height: min(56vh, 560px);
 }
 .cvs-i3d {
   --w: calc(var(--k) * clamp(44px, 4.3vw, 82px));
@@ -173,21 +148,20 @@
   perspective: 700px;
   opacity: var(--pop, 0);
   transform: scale(calc(0.35 + 0.65 * var(--popS, 0)));
-  animation: cvs-float 6s ease-in-out infinite; animation-delay: calc(var(--k) * -4s);   /* Schweben auf der äußeren Ebene */
+  animation: cvs-float 6s ease-in-out infinite; animation-delay: calc(var(--k) * -4s);
 }
 .cvs-i3d-body {
   position: relative; width: var(--w); height: var(--w);
   transform-style: preserve-3d;
-  transform: rotateX(8deg) rotateY(var(--flip, 0deg));      /* leicht von oben gesehen → Tiefe sichtbar */
+  transform: rotateX(8deg) rotateY(var(--flip, 0deg));
   will-change: transform;
 }
-.cvs-i3d.is-spin .cvs-i3d-body { animation: cvs-spin 0.95s cubic-bezier(0.45, 0, 0.2, 1); }   /* Drehen auf der inneren Ebene → kein Springen */
-@keyframes cvs-spin { from { rotate: y 0deg; } to { rotate: y 360deg; } }       /* Münzwurf */
+.cvs-i3d.is-spin .cvs-i3d-body { animation: cvs-spin 0.95s cubic-bezier(0.45, 0, 0.2, 1); }
+@keyframes cvs-spin { from { rotate: y 0deg; } to { rotate: y 360deg; } }
 .cvs-i3d-body img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 @keyframes cvs-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
 .cvs-i3d-name { font-family: var(--font-mono); font-size: 11px; line-height: 1.25; color: var(--muted); text-align: center; }
 
-/* 4 — Interessen als Sticker-Collage */
 .cvs-stickers {
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
@@ -202,10 +176,10 @@
   font-size: clamp(1rem, 1.8vw, 2rem); line-height: 1; letter-spacing: 0.03em;
   text-transform: uppercase;
   transform: rotate(var(--r));
-  box-shadow: 0 6px 12px -5px rgba(0, 0, 0, 0.38);                 /* kurzer, weicher Schatten */
+  box-shadow: 0 6px 12px -5px rgba(0, 0, 0, 0.38);
 }
 
-/* Spielfläche über dem Footer: Pillen fallen hinein, stapeln sich, lassen sich ziehen (cv.js) */
+/* playground */
 .cvp { position: relative; z-index: 5; height: 72vh; min-height: 420px; }
 .cvp-pill {
   position: absolute; left: 0; top: 0; margin: 0;
@@ -213,21 +187,17 @@
   transform-origin: 50% 50%; will-change: transform;
 }
 .cvp-pill.is-held { cursor: grabbing; box-shadow: 0 12px 20px -6px rgba(0, 0, 0, 0.42); }
-.cvs-sticker.is-dropped { visibility: hidden; }        /* Original ausgeblendet, solange die Physik-Kopie lebt */
+.cvs-sticker.is-dropped { visibility: hidden; }
 
-/* Ohne Animation (Reduced Motion / ohne ScrollTrigger): alles sichtbar, Szenen untereinander */
 .cvs.is-static .cvs-stage { height: auto; min-height: 0; }
 .cvs.is-static .cvs-scene { position: static; min-height: 80vh; padding: clamp(56px, 8vh, 96px) var(--pad); pointer-events: auto; }
-.cvs.is-static ~ .cvp { display: none; }                /* ohne Animation keine Physik */
+.cvs.is-static ~ .cvp { display: none; }
 
-/* ============================
-   RESPONSIVE
-   ============================ */
 @media (max-width: 760px) {
   .cvh { --d: min(82vw, 40vh); --cy: max(44vh, calc(var(--nav) + 13vw + 110px + var(--d) / 2)); }
   .cvh-now { left: 50%; right: auto; bottom: calc(var(--pad) + 68px); transform: translateX(-50%); text-align: center; width: max-content; max-width: 90vw; }
   .cvh-now-org { justify-content: center; }
-  .cvh-cta-wrap { bottom: auto; top: calc(var(--nav) + 2vh + 13vw + 14px); }   /* Handy: direkt unter dem Namen */
+  .cvh-cta-wrap { bottom: auto; top: calc(var(--nav) + 2vh + 13vw + 14px); }
   .cvh-social { right: 50%; transform: translateX(50%); }
   .cvh-bubble { width: 44px; height: 44px; }
   .cvs-big { font-size: clamp(2rem, 9vw, 3.4rem); }
