@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forsthofgut — 3D Map</title>
+<link rel="icon" type="image/svg+xml" href="assets/jcky-logo-bold-small.svg">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css">
+<script src="https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js"></script>
+
+<style>
+  html, body, #map { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #0d1410; }
+  #loader {
+    position: fixed; inset: 0; display: grid; place-items: center;
+    background: #0d1410; color: #d8e0d4; font: 500 15px/1.4 system-ui, sans-serif; letter-spacing: 0.04em;
+    transition: opacity 0.8s ease;
+  }
+  #loader.hidden { opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="loader">Forsthofgut wird geladen …</div>
+<script type="module" src="forsthofgut.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{
+ "origin": [
+  12.7144,
+  47.4393
+ ],
+ "geoid": 48.1,
+ "grids": [
+  {
+   "name": "near",
+   "half": 1600,
+   "step": 4,
+   "size": 801
+  },
+  {
+   "name": "far",
+   "half": 25000,
+   "step": 75,
+   "size": 668
+  }
+ ]
+}
