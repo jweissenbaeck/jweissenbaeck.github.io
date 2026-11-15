@@ -1,184 +1,173 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#232323">
-<title>Jacob Weissenbäck — Portfolio</title>
-
-<link rel="icon" type="image/svg+xml" href="assets/jcky-logo-bold-small.svg">
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jacob Weissenbäck</title>
+<meta name="description" content="Jacob Weissenbäck, UI / UX designer from Salzburg. Selected work, a short introduction and contact.">
+<meta name="theme-color" content="#070707">
+<meta property="og:title" content="Jacob Weissenbäck">
+<meta property="og:description" content="UI / UX designer from Salzburg. Selected work and contact.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 44'%3E%3Crect width='30' height='44' fill='%23070707'/%3E%3Cpath d='M6 40V26A19 19 0 0 1 15 9A19 19 0 0 1 24 26V40Z' fill='%23e9e7e2'/%3E%3C/svg%3E">
+<link rel="preload" href="fonts/plex-mono-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plex-mono-500.woff2" as="font" type="font/woff2" crossorigin>
+<script type="importmap">{ "imports": { "three": "./lib/three.module.min.js" } }</script>
+<link rel="modulepreload" href="lib/three.module.min.js">
 <link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="mobile.css" media="(max-width: 760px), (hover: none) and (pointer: coarse) and (max-height: 500px)">
-<script>
-  // the phone layout has its own css/js, so crossing the breakpoint reloads the page
-  (function () {
-    var mq = matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse) and (max-height: 500px)');
-    if (mq.matches) {
-      document.documentElement.classList.add('is-phone');
-      // the url bar sliding in/out only changes the height, that's not a real resize
-      var w0 = innerWidth;
-      addEventListener('resize', function (e) { if (innerWidth === w0) e.stopImmediatePropagation(); else w0 = innerWidth; }, true);
-    }
-    mq.addEventListener('change', function () { location.reload(); });
-
-    // coming from another page: stay hidden until the page transition covers the screen
-    try {
-      if (sessionStorage.getItem('jcky:internalNav') === '1') {
-        document.documentElement.classList.add('vt-arriving');
-        setTimeout(function () { document.documentElement.classList.remove('vt-arriving'); }, 2500);
-      }
-    } catch (e) {}
-  })();
-</script>
-
+<script>document.documentElement.classList.add('js', 'is-loading');</script>
+<script src="lib/gsap.min.js" defer></script>
+<script src="lib/ScrollTrigger.min.js" defer></script>
+<script src="lib/SplitText.min.js" defer></script>
+<script src="lib/lenis.min.js" defer></script>
+<script type="module" src="js/main.js"></script>
 </head>
 <body>
 
-<div id="pageLoader" aria-hidden="true">
-  <svg class="ld-svg" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <text id="ldText" class="ld-t" x="0" y="0" font-size="200">JCKY</text>
-      <mask id="ldHole" maskUnits="userSpaceOnUse">
-        <rect class="ld-full" width="100%" height="100%" fill="#fff"/>
-        <g class="ld-tf"><use href="#ldText" class="ld-hole" fill="#000" stroke="#000" stroke-width="0" stroke-linejoin="round"/></g>
-      </mask>
-    </defs>
-    <rect class="ld-plate ld-full" width="100%" height="100%"/>
-    <g class="ld-logo ld-tf"><use href="#ldText" class="ld-ink"/></g>
-  </svg>
+<a class="skip" href="#work">Skip to work</a>
+
+<div class="loader" aria-hidden="true">
+  <div class="loader-inner">
+    <p class="loader-count">000</p>
+    <div class="loader-bar"><i></i></div>
+    <p class="loader-label"><span>Pouring concrete</span><span>Jacob Weissenbäck</span></p>
+  </div>
 </div>
 
-<nav class="nav" id="mainNav">
-  <div class="nav-left">
-    <span class="nav-cell nav-brand" id="navLogoName"><span class="nav-txt nav-logo-text">JCKY</span></span>
-  </div>
-  <div class="nav-center">
-    <a href="#hero"    class="nav-cell nav-sec" data-section="hero"><span class="nav-txt">Start</span></a>
-    <a href="#work"    class="nav-cell nav-sec" data-section="work"><span class="nav-txt">What I do</span></a>
-    <a href="#contact" class="nav-cell nav-sec" data-section="contact"><span class="nav-txt">Find me here</span></a>
-  </div>
-  <div class="nav-right">
-    <a href="projects.html" class="nav-cell"><span class="nav-txt">My Work</span></a>
-    <a href="cv.html" class="nav-cell"><span class="nav-txt">Me</span></a>
-  </div>
-</nav>
+<div class="cursor" aria-hidden="true"><span class="cursor-box"></span><span class="cursor-label"></span></div>
 
-<section class="hx" id="hero" aria-label="Jacob Weissenbäck — UI / UX Designer">
-  <div class="hx-bg" aria-hidden="true"><img class="hx-bw" src="assets/background_noperson.png" alt="" decoding="async" fetchpriority="high"><img class="hx-col" src="assets/background_noperson.png" alt="" decoding="async"></div>
-  <div class="hx-person" aria-hidden="true"><img class="hx-bw" src="assets/person_nobackground.png" alt="" decoding="async" fetchpriority="high"><img class="hx-col" src="assets/person_nobackground.png" alt="" decoding="async"></div>
-  <div class="hx-fade" aria-hidden="true"></div>
-  <div class="hx-shade" aria-hidden="true"></div>
+<div class="sky" aria-hidden="true"><canvas></canvas></div>
 
-  <div class="hx-bottom" data-hx-speed="0.1">
-    <h1 class="hx-name"><span class="hx-mask"><span>Jacob</span></span><span class="hx-mask"><span>Weissenback</span></span></h1>
-    <p class="hx-text hx-rv" style="--r:3">UI / UX designer from Salzburg. I design interfaces people get at first glance — from research to clickable prototypes.</p>
-  </div>
+<header class="top">
+  <a class="top-mark" href="#top" aria-label="Jacob Weissenbäck, back to the top">JW</a>
+  <nav class="top-nav" aria-label="Sections">
+    <a href="#work" data-scramble>Work</a>
+    <a href="#about" data-scramble>About</a>
+    <a href="#contact" data-scramble>Contact</a>
+    <button class="sound" type="button" aria-pressed="false">
+      <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="sound-label">Sound off</span>
+    </button>
+  </nav>
+</header>
 
-  <ul class="hx-right" data-hx-speed="0.06">
-    <li class="hx-item hx-rv" style="--r:1"><b>Junior UI / UX Designer</b><span>at Websline</span></li>
-    <li class="hx-item hx-rv" style="--r:2"><b>Location</b><span>Salzburg, Austria</span></li>
-    <li class="hx-item hx-rv" style="--r:3"><b>German</b><span>Native language</span></li>
-    <li class="hx-item hx-rv" style="--r:4"><b data-age>23</b><span>Years old</span></li>
-  </ul>
+<main>
 
-</section>
-
-<div id="mainContent" class="main-content">
-
-<section class="services-section wid" id="work" aria-labelledby="widTitle">
-  <div class="wid-stage">
-    <ul class="wid-col wid-col--l">
-      <li class="wid-item"><span class="wid-n">01</span><span class="wid-name">UI / UX Design</span><span class="wid-tools">Figma · Framer · Prototyping</span></li>
-      <li class="wid-item"><span class="wid-n">02</span><span class="wid-name">Product Design</span><span class="wid-tools">Systems · Components</span></li>
-      <li class="wid-item"><span class="wid-n">03</span><span class="wid-name">Image Editing</span><span class="wid-tools">Photoshop · Lightroom</span></li>
-      <li class="wid-item"><span class="wid-n">04</span><span class="wid-name">Colorgrading</span><span class="wid-tools">DaVinci · LUTs</span></li>
-    </ul>
-    <div class="wid-center">
-      <p class="wid-eyebrow" id="widTitle">What I do</p>
-      <h2 class="wid-quote">I turn complex ideas into <em>clear, bold interfaces</em> and visuals — work people understand at first glance and <em>remember long after.</em></h2>
+  <!-- a lancet window cut into board-formed concrete, rendered live.
+       The work section waits behind the glass. -->
+  <section class="hero" id="top" aria-label="Introduction">
+    <div class="hero-stage">
+      <canvas class="hero-canvas" aria-hidden="true"></canvas>
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-title">
+        <h1 class="hero-name">Jacob Weissenbäck</h1>
+        <p class="hero-role">UI / UX Designer<br>Salzburg, Austria</p>
+      </div>
+      <div class="hero-foot">
+        <p>Portfolio 2026</p>
+        <p class="hero-foot-r">47.80° N<br>13.04° E</p>
+      </div>
     </div>
-    <ul class="wid-col wid-col--r">
-      <li class="wid-item"><span class="wid-n">05</span><span class="wid-name">Video Cutting</span><span class="wid-tools">DaVinci Resolve · Pacing</span></li>
-      <li class="wid-item"><span class="wid-n">06</span><span class="wid-name">Advertisements</span><span class="wid-tools">Motion · Copywriting</span></li>
-      <li class="wid-item"><span class="wid-n">07</span><span class="wid-name">Social Media</span><span class="wid-tools">Content · Strategy</span></li>
-    </ul>
+  </section>
+
+  <section class="work" aria-labelledby="work-title">
+    <!-- a short flight over the clouds and a dive into one -->
+    <div class="ascent" aria-hidden="true"></div>
+    <div class="work-stage">
+      <canvas class="works-canvas" aria-hidden="true"></canvas>
+      <div class="work-head" id="work">
+        <h2 class="title" id="work-title" data-scramble>Selected Work</h2>
+        <button class="work-index" type="button" aria-haspopup="dialog" data-cursor="Index"><span data-scramble>All projects</span><b>12</b><i aria-hidden="true">↗</i></button>
+      </div>
+      <a class="work-hit" href="#" data-cursor="View" aria-label="View project"></a>
+      <div class="work-now" aria-live="polite">
+        <h3 class="now-title">Lumina</h3>
+        <p class="now-meta"><span>UI / UX Design</span><span>2026</span></p>
+      </div>
+      <p class="now-hint" aria-hidden="true"><i></i></p>
+      <ol class="work-list">
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="Lumina, project cover" decoding="async"><h3>Lumina</h3><p><span>UI / UX Design</span><span>2026</span></p></a></li>
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="Kane, project cover" decoding="async"><h3>Kane</h3><p><span>Video Editing</span><span>2026</span></p></a></li>
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="The Feed, project cover" decoding="async"><h3>The Feed</h3><p><span>Video Editing</span><span>2026</span></p></a></li>
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="Flux, project cover" decoding="async"><h3>Flux</h3><p><span>UI / UX Design</span><span>2025</span></p></a></li>
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="Prism, project cover" decoding="async"><h3>Prism</h3><p><span>UI / UX Design</span><span>2025</span></p></a></li>
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="Vertex, project cover" decoding="async"><h3>Vertex</h3><p><span>Photography</span><span>2024</span></p></a></li>
+          <li><a class="win" href="#" data-selected><img src="img/placeholder.png" alt="Halo, project cover" decoding="async"><h3>Halo</h3><p><span>Photography</span><span>2024</span></p></a></li>
+          <li><a class="win" href="#"><img src="img/placeholder.png" alt="Orbit, project cover" decoding="async"><h3>Orbit</h3><p><span>Video Editing</span><span>2023</span></p></a></li>
+          <li><a class="win" href="#"><img src="img/placeholder.png" alt="Atlas, project cover" decoding="async"><h3>Atlas</h3><p><span>UI / UX Design</span><span>2023</span></p></a></li>
+          <li><a class="win" href="#"><img src="img/placeholder.png" alt="Monolith, project cover" decoding="async"><h3>Monolith</h3><p><span>Photography</span><span>2023</span></p></a></li>
+          <li><a class="win" href="#"><img src="img/placeholder.png" alt="Atrium, project cover" decoding="async"><h3>Atrium</h3><p><span>UI / UX Design</span><span>2022</span></p></a></li>
+          <li><a class="win" href="#"><img src="img/placeholder.png" alt="Requiem, project cover" decoding="async"><h3>Requiem</h3><p><span>Video Editing</span><span>2022</span></p></a></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- the way down: a section through the ground, fixed to the screen and moved
+       by the scroll alone, from the foot of the tower to the cave -->
+    <div class="earth-void" aria-hidden="true"></div>
+    <div class="earth" aria-hidden="true">
+      <div class="stratum stratum--0"></div>
+      <div class="stratum stratum--1"></div>
+      <div class="stratum stratum--2"></div>
+      <div class="stratum stratum--3"></div>
+      <p class="earth-depth"><span class="earth-m">And what lies beneath.</span></p>
+    </div>
+
+  <section class="about" id="about" aria-labelledby="about-title">
+    <div class="about-stage">
+      <div class="scene scene--cave" aria-hidden="true"><canvas></canvas></div>
+      <div class="band" aria-hidden="true">
+        <div class="band-track">
+          <div class="band-set"><span>What I do</span><i aria-hidden="true"></i><span>What I do</span><i aria-hidden="true"></i><span>What I do</span><i aria-hidden="true"></i><span>What I do</span><i aria-hidden="true"></i></div>
+          <div class="band-set"><span>What I do</span><i aria-hidden="true"></i><span>What I do</span><i aria-hidden="true"></i><span>What I do</span><i aria-hidden="true"></i><span>What I do</span><i aria-hidden="true"></i></div>
+        </div>
+      </div>
+      <h2 class="sr" id="about-title">What I do</h2>
+      <ul class="sr"><li>UI / UX Design</li><li>Product Design</li><li>Graphic Design</li><li>Web Design</li><li>Videography</li><li>Video Editing</li><li>Photography</li><li>Motion Design</li></ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- the index: every project in one list -->
+<div class="archive" role="dialog" aria-modal="true" aria-labelledby="archive-title" hidden>
+  <div class="archive-inner" data-lenis-prevent>
+    <div class="archive-head">
+      <h2 class="title" id="archive-title">Index</h2>
+      <div class="archive-filter" role="group" aria-label="Filter by discipline">
+        <button type="button" aria-pressed="true" data-cat="">All</button>
+        <button type="button" aria-pressed="false" data-cat="UI / UX Design">UI / UX</button>
+        <button type="button" aria-pressed="false" data-cat="Video Editing">Film</button>
+        <button type="button" aria-pressed="false" data-cat="Photography">Photography</button>
+      </div>
+      <button class="archive-close" type="button"><span data-scramble>Close</span><i aria-hidden="true"></i></button>
+    </div>
+    <div class="archive-cols" aria-hidden="true"><span>Project</span><span>Discipline</span><span>Year</span></div>
+    <ol class="archive-list"></ol>
   </div>
-</section>
-
-<section class="sw" id="selectedWork" aria-labelledby="swTitle">
-  <header class="sw-head">
-    <h2 class="sw-title" id="swTitle"><span class="sw-title-in">Selected Work</span></h2>
-  </header>
-  <div class="sw-cols" aria-hidden="true"><span>Project</span><span>Category</span><span>Year</span></div>
-  <ol class="sw-list">
-    <li><a class="sw-row" href="projects.html#lumina" data-img="https://picsum.photos/id/1015/1200/900">
-      <span class="sw-name">Lumina</span>
-      <span class="sw-cat">UI / UX Design</span>
-      <span class="sw-year">2026</span>
-      <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
-      <img class="sw-thumb" src="https://picsum.photos/id/1015/480/360" alt="" loading="lazy" decoding="async">
-    </a></li>
-    <li><a class="sw-row" href="projects.html#kane" data-img="https://picsum.photos/id/1043/1200/900">
-      <span class="sw-name">Kane</span>
-      <span class="sw-cat">Video Editing</span>
-      <span class="sw-year">2026</span>
-      <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
-      <img class="sw-thumb" src="https://picsum.photos/id/1043/480/360" alt="" loading="lazy" decoding="async">
-    </a></li>
-    <li><a class="sw-row" href="projects.html#flux" data-img="https://picsum.photos/id/1050/1200/900">
-      <span class="sw-name">Flux</span>
-      <span class="sw-cat">UI / UX Design</span>
-      <span class="sw-year">2025</span>
-      <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
-      <img class="sw-thumb" src="https://picsum.photos/id/1050/480/360" alt="" loading="lazy" decoding="async">
-    </a></li>
-    <li><a class="sw-row" href="projects.html#vertex" data-img="https://picsum.photos/id/1074/1200/900">
-      <span class="sw-name">Vertex</span>
-      <span class="sw-cat">Photography</span>
-      <span class="sw-year">2024</span>
-      <span class="sw-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
-      <img class="sw-thumb" src="https://picsum.photos/id/1074/480/360" alt="" loading="lazy" decoding="async">
-    </a></li>
-  </ol>
-</section>
-
-<nav class="sn" id="storyNext" aria-label="Continue">
-  <a class="sn-link" href="projects.html">
-    <span class="sn-k">All projects</span>
-    <span class="sn-t"><span class="sn-in">More projects</span></span>
-    <span class="sn-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
-  </a>
-  <a class="sn-link" href="cv.html">
-    <span class="sn-k">Who I am</span>
-    <span class="sn-t"><span class="sn-in">More about me</span></span>
-    <span class="sn-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg><svg viewBox="0 0 24 24"><path d="M6 18 18 6M8 6h10v10"/></svg></span>
-  </a>
-</nav>
-
+  <div class="archive-preview" aria-hidden="true"><img alt="" src="img/placeholder.png"></div>
 </div>
 
-<footer class="site-footer" id="siteFooter">
-  <div class="site-footer-text" id="footerText">
-    <span class="ftp-note">Thank you for visiting my Website!</span>
-    <div class="ftp-word" id="footerWord" role="img" aria-label="JCKY"><span class="ftp-word-inner">JCKY</span></div>
-  </div>
-  <div class="site-footer-bar">
-    <nav class="sf-links" aria-label="Footer">
-      <a href="#" class="sf-link"><span class="sf-txt">LinkedIn</span></a>
-      <a href="mailto:j.weissenbaeck@gmx.at" class="sf-link"><span class="sf-txt">Email</span></a>
-      <a href="#" class="sf-link"><span class="sf-txt">Behance</span></a>
-    </nav>
-    <span class="sf-right"><span class="sf-txt">My Portfolio — made with love</span></span>
+<footer class="foot" id="contact">
+  <div class="foot-inner">
+    <!-- a wall in the dark: a stained-glass window or a door of light (3D, see main.js) -->
+    <canvas class="foot-canvas" aria-hidden="true"></canvas>
+    <h2 class="sr">Contact</h2>
+    <div class="foot-body">
+      <!-- on a wide screen these words are painted on the wall in the 3D scene -->
+      <p class="foot-claim">Let’s bring color into your projects.</p>
+      <p class="foot-ask">Write to me</p>
+      <a class="foot-mail" href="mailto:j.weissenbaeck@gmx.at" data-cursor="Write"><span>j.weissenbaeck@gmx.at</span><i aria-hidden="true">↗</i></a>
+      <ul class="foot-links">
+        <li><a href="https://github.com/jweissenbaeck" target="_blank" rel="noopener"><span data-scramble>GitHub</span><i aria-hidden="true">↗</i></a></li>
+        <li><a href="#" target="_blank" rel="noopener"><span data-scramble>LinkedIn</span><i aria-hidden="true">↗</i></a></li>
+        <li><a href="#" target="_blank" rel="noopener"><span data-scramble>Instagram</span><i aria-hidden="true">↗</i></a></li>
+      </ul>
+    </div>
+    <div class="foot-meta">
+      <p>© 2026 Jacob Weissenbäck</p>
+    </div>
   </div>
 </footer>
 
-<script src="script.js" defer></script>
-<script src="mobile.js" defer></script>
 </body>
 </html>
