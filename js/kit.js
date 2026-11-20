@@ -26,14 +26,40 @@ export function makeRenderer(canvas, { exposure = 1 } = {}) {
   return renderer;
 }
 
+// Everything the page waits for before it lets the visitor in: every file, every
+// scene being built and warmed. The loader shows done / total, so its bar tells
+// the truth. A task is settled once, however often its callback is called.
+export const loading = { total: 0, done: 0 };
+export function task(weight = 1) {
+  loading.total += weight;
+  let settled = false;
+  return () => { if (!settled) { settled = true; loading.done += weight; } };
+}
+
 // counts everything a scene waits for, then calls back once
 export function tracker(onDone) {
   let open = 0, closed = false;
   const settle = () => { if (--open === 0 && closed) onDone(); };
   return {
-    add() { open++; return settle; },
+    add() { open++; const t = task(); return () => { t(); settle(); }; },
     close() { closed = true; if (open === 0) onDone(); },
   };
+}
+
+// Warm a scene before it is seen: compile every material, send every texture to
+// the graphics card, draw it once. Otherwise all of that happens the first time it
+// comes into view, in the middle of a scroll, and the page stutters.
+export function warmUp(renderer, scene, camera) {
+  renderer.compile(scene, camera);
+  const seen = new Set();
+  scene.traverse((o) => {
+    const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+    for (const m of mats) {
+      for (const v of Object.values(m)) if (v && v.isTexture && !seen.has(v)) { seen.add(v); renderer.initTexture(v); }
+      if (m.uniforms) for (const u of Object.values(m.uniforms)) if (u.value && u.value.isTexture && !seen.has(u.value)) { seen.add(u.value); renderer.initTexture(u.value); }
+    }
+  });
+  renderer.render(scene, camera);
 }
 
 const texLoader = new THREE.TextureLoader();
@@ -212,7 +238,7 @@ export function loop(renderer, scene, camera, canvas, { update, onResize } = {})
     resize,
     // the first picture also compiles every material in the scene, seen or not,
     // so nothing has to be compiled later, in the middle of a scroll
-    renderOnce() { resize(); update && update(state, t, 0); renderer.compile(scene, camera); renderer.render(scene, camera); },
+    renderOnce() { resize(); update && update(state, t, 0); warmUp(renderer, scene, camera); },
     start() { if (running) return; running = true; last = performance.now(); raf = requestAnimationFrame(frame); },
     stop() { running = false; cancelAnimationFrame(raf); },
     setProgress(p) { state.p = p; },

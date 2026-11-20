@@ -88,7 +88,7 @@ export function createCave(canvas, { onReady } = {}) {
       done();
     }).catch(done);
   };
-  // what stands in front of the name: drawn after it, so it covers it
+  // what stands in front of the list: drawn after it, so it covers it
   const inFront = (o) => {
     o.renderOrder = 2;
     const m = o.material;
@@ -173,7 +173,7 @@ export function createCave(canvas, { onReady } = {}) {
 
   const dust = motes(220, new THREE.Box3(new THREE.Vector3(-1.4, FLOOR, -3.4), new THREE.Vector3(1.6, 3.2, -0.6)), { size: 4, opacity: 0.8, drift: 0.015 });
   scene.add(dust);
-  // the light and the dust in it pass in front of the name
+  // the light and the dust in it pass in front of the list
   beam.renderOrder = glow.renderOrder = dust.renderOrder = 3;
 
   // what I do, in two columns standing in the dark behind the figure. They hang
@@ -185,13 +185,13 @@ export function createCave(canvas, { onReady } = {}) {
     { items: ['UI / UX Design', 'Product Design', 'Graphic Design', 'Web Design'], indent: [0, 1.6, 0.5, 2.3] },
     { items: ['Videography', 'Video Editing', 'Photography', 'Motion Design'], indent: [0.9, 0, 1.9, 0.4] },
   ];
-  const nameMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
-  const name = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), nameMat);
-  name.renderOrder = 1;
-  name.visible = false;
-  scene.add(name);
-  let nameAspect = 0;
-  const nameDone = track.add();
+  const skillsMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false, toneMapped: false });
+  const skills = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), skillsMat);
+  skills.renderOrder = 1;
+  skills.visible = false;
+  scene.add(skills);
+  let skillsAspect = 0;
+  const skillsDone = track.add();
   const px = 130;
   const font = `500 ${px}px "Plex Mono", ui-monospace, monospace`;
   (document.fonts ? document.fonts.load(font) : Promise.resolve()).catch(() => {}).then(() => {
@@ -214,31 +214,25 @@ export function createCave(canvas, { onReady } = {}) {
       return { t, x, y: pad + asc + lead * (k + col * 0.5) };
     };
     const write = (t, x, y) => { for (const ch of t) { ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + tracking; } };
-    const paintList = () => {
-      ctx.clearRect(0, 0, c.width, c.height);
-      ctx.font = font;
-      COLUMNS.forEach((col, ci) => col.items.forEach((_, k) => {
-        const { t, x, y } = at(ci, k);
-        // lit from above: full at the top, sinking into the dark towards the floor
-        const lit = 1 - 0.68 * ((y - pad) / (c.height - pad * 2));
-        ctx.fillStyle = `rgba(238,237,233,${lit.toFixed(3)})`;
-        write(t, x, y);
-      }));
-      if (nameMat.map) nameMat.map.needsUpdate = true;
-    };
-    paintList();
+    COLUMNS.forEach((col, ci) => col.items.forEach((_, k) => {
+      const { t, x, y } = at(ci, k);
+      // lit from above: full at the top, sinking into the dark towards the floor
+      const lit = 1 - 0.68 * ((y - pad) / (c.height - pad * 2));
+      ctx.fillStyle = `rgba(238,237,233,${lit.toFixed(3)})`;
+      write(t, x, y);
+    }));
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-    nameMat.map = tex;
-    nameMat.needsUpdate = true;
-    nameAspect = c.height / c.width;
-    name.visible = true;
-    placeName();
-    nameDone();
+    skillsMat.map = tex;
+    skillsMat.needsUpdate = true;
+    skillsAspect = c.height / c.width;
+    skills.visible = true;
+    placeSkills();
+    skillsDone();
   });
 
-  // someone sits on the boulder in the light, their back to us -------------------
+  // someone sits on the boulder in the light, their back to us ----------------
   // A jointed figure, like an artist's wooden model: capsules for the limbs, balls
   // for the joints, all of it built here, so nothing of anyone else's is used.
   // It faces +z; every limb hangs along -y from its joint, the trunk rises along +y.
@@ -309,48 +303,45 @@ export function createCave(canvas, { onReady } = {}) {
     pos.set(THREE.MathUtils.lerp(2.3, 1.1, p) + sx * 0.3, 0.3 + sy * 0.12 + drop * 2.6, THREE.MathUtils.lerp(4.2, 2.6, p));
     at.set(-0.2 + sx * 0.6, 0.05 + sy * 0.25 - p * 0.3 - drop * 1.6, -3.5);
   };
-  // the name is set for the eye at the moment the about is read in full (its
+  // the list is set for the eye at the moment the about is read in full (its
   // progress when the section's end reaches the bottom of the screen)
-  const READ = 0.7, NAME_DIST = 6.2;
+  const READ = 0.7, SKILLS_DIST = 6.2;
   const probe = new THREE.PerspectiveCamera();
   const pv = new THREE.Vector3(), lv = new THREE.Vector3(), up = new THREE.Vector3();
-  function placeName() {
-    if (!nameAspect) return;
+  function placeSkills() {
+    if (!skillsAspect) return;
     eyeAt(READ, 0, 0, pv, lv);
     probe.position.copy(pv);
     probe.lookAt(lv);
-    const hgt = 2 * NAME_DIST * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+    const hgt = 2 * SKILLS_DIST * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     const wid = hgt * camera.aspect;
-    const w = Math.min(wid * 0.92, (hgt * 0.4) / nameAspect);
-    name.scale.set(w, w * nameAspect, 1);
+    const w = Math.min(wid * 0.92, (hgt * 0.4) / skillsAspect);
+    skills.scale.set(w, w * skillsAspect, 1);
     // straight ahead, a little above the middle: the figure's head sits in the letters
     // (on a tall screen higher up, in the dark above the figure, clear of the words below)
     up.set(0, 1, 0).applyQuaternion(probe.quaternion);
-    name.position.copy(pv).addScaledVector(lv.sub(pv).normalize(), NAME_DIST).addScaledVector(up, hgt * (camera.aspect < 1 ? 0.19 : 0.035));
-    name.quaternion.copy(probe.quaternion);
+    skills.position.copy(pv).addScaledVector(lv.sub(pv).normalize(), SKILLS_DIST).addScaledVector(up, hgt * (camera.aspect < 1 ? 0.19 : 0.035));
+    skills.quaternion.copy(probe.quaternion);
   }
   const L = loop(renderer, scene, camera, canvas, {
     onResize(w, h) {
       camera.fov = w < h ? 66 : 48;
       dust.material.uniforms.uScale.value = h * renderer.getPixelRatio() / 900;
-      placeName();
+      placeSkills();
     },
     update(s, t) {
       dust.material.uniforms.uTime.value = t;
-      if (person) {
-        // facing away from us, into the cave
-        const dir = Math.atan2(look.x - camera.position.x, look.z - camera.position.z);
-        person.rotation.y = dir;
-        const u = person.userData;
-        // breathing, and now and then a slow turn of the head
-        u.spine.quaternion.copy(u.rest[0]).multiply(breath.setFromAxisAngle(bx, Math.sin(t * 1.3) * 0.012));
-        u.head.quaternion.copy(u.rest[1]).multiply(breath.setFromAxisAngle(by, Math.sin(t * 0.21) * 0.18));
-      }
+      // facing away from us, into the cave
+      person.rotation.y = Math.atan2(look.x - camera.position.x, look.z - camera.position.z);
+      const u = person.userData;
+      // breathing, and now and then a slow turn of the head
+      u.spine.quaternion.copy(u.rest[0]).multiply(breath.setFromAxisAngle(bx, Math.sin(t * 1.3) * 0.012));
+      u.head.quaternion.copy(u.rest[1]).multiply(breath.setFromAxisAngle(by, Math.sin(t * 0.21) * 0.18));
       const p = s.p;
       eyeAt(p, s.sx, s.sy, camera.position, look);
       camera.lookAt(look);
-      // the name comes out of the dark as we settle
-      nameMat.opacity = 0.94 * smooth(0.3, 0.62, p);
+      // the list comes out of the dark as we settle
+      skillsMat.opacity = 0.94 * smooth(0.3, 0.62, p);
     },
   });
 

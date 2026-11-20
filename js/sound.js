@@ -11,6 +11,11 @@
 //   halo    at the very end, barely there: a high, still shimmer
 
 let ctx = null, master = null, hall = null, cavern = null, enabled = false;
+// before the page: while the visitor chooses, the cave is heard, low, alone
+let prelude = false;
+const PRELUDE_CAVE = 0.4;
+// for when the page is behind something (the index): the sound as if from the next room
+let muffle = null, duck = null, muffled = false;
 const rooms = {};
 const levels = { nave: 1, sky: 0, tower: 0, cave: 0, halo: 0 };
 
@@ -333,7 +338,12 @@ function ensure() {
   ctx = new AC();
   master = ctx.createGain();
   master.gain.value = 0;
-  master.connect(ctx.destination);
+  muffle = ctx.createBiquadFilter();
+  muffle.type = 'lowpass'; muffle.Q.value = 0.6;
+  muffle.frequency.value = muffled ? 420 : 20000;
+  duck = ctx.createGain();
+  duck.gain.value = muffled ? 0.55 : 1;
+  master.connect(muffle).connect(duck).connect(ctx.destination);
   hall = ctx.createConvolver();
   hall.buffer = impulse(4.2, 2.6);
   const wet = ctx.createGain(); wet.gain.value = 0.5;
@@ -351,16 +361,17 @@ function ensure() {
   return true;
 }
 
-function mix() {
+// tau: how slowly the rooms move to their new levels (seconds, time constant)
+function mix(tau = 0.7) {
   if (!ctx) return;
   const t = ctx.currentTime;
   for (const [name, r] of Object.entries(rooms)) {
-    const target = enabled ? levels[name] : 0;
+    const target = enabled ? levels[name] : prelude && name === 'cave' ? PRELUDE_CAVE : 0;
     if (Math.abs(target - r.level) > 0.008 || (target === 0 && r.level !== 0)) {
       r.level = target;
       for (const g of [r.bus, ...r.wets.values()]) {
         g.gain.cancelScheduledValues(t);
-        g.gain.setTargetAtTime(target, t, 0.7);
+        g.gain.setTargetAtTime(target, t, tau);
       }
     }
     const on = target > 0.004;
@@ -389,6 +400,67 @@ export function setMix(next) {
   Object.assign(levels, rest);
   if (towerDepth !== undefined && rooms.tower) rooms.tower.setDepth(towerDepth);
   mix();
+}
+
+// muffled: dull and quieter, as if through a wall or under water
+export function setMuffled(on) {
+  muffled = on;
+  if (!ctx) return;
+  const t = ctx.currentTime;
+  if (on) {
+    muffle.frequency.cancelScheduledValues(t);
+    muffle.frequency.setTargetAtTime(420, t, 0.18);
+    duck.gain.cancelScheduledValues(t);
+    duck.gain.setTargetAtTime(0.55, t, 0.18);
+    return;
+  }
+  // opening up again slowly and evenly: the filter climbs at an even pace in
+  // pitch (exponentially in hertz), the level comes back over the same time,
+  // both starting from wherever they are now
+  const D = 1.8;
+  const f = Math.max(60, muffle.frequency.value), g = duck.gain.value;
+  muffle.frequency.cancelScheduledValues(t);
+  muffle.frequency.setValueAtTime(f, t);
+  muffle.frequency.exponentialRampToValueAtTime(20000, t + D);
+  duck.gain.cancelScheduledValues(t);
+  duck.gain.setValueAtTime(g, t);
+  duck.gain.linearRampToValueAtTime(1, t + D);
+}
+
+// the prelude: the cave, low, under the question before the page. The browser
+// may refuse any sound until the visitor has clicked, tapped or pressed a key
+// (most do, for a first visit); then it begins at the first of those (wake).
+export function startPrelude() {
+  if (enabled || !ensure()) return;
+  prelude = true;
+  ctx.resume().catch(() => {});
+  master.gain.cancelScheduledValues(ctx.currentTime);
+  master.gain.setTargetAtTime(1, ctx.currentTime, 0.8);
+  mix(1.2);
+}
+export function wakePrelude() {
+  if (prelude && ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
+}
+export const preludeHeard = () => !!(prelude && ctx && ctx.state === 'running');
+// the answer. With sound: the cave sinks away slowly while the bells of the
+// nave come up in its place. In silence: everything slowly loses its voice.
+export function endPrelude(withSound) {
+  if (!ctx) { if (withSound) setEnabled(true); return; }
+  prelude = false;
+  const t = ctx.currentTime;
+  if (withSound) {
+    enabled = true;
+    ctx.resume().catch(() => {});
+    master.gain.cancelScheduledValues(t);
+    master.gain.setTargetAtTime(1, t, 0.3);
+    mix(1.5);
+    return;
+  }
+  master.gain.cancelScheduledValues(t);
+  master.gain.setValueAtTime(master.gain.value, t);
+  master.gain.linearRampToValueAtTime(0, t + 2.6);
+  // once it is silent, the rooms stop (unless the sound was turned on meanwhile)
+  setTimeout(() => { if (!enabled) mix(); }, 2800);
 }
 
 export const isEnabled = () => enabled;

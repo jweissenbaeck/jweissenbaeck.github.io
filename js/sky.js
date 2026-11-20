@@ -2,7 +2,7 @@
 // resolution. The camera flies out over the clouds and dives into one, until
 // nothing is left but the mist. The mist is one exact colour, MIST, which the
 // page then takes over as its background, so the hand-over can't be seen.
-import { THREE, url } from './kit.js';
+import { THREE, url, task } from './kit.js';
 
 const vertexShader = `
   varying vec2 vUv;
@@ -129,18 +129,32 @@ const LINES = [
   { text: 'Everything has a surface.', weight: 500, size: 1 },
   { text: 'I design it.', weight: 600, size: 2.1 },
 ];
-function words() {
-  const px = 150;
-  const font = (l) => `${l.weight} ${Math.round(px * l.size)}px "Plex Mono", ui-monospace, monospace`;
-  const load = document.fonts ? Promise.all(LINES.map((l) => document.fonts.load(font(l)))).catch(() => {}) : Promise.resolve();
+// on a tall screen the same words in four lines, so they fit its narrow view
+const LINES_TALL = [
+  { text: 'Everything', weight: 500, size: 1 },
+  { text: 'has a surface.', weight: 500, size: 1 },
+  { text: 'I design', weight: 600, size: 1.75 },
+  { text: 'it.', weight: 600, size: 1.75 },
+];
+const TALL_SCALE = 0.72;
+const PX = 150;
+const fontOf = (l) => `${l.weight} ${Math.round(PX * l.size)}px "Plex Mono", ui-monospace, monospace`;
+// the width of the texture for these lines (the fonts already loaded)
+function measure(lines) {
+  const g = document.createElement('canvas').getContext('2d');
+  return Math.ceil(Math.max(...lines.map((l) => { g.font = fontOf(l); return g.measureText(l.text.toUpperCase()).width; })) + PX * 0.4);
+}
+function words(lines) {
+  const load = document.fonts ? Promise.all(lines.map((l) => document.fonts.load(fontOf(l)))).catch(() => {}) : Promise.resolve();
   return load.then(() => {
     const c = document.createElement('canvas');
     const g = c.getContext('2d');
-    // as wide as the long line, the big line under it
-    const widths = LINES.map((l) => { g.font = font(l); return g.measureText(l.text.toUpperCase()).width; });
+    const px = PX;
+    // as wide as the longest line, each line under the one before
+    const widths = lines.map((l) => { g.font = fontOf(l); return g.measureText(l.text.toUpperCase()).width; });
     const W = Math.ceil(Math.max(...widths) + px * 0.4);
-    const lh = LINES.map((l) => px * l.size);
-    const H = Math.ceil(lh[0] * 0.95 + lh[1] * 1.0 + px * 0.5);
+    const lh = lines.map((l) => px * l.size);
+    const H = Math.ceil(lh.reduce((s, v) => s + v * 0.95, 0) + lh[lh.length - 1] * 0.05 + px * 0.5);
     c.width = W; c.height = H;
     // lit from above like the cloud tops, greyer where the cloud closes round them
     const grad = g.createLinearGradient(0, 0, 0, H);
@@ -150,8 +164,12 @@ function words() {
     g.fillStyle = grad;
     g.textAlign = 'center';
     g.textBaseline = 'alphabetic';
-    g.font = font(LINES[0]); g.fillText(LINES[0].text.toUpperCase(), W / 2, px * 0.2 + lh[0] * 0.75);
-    g.font = font(LINES[1]); g.fillText(LINES[1].text.toUpperCase(), W / 2, px * 0.2 + lh[0] * 0.95 + lh[1] * 0.75);
+    let top = px * 0.2;
+    lines.forEach((l, i) => {
+      g.font = fontOf(l);
+      g.fillText(l.text.toUpperCase(), W / 2, top + lh[i] * 0.75);
+      top += lh[i] * 0.95;
+    });
     const tex = new THREE.CanvasTexture(c);
     tex.flipY = true;
     tex.generateMipmaps = true;
@@ -184,12 +202,25 @@ export function createSky(canvas, { onReady } = {}) {
     uTextRect: { value: new THREE.Vector4(0, 0, 1, 1) },
   };
   uniforms.uText.value.needsUpdate = true;
-  words().then((tex) => {
-    uniforms.uText.value = tex;
-    // centred on the line of flight, its foot sunk in the cloud
-    const w = TEXT_W, h = w * tex.image.height / tex.image.width;
-    uniforms.uTextRect.value.set(5.6 - w / 2, -3.0, w, h);
-  });
+  const wordsDone = task(), cloudsDone = task(2), warmDone = task(2);
+  // the words for the shape of the screen: on a tall one in four lines and a
+  // little smaller, so the whole of them is seen as we fly over
+  let tallNow = null;
+  const setWords = () => {
+    const tall = innerWidth < innerHeight;
+    if (tall === tallNow) return Promise.resolve();
+    tallNow = tall;
+    return words(tall ? LINES_TALL : LINES).then((tex) => {
+      const old = uniforms.uText.value;
+      uniforms.uText.value = tex;
+      old.dispose();
+      // centred on the line of flight, its foot sunk in the cloud
+      const w = tall ? TEXT_W * (tex.image.width / measure(LINES)) * TALL_SCALE : TEXT_W;
+      const h = w * tex.image.height / tex.image.width;
+      uniforms.uTextRect.value.set(5.6 - w / 2, -3.0, w, h);
+    });
+  };
+  const wordsReady = setWords().finally(wordsDone);
   const mat = new THREE.ShaderMaterial({
     uniforms, vertexShader, fragmentShader,
     defines: { STEPS: small ? 44 : 72 },
@@ -244,6 +275,8 @@ export function createSky(canvas, { onReady } = {}) {
     renderer.setSize(w, h, false);
     uniforms.uAspect.value = w / h;
     uniforms.uTan.value = Math.tan(THREE.MathUtils.degToRad(w < h ? 36 : 28));
+    // turned from wide to tall or back: the words are set anew
+    if (tallNow !== null) setWords();
   }
   addEventListener('resize', resize);
   resize();
@@ -258,7 +291,7 @@ export function createSky(canvas, { onReady } = {}) {
     if (uniforms.uWhite.value < 0.99 || uniforms.uDark.value > 0) renderer.render(scene, camera);
   }
 
-  fetch(url('tex/clouds.bin')).then((r) => r.arrayBuffer()).then((buf) => {
+  const cloudsReady = fetch(url('tex/clouds.bin')).then((r) => r.arrayBuffer()).then((buf) => {
     const tex = new THREE.Data3DTexture(new Uint8Array(buf), 64, 64, 64);
     tex.format = THREE.RedFormat;
     tex.minFilter = tex.magFilter = THREE.LinearFilter;
@@ -266,9 +299,20 @@ export function createSky(canvas, { onReady } = {}) {
     tex.unpackAlignment = 1;
     tex.needsUpdate = true;
     uniforms.uNoise.value = tex;
-    place();
-    renderer.render(scene, camera);
-    onReady && onReady();
+  }).finally(cloudsDone);
+  // warm up while the page is still loading: fly the whole way once, out over the
+  // words and into the cloud, one picture at a time, then go back to the window
+  Promise.all([cloudsReady, wordsReady.catch(() => {})]).then(() => {
+    const stops = [0.5, 0.62, 0.74, 0.86, 0];
+    const next = () => {
+      const p = stops.shift();
+      state.p = state.sp = p;
+      place();
+      renderer.render(scene, camera);
+      if (stops.length) requestAnimationFrame(next);
+      else { warmDone(); onReady && onReady(); }
+    };
+    requestAnimationFrame(next);
   });
 
   return {

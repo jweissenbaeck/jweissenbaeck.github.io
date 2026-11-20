@@ -1,17 +1,14 @@
-/* fonts ------------------------------------------------------------------ */
+/* fonts -------------------------------------------------------------------- */
 @font-face { font-family: 'Plex Mono'; src: url(fonts/plex-mono-300.woff2) format('woff2'); font-weight: 300; font-display: swap; }
 @font-face { font-family: 'Plex Mono'; src: url(fonts/plex-mono-400.woff2) format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'Plex Mono'; src: url(fonts/plex-mono-500.woff2) format('woff2'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'Plex Mono'; src: url(fonts/plex-mono-600.woff2) format('woff2'); font-weight: 600; font-display: swap; }
 
-/* tokens ----------------------------------------------------------------- */
+/* tokens ------------------------------------------------------------------- */
 :root {
   --void: #070707;
   --ink: #0e0e0d;
-  --soot: #1a1a19;
   --stone: #8d8b86;
-  --ash: #b7b5b0;
-  --bone: #dcdad5;
   --paper: #eeede9;
   --mist: #dcdbd7; /* the inside of the cloud; js/sky.js ends on exactly this */
 
@@ -22,17 +19,20 @@
   --fs-body: 15px;
   --fs-name: clamp(22px, 2.5vw, 40px);
   --fs-title: clamp(28px, 3.6vw, 58px);
-  --fs-statement: clamp(22px, 2.6vw, 42px);
   --ease: cubic-bezier(.2, .7, .1, 1);
 
   --concrete: url(img/concrete-board.webp);
-  --concrete-fine: url(img/concrete-rough.webp);
 
   color-scheme: dark;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+  /* the scrollbar's place is kept even while the page is held (the loader, the
+     index), so nothing jumps sideways when it goes */
+  scrollbar-gutter: stable;
+}
 html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped, .is-loading { overflow: hidden; }
@@ -55,20 +55,13 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 :focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
 
 /* small uppercase mono, the voice of the whole site */
-.label, .top-nav, .hero-role, .hero-foot, .work-meta, .win-cap p,
-.foot-links a, .loader-label {
+.top-nav, .hero-role, .hero-foot, .foot-links a, .loader-label {
   font-size: var(--fs-meta);
   font-weight: 500;
   line-height: 1.5;
   text-transform: uppercase;
   letter-spacing: .1em;
 }
-.label { display: inline-flex; align-items: center; gap: 10px; }
-.label::before {
-  content: ''; width: 7px; height: 10px; background: currentColor;
-  -webkit-mask: url(img/lancet.svg) center / contain no-repeat; mask: url(img/lancet.svg) center / contain no-repeat;
-}
-
 .skip {
   position: fixed; left: var(--gut); top: -60px; z-index: 80;
   padding: 10px 14px; background: var(--paper); color: var(--ink);
@@ -94,7 +87,7 @@ body::after {
   100% { transform: translate(0, 0); }
 }
 
-/* loader ----------------------------------------------------------------- */
+/* loader ------------------------------------------------------------------- */
 .loader {
   position: fixed; inset: 0; z-index: 70;
   background: var(--void);
@@ -113,7 +106,7 @@ body::after {
 .loader-bar i { position: absolute; inset: 0; background: var(--paper); transform: scaleX(0); transform-origin: left; }
 .loader-label { display: flex; justify-content: space-between; color: rgba(238,237,233,.55); }
 
-/* cursor: a small square that opens into a frame over the work ------------ */
+/* cursor: a small square that opens into a frame over the work ------------- */
 .cursor {
   position: fixed; left: 0; top: 0; z-index: 60;
   pointer-events: none;
@@ -146,7 +139,7 @@ body::after {
 }
 @media (hover: none), (pointer: coarse) { .cursor { display: none; } }
 
-/* header ----------------------------------------------------------------- */
+/* header ------------------------------------------------------------------- */
 .top {
   position: fixed; inset: 0 0 auto; z-index: 40;
   display: flex; align-items: center; justify-content: space-between;
@@ -168,14 +161,104 @@ body::after {
 }
 .top-nav a:hover::after { transform: scaleX(1); transform-origin: left; }
 .sound { display: inline-flex; align-items: center; gap: 10px; text-transform: uppercase; letter-spacing: .1em; padding: 6px 0; }
+/* as wide as "Sound off" either way, so switching it never moves the menu beside it
+   (monospaced: nine characters and their spacing) */
+.sound-label { display: inline-block; min-width: calc(9ch + .9em); text-align: left; }
 .sound-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 10px; }
 .sound-bars i { width: 2px; height: 3px; background: currentColor; }
-.sound[aria-pressed="true"] .sound-bars i { animation: bar 1s ease-in-out infinite alternate; }
-.sound[aria-pressed="true"] .sound-bars i:nth-child(2) { animation-delay: -.4s; }
-.sound[aria-pressed="true"] .sound-bars i:nth-child(3) { animation-delay: -.7s; }
+.sound[aria-pressed="true"] .sound-bars i, .gate-on .sound-bars i { animation: bar 1s ease-in-out infinite alternate; }
+.sound[aria-pressed="true"] .sound-bars i:nth-child(2), .gate-on .sound-bars i:nth-child(2) { animation-delay: -.4s; }
+.sound[aria-pressed="true"] .sound-bars i:nth-child(3), .gate-on .sound-bars i:nth-child(3) { animation-delay: -.7s; }
 @keyframes bar { from { height: 2px; } to { height: 10px; } }
+/* on a phone the sections are behind one word, "Menu" */
+.menu-btn { display: none; text-transform: uppercase; letter-spacing: .1em; padding: 6px 0; }
+.menu-label { display: inline-block; min-width: 5ch; text-align: right; }
 
-/* hero ------------------------------------------------------------------- */
+/* menu (phones): the sections in large type, all projects, the ways out. It
+   lies under the header, whose words stay over it */
+.menu {
+  position: fixed; inset: 0; z-index: 39;
+  display: flex; flex-direction: column;
+  padding: calc(var(--gut) * .7 + 76px) var(--gut) calc(var(--gut) + env(safe-area-inset-bottom, 0px));
+  background: var(--void); color: var(--paper);
+  clip-path: inset(100% 0 0 0);
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.menu[hidden] { display: none; }
+.menu-list { margin: 0; border-top: 1px solid rgba(238,237,233,.14); }
+.menu-list li { overflow: hidden; border-bottom: 1px solid rgba(238,237,233,.14); }
+.menu-list a {
+  display: block; padding: 16px 0 12px;
+  font-size: clamp(44px, 15vw, 84px); font-weight: 500; line-height: .9; letter-spacing: -.055em;
+  text-transform: uppercase; text-decoration: none;
+}
+.menu-in { display: block; padding-right: .055em; }
+.menu-index {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 10px;
+  min-height: 44px; margin-top: 14px;
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+}
+.menu-index b { font-weight: 500; color: rgba(238,237,233,.45); }
+.menu-foot { margin-top: auto; padding-top: 32px; }
+.menu-mail {
+  display: inline-flex; align-items: center; min-height: 44px;
+  font-size: clamp(20px, 6vw, 28px); letter-spacing: -.04em; text-decoration: none;
+}
+.menu-links { display: flex; flex-wrap: wrap; gap: 0 26px; margin-top: 10px; }
+.menu-links a {
+  display: inline-flex; align-items: center; min-height: 44px;
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  text-decoration: none; color: rgba(238,237,233,.7);
+}
+/* the gate: after the loader the page lies blurred behind it, alive, until
+   the sound is chosen; then the blur lifts and the page begins */
+.gate {
+  --blur: 22px; --tint: .42;
+  position: fixed; inset: 0; z-index: 58;
+  display: grid; place-items: center;
+  padding: var(--gut);
+  background: rgba(7,7,7,var(--tint));
+  -webkit-backdrop-filter: blur(var(--blur)); backdrop-filter: blur(var(--blur));
+  color: var(--paper); text-align: center;
+}
+.gate[hidden] { display: none; }
+.gate-inner { position: relative; display: flex; flex-direction: column; align-items: center; max-width: 1100px; }
+.gate-kicker {
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(238,237,233,.6);
+}
+.gate-title {
+  display: flex; flex-direction: column; align-items: center;
+  margin: clamp(18px, 3vh, 30px) 0 clamp(16px, 2.6vh, 26px);
+  font-size: clamp(40px, 8.4vw, 136px); font-weight: 500; line-height: .92; letter-spacing: -.055em;
+  text-transform: uppercase;
+}
+/* each line rises into view from behind its own lower edge. Centred on what is
+   seen: the tracking pulls the last letter's space in, so that much is given
+   back on the right */
+.gate-line {
+  display: block; overflow: hidden; white-space: nowrap;
+  padding: 0 .055em .06em 0; margin-bottom: -.06em;
+}
+.gate-in { display: block; will-change: transform; }
+/* the layers of the gate drift with the hand, each by its own depth */
+.gate-kicker, .gate-line, .gate-actions { translate: var(--px, 0) var(--py, 0); }
+
+.gate-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: clamp(26px, 5vh, 48px); }
+.gate-actions button {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 20px;
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  border: 1px solid rgba(238,237,233,.35);
+  transition: background .35s, color .35s, border-color .35s;
+}
+.gate-on { background: var(--paper); color: var(--ink); border-color: var(--paper) !important; }
+.gate-on:hover { background: #fff; }
+.gate-off { color: rgba(238,237,233,.8); }
+.gate-off:hover { color: var(--paper); border-color: rgba(238,237,233,.7); }
+.gate-actions button:focus-visible { outline: 1px solid var(--paper); outline-offset: 4px; }
+
+/* hero --------------------------------------------------------------------- */
 .hero {
   position: relative; z-index: 2;
   height: 340vh;
@@ -222,8 +305,8 @@ body::after {
 }
 .hero-foot-r { text-align: right; }
 
-/* sky: fixed behind the page from the window to the end of the work. Once the
-   dive has turned everything to mist, the canvas goes and the flat colour stays. */
+/* sky: fixed behind the page from the window to the earth, shown only while it
+   can be seen (main.js) */
 .sky {
   position: fixed; inset: 0; z-index: 0;
   visibility: hidden;
@@ -231,10 +314,9 @@ body::after {
   background: var(--mist);
 }
 .sky canvas { display: block; width: 100%; height: 100%; }
-.sky.is-flat canvas { visibility: hidden; }
 .ascent { height: 110vh; height: 110svh; }
 
-/* work: a round tower standing in the mist ------------------------------------------- */
+/* work: a round tower standing in the mist --------------------------------- */
 .work {
   position: relative; z-index: 1;
   color: var(--ink);
@@ -242,7 +324,6 @@ body::after {
 .work-stage {
   position: relative;
   height: 100vh; height: 100svh;
-  overflow: hidden;
 }
 .work-head, .work-now, .now-hint, .work-hit { filter: opacity(var(--fade, 1)); }
 .works-canvas {
@@ -252,13 +333,12 @@ body::after {
 }
 /* the earth: a section through the ground, rising over the foot of the tower.
    Its last stretch hangs below the stage as the ceiling of the cave. */
-.work-stage { overflow: visible; }
 .earth {
   position: fixed; left: 0; right: 0; top: 0; z-index: 5;
   height: 165vh; height: 165svh;
   transform: translate3d(0, var(--ey, 101vh), 0);
   pointer-events: none;
-  visibility: var(--earth-vis, hidden);
+  visibility: hidden;
   -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 18vh) no-repeat, url(img/cave-ceiling.svg) bottom / 100% 18vh no-repeat;
   mask: linear-gradient(#000 0 0) top / 100% calc(100% - 18vh) no-repeat, url(img/cave-ceiling.svg) bottom / 100% 18vh no-repeat;
 }
@@ -278,7 +358,7 @@ body::after {
   background: linear-gradient(to bottom, var(--ink) 0, var(--ink) 36%, rgba(14,14,13,.86) 48%, rgba(14,14,13,.55) 63%, rgba(14,14,13,.22) 80%, rgba(14,14,13,0));
   transform: translate3d(0, var(--ey, 101vh), 0);
   pointer-events: none;
-  visibility: var(--earth-vis, hidden);
+  visibility: hidden;
 }
 .stratum--0 {
   top: 0;
@@ -307,10 +387,8 @@ body::after {
 .stratum--3 { -webkit-mask: url(img/stratum-3.svg) top / 100% 10vh no-repeat, linear-gradient(#000 0 0) 0 9.9vh / 100% 100% no-repeat; mask: url(img/stratum-3.svg) top / 100% 10vh no-repeat, linear-gradient(#000 0 0) 0 9.9vh / 100% 100% no-repeat; }
 .earth-depth {
   position: absolute; left: var(--gut); top: calc(50vh + var(--dy, 0px));
-  margin: 0;
   font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
   color: rgba(238,237,233,.7);
-  font-variant-numeric: tabular-nums;
 }
 .earth-m { font-size: clamp(28px, 3vw, 48px); font-weight: 300; letter-spacing: -.05em; color: var(--paper); margin-right: .2em; }
 .work-stage > :not(.works-canvas) { position: absolute; z-index: 2; }
@@ -335,7 +413,6 @@ body::after {
   letter-spacing: -.05em;
   text-transform: uppercase;
 }
-.work-meta { display: flex; gap: 28px; color: rgba(14,14,13,.6); }
 .work-index {
   display: inline-flex; align-items: baseline; gap: 10px;
   font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
@@ -391,70 +468,9 @@ body::after {
 .no-works .work-list { position: static !important; width: auto; height: auto; clip-path: none; white-space: normal; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; margin-top: 40px; }
 .no-works .work-list img { width: 100%; height: auto; aspect-ratio: 3 / 4; object-fit: cover; }
 
-/* the portrait in the cave keeps the stepped stone orders */
-/* a window: stepped orders around a picture, every layer cut to the pointed arch.
-   The outer order is frosted stone. */
 .win { display: block; color: inherit; text-decoration: none; }
-.win-slab {
-  position: relative;
-  aspect-ratio: 300 / 440;
-  transition: scale .9s var(--ease);
-}
-.win-depth, .win-order {
-  position: absolute; inset: 0;
-  -webkit-mask-size: 100% 100%, 100% 100%; mask-size: 100% 100%, 100% 100%;
-  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-composite: source-in; mask-composite: intersect;
-}
-.win-depth {
-  overflow: hidden;
-  /* the picture fills the opening; on hover it grows to the whole arch */
-  -webkit-mask-image: url(img/lancet-1.svg); mask-image: url(img/lancet-1.svg);
-  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
-  transform-origin: 50% 56%;
-  transition: scale 1s var(--ease);
-  background: #111;
-}
-.win-depth img {
-  position: absolute; left: -10%; top: -8%;
-  width: 120%; height: 116%;
-  max-width: none;
-  object-fit: cover;
-  transition: scale 1.2s var(--ease), filter 1.2s var(--ease);
-}
-.win-depth::after {
-  /* the head of the arch throws its shadow onto the glass */
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,.5), rgba(0,0,0,0) 50%, rgba(0,0,0,.2));
-  transition: opacity 1s var(--ease);
-  pointer-events: none;
-}
-.win-order--2, .win-order--3 { will-change: transform; }
-.win-order {
-  transition: scale 1s var(--ease), opacity .8s var(--ease);
-}
-.win-order--1 {
-  -webkit-mask-image: url(img/lancet-0.svg), url(img/order-1.svg); mask-image: url(img/lancet-0.svg), url(img/order-1.svg);
-  background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.02) 45%, rgba(255,255,255,.08));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
-  -webkit-backdrop-filter: blur(10px) saturate(0) brightness(1.18);
-  backdrop-filter: blur(10px) saturate(0) brightness(1.18);
-}
-.win-order--1::before {
-  content: ''; position: absolute; inset: 0;
-  background: var(--concrete) 0 0 / 360px;
-  opacity: .22;
-  mix-blend-mode: multiply;
-}
-.win-order--2 {
-  -webkit-mask-image: url(img/lancet-1.svg), url(img/order-2.svg); mask-image: url(img/lancet-1.svg), url(img/order-2.svg);
-  background: linear-gradient(to bottom, rgba(10,10,10,.62), rgba(10,10,10,.38));
-}
-.win-order--3 {
-  -webkit-mask-image: url(img/lancet-2.svg), url(img/order-3.svg); mask-image: url(img/lancet-2.svg), url(img/order-3.svg);
-  background: linear-gradient(to bottom, rgba(5,5,5,.72), rgba(5,5,5,.5));
-}
-/* band -------------------------------------------------------------------- */
+
+/* band --------------------------------------------------------------------- */
 .band {
   /* in the cave, no ground of its own, close under the menu; its box is
      exactly the height of the capitals */
@@ -481,7 +497,7 @@ body::after {
   -webkit-mask: url(img/lancet.svg) center / contain no-repeat; mask: url(img/lancet.svg) center / contain no-repeat;
 }
 
-/* about: the cave, someone sitting in the light, a few words around them ------------ */
+/* about: the cave, someone sitting in the light, a few words around them --- */
 .about {
   position: relative; z-index: 0;
   background: var(--ink);
@@ -505,8 +521,8 @@ body::after {
 }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* footer: the address, the ways out, and the name cast in concrete across the
-   whole width, dark until a light finds it ------------------------------------- */
+/* footer: a wall in the dark with a window of coloured glass, the address and
+   the ways out under it ---------------------------------------------------- */
 .foot {
   position: relative;
   height: 100vh; height: 100svh;
@@ -522,12 +538,11 @@ body::after {
   background: var(--void);
 }
 .foot-meta p, .foot-ask {
-  margin: 0;
   font-size: var(--fs-meta); font-weight: 500; line-height: 1.5; letter-spacing: .1em; text-transform: uppercase;
   color: rgba(238,237,233,.5);
   white-space: nowrap;
 }
-/* under the stone: the address and the ways out */
+/* the address and the ways out, at the foot of the wall */
 .foot-body {
   flex: 1; min-height: 0;
   display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;
@@ -541,7 +556,7 @@ body::after {
 @media (max-aspect-ratio: 11/10) {
   .foot-claim {
     display: block; margin: 0 0 auto; padding-top: clamp(8px, 2vh, 24px);
-    font-size: var(--fs-title); font-weight: 600; line-height: 1.02; letter-spacing: -.05em;
+    font-size: clamp(28px, 7.2vw, 72px); font-weight: 600; line-height: 1.02; letter-spacing: -.05em;
     text-transform: uppercase;
   }
 }
@@ -577,108 +592,182 @@ body::after {
 
 [data-scramble] { white-space: nowrap; }
 
-/* index: all projects, one list --------------------------------------------- */
+/* all projects: the names round a turning drum, one window beside it ------- */
 .archive {
   position: fixed; inset: 0; z-index: 55;
+  display: grid; grid-template-rows: auto 1fr auto;
   background: var(--void); color: var(--paper);
   clip-path: inset(100% 0 0 0);
+  overflow: hidden;
 }
 .archive[hidden] { display: none; }
-.archive-inner {
-  height: 100%; overflow-y: auto; overscroll-behavior: contain;
-  padding: clamp(90px, 13vh, 130px) var(--gut) clamp(60px, 10vh, 120px);
-}
+/* the head takes the place of the menu it covers, at the same height */
 .archive-head {
-  display: grid; grid-template-columns: 1fr auto auto; align-items: end; gap: clamp(20px, 4vw, 64px);
-  padding-bottom: 18px;
-  border-bottom: 1px solid rgba(238,237,233,.25);
+  position: relative;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px clamp(18px, 3vw, 40px);
+  padding: calc(var(--gut) * .7) var(--gut) 14px;
 }
-.archive-head .title { font-size: clamp(64px, 11vw, 190px); line-height: .78; letter-spacing: -.07em; }
-.archive-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+.archive-head::after {
+  content: ''; position: absolute; left: var(--gut); right: var(--gut); bottom: 0; height: 1px;
+  background: rgba(238,237,233,.14);
+  transform-origin: left; transform: scaleX(var(--rule, 1));
+}
+.archive-title, .archive-count, .year-btn, .year-menu button, .archive-sound {
+  padding: 6px 0;
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase; line-height: 1.2;
+}
+.archive-title { font-weight: 600; }
+/* how many there are, all told: on the same line as the title, close to it */
+.archive-count { margin-left: calc(clamp(18px, 3vw, 40px) * -1 + .9em); color: rgba(238,237,233,.45); }
+/* the year: a word with a chevron that lets down a list of years */
+.archive-year { position: relative; z-index: 4; }
+.year-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--paper); }
+.year-btn i {
+  width: 6px; height: 6px; margin-top: -3px;
+  border-right: 1px solid currentColor; border-bottom: 1px solid currentColor;
+  transform: rotate(45deg); transition: transform .5s var(--ease), margin .5s var(--ease);
+}
+.year-btn[aria-expanded="true"] i { transform: rotate(225deg); margin-top: 3px; }
+.year-menu {
+  position: absolute; left: -16px; top: calc(100% + 12px);
+  min-width: 170px; padding: 8px 0;
+  background: #0c0c0c; border: 1px solid rgba(238,237,233,.14);
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path .55s var(--ease);
+}
+.year-menu.is-open { clip-path: inset(0 0 0 0); }
+.year-menu button {
+  position: relative; display: block; width: 100%; padding: 8px 16px 8px 30px; text-align: left;
+  color: rgba(238,237,233,.45); transition: color .3s;
+}
+.year-menu button:hover, .year-menu button:focus-visible, .year-menu button[aria-checked="true"] { color: var(--paper); }
+/* the chosen year is marked with a small lancet */
+.year-menu button[aria-checked="true"]::before {
+  content: ''; position: absolute; left: 14px; top: 50%; width: 6px; height: 9px; margin-top: -5px;
+  background: currentColor;
+  -webkit-mask: url(img/lancet.svg) center / contain no-repeat; mask: url(img/lancet.svg) center / contain no-repeat;
+}
+/* the sound can be switched here too: the menu that has it lies under the index */
+.archive-sound { color: rgba(238,237,233,.45); transition: color .3s; }
+.archive-sound:hover, .archive-sound[aria-pressed="true"] { color: var(--paper); }
+/* the filters and the close are words, not boxes; the chosen one is underlined */
+.archive-filter { display: flex; gap: clamp(14px, 2vw, 28px); flex-wrap: wrap; margin-left: auto; }
 .archive-filter button, .archive-close {
+  position: relative; padding: 6px 0;
   font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
-  padding: 10px 14px;
-  border: 1px solid rgba(238,237,233,.25);
-  transition: background .3s, color .3s, border-color .3s;
+  color: rgba(238,237,233,.45);
+  transition: color .3s;
 }
-.archive-filter button[aria-pressed="true"], .archive-filter button:hover { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.archive-filter button::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: currentColor;
+  transform: scaleX(0); transform-origin: right; transition: transform .5s var(--ease);
+}
+.archive-filter button:hover, .archive-filter button[aria-pressed="true"], .archive-close { color: var(--paper); }
+/* a discipline with nothing in the chosen year cannot be chosen */
+.archive-filter button:disabled { opacity: .3; color: rgba(238,237,233,.45); cursor: default; }
+.archive-filter button[aria-pressed="true"]::after { transform: scaleX(1); transform-origin: left; }
 .archive-close { display: inline-flex; align-items: center; gap: 12px; }
-.archive-close i { position: relative; width: 12px; height: 12px; }
+.archive-close i { position: relative; width: 12px; height: 12px; transition: transform .6s var(--ease); }
 .archive-close i::before, .archive-close i::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 1px; background: currentColor; transform: translate(-50%, -50%) rotate(45deg); }
 .archive-close i::after { transform: translate(-50%, -50%) rotate(-45deg); }
-.archive-close:hover { background: var(--paper); color: var(--ink); }
-.archive-cols, .archive-list a { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 18vw) 6ch 2ch; gap: 24px; align-items: baseline; }
-.archive-cols {
-  padding: 14px 0;
-  font-size: 10px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase;
-  color: rgba(238,237,233,.45);
+.archive-close:hover i { transform: rotate(90deg); }
+
+.archive-body { position: relative; min-height: 0; overflow: hidden; }
+/* the drum: every name stands on it, the one on the middle line faces you,
+   the others turn away above and below and fade into the dark */
+.archive-drum {
+  position: absolute; inset: 0;
+  /* the eye stands in front of the names, not off to the side: they turn away
+     without leaning over */
+  perspective: 2200px; perspective-origin: 14% 50%;
+  touch-action: none;
 }
-.archive-list { counter-reset: none; }
-.archive-list li { border-top: 1px solid rgba(238,237,233,.14); }
-.archive-list li:last-child { border-bottom: 1px solid rgba(238,237,233,.14); }
+.archive-list {
+  position: absolute; left: var(--gut); top: 50%; margin: 0;
+  transform-style: preserve-3d;
+  font-size: var(--fs, 64px); line-height: 1;
+}
+.archive-list li {
+  position: absolute; left: 0; top: 0;
+  height: var(--lh, 70px); margin-top: calc(var(--lh, 70px) / -2);
+  display: flex; align-items: center;
+  white-space: nowrap; backface-visibility: hidden;
+  transform-origin: 0 50%; will-change: transform, opacity; opacity: 0;
+}
 .archive-list li[hidden] { display: none; }
 .archive-list a {
-  position: relative;
-  padding: clamp(12px, 2vh, 22px) 0;
-  text-decoration: none;
-  isolation: isolate;
+  display: block; padding: .04em 0;
+  font-weight: 500; letter-spacing: -.05em; text-transform: uppercase; text-decoration: none;
 }
-.archive-list a::before {
-  /* light fills the row from the left */
-  content: ''; position: absolute; inset: 0; z-index: -1;
-  background: var(--paper);
-  transform: scaleY(0); transform-origin: bottom;
-  transition: transform .45s var(--ease);
-}
-.archive-list a:hover::before, .archive-list a:focus-visible::before { transform: scaleY(1); }
-.archive-list a:hover, .archive-list a:focus-visible { color: var(--ink); }
-.a-title {
-  font-size: clamp(26px, 4.2vw, 68px); font-weight: 500; line-height: 1;
-  letter-spacing: -.055em; text-transform: uppercase;
-  transition: transform .6s var(--ease);
-}
-.archive-list a:hover .a-title { transform: translateX(clamp(10px, 1.5vw, 24px)); }
-.a-cat, .a-year { font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase; opacity: .65; }
-.a-arrow { justify-self: end; padding-right: 10px; transition: transform .5s var(--ease); }
-.archive-list a:hover .a-arrow { transform: translate(4px, -4px); }
-.archive-preview {
-  /* a small lancet that follows the hand */
-  position: fixed; left: 0; top: 0; z-index: 2;
-  width: clamp(160px, 15vw, 240px); aspect-ratio: 3 / 4;
+.archive-list a:focus-visible { outline: 1px solid rgba(238,237,233,.5); outline-offset: 6px; }
+/* the picture of the one on the line: a plain rectangle, name, discipline and
+   year under it */
+.archive-view {
+  position: absolute; right: calc(var(--gut) + 9vw); top: 50%; translate: 0 -50%;
+  width: min(clamp(260px, 30vw, 500px), 56vh);
   pointer-events: none;
-  -webkit-mask: url(img/lancet-0.svg) 0 0 / 100% 100%; mask: url(img/lancet-0.svg) 0 0 / 100% 100%;
-  opacity: 0; scale: .85;
-  transition: opacity .35s, scale .5s var(--ease);
 }
-.archive-preview.is-on { opacity: 1; scale: 1; }
-.archive-preview img { width: 100%; height: 100%; object-fit: cover; }
-@media (max-width: 760px) {
-  .archive-head { grid-template-columns: 1fr auto; }
-  .archive-filter { grid-column: 1 / -1; grid-row: 2; }
-  .archive-cols { display: none; }
-  .archive-list a { grid-template-columns: 1fr auto; }
-  .a-cat { grid-column: 1; }
-  .a-year { grid-column: 2; grid-row: 1; }
-  .a-arrow { display: none; }
-  .archive-preview { display: none; }
+/* white where a project has no picture yet */
+.archive-pic { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: var(--paper); }
+.archive-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.archive-pic img:not([src]) { visibility: hidden; }
+.archive-info {
+  display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: space-between;
+  margin: 16px 0 0;
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
 }
+.ai-title { width: 100%; color: var(--paper); }
+.ai-cat, .ai-year { color: rgba(238,237,233,.45); }
+.archive-foot {
+  /* how to turn it, which of how many is on the line, how to leave */
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 24px;
+  padding: 14px var(--gut) calc(var(--gut) * .7);
+  font-size: var(--fs-meta); font-weight: 500; letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(238,237,233,.35);
+}
+.af-esc { justify-self: end; }
+.af-pos { font-variant-numeric: tabular-nums; color: rgba(238,237,233,.45); }
+.af-now { font-weight: 500; color: var(--paper); }
 
-@media (max-width: 760px) {
-  .work-now { width: auto; right: var(--gut); }
-  .now-hint { display: none; }
-}
-
-/* medium screens ---------------------------------------------------------- */
-@media (max-width: 1100px) {
-}
-
-/* small screens ---------------------------------------------------------- */
+/* small screens ------------------------------------------------------------ */
 @media (max-width: 760px) {
   .top-nav a { display: none; }
+  .menu-btn { display: inline-flex; }
   .hero { height: 280vh; }
 
   .work-head { flex-direction: column; align-items: flex-start; }
+  .work-now { width: auto; right: var(--gut); }
+  .now-hint { display: none; }
 
+  /* the head of the index in two rows: the title, the sound and the close; then
+     the year and the disciplines, which slide sideways if they need the room */
+  .archive-head { row-gap: 4px; }
+  .archive-head::before { content: ''; order: 5; flex-basis: 100%; height: 0; }
+  .archive-sound { order: 3; margin-left: auto; }
+  .archive-close { order: 4; }
+  .archive-year { order: 6; }
+  .archive-filter {
+    order: 7; flex: 1; min-width: 0; margin-left: 0; flex-wrap: nowrap;
+    overflow-x: auto; scrollbar-width: none;
+    -webkit-mask: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  }
+  .archive-filter::-webkit-scrollbar { display: none; }
+  .archive-filter button { flex: none; }
+  .archive-filter button:last-child { margin-right: 28px; }
+  /* the sound switch is only its bars here */
+  .archive-sound .sound-label { position: absolute; width: 1px; height: 1px; min-width: 0; overflow: hidden; clip-path: inset(50%); }
+  .archive-drum { perspective-origin: 50% 50%; }
+  /* no picture: only the words of the one on the line, below */
+  .archive-pic { display: none; }
+  .archive-view { left: var(--gut); right: var(--gut); top: auto; bottom: 8px; translate: none; width: auto; }
+  .archive-info { margin: 0; }
+  .ai-title { display: none; }
+
+  /* the question of the gate across the width; its two answers one under the
+     other, as wide as each other */
+  .gate-title { font-size: 14vw; }
+  .gate-actions { flex-direction: column; align-self: stretch; width: min(100%, 320px); margin-inline: auto; }
+  .gate-actions button { justify-content: center; padding: 16px 20px; }
 
   .foot-mail { font-size: clamp(22px, 6.4vw, 34px); }
   /* on a tall screen the light runs out under the words: a dark floor for them */
@@ -687,6 +776,26 @@ body::after {
     background: linear-gradient(to bottom, rgba(7,7,7,0), rgba(7,7,7,.78) 38%, rgba(7,7,7,.92));
     pointer-events: none;
   }
+}
+
+/* a phone on its side: little height, the band of the cave smaller */
+@media (max-height: 500px) and (orientation: landscape) {
+  .about { --band: clamp(32px, 11vh, 64px); }
+}
+
+/* touch: nothing to aim with but a finger. Everything that can be tapped is at
+   least 44 px each way, its picture as it was (a larger target round it) */
+@media (pointer: coarse) {
+  .top-mark, .sound, .menu-btn, .work-index, .foot-mail, .foot-links a,
+  .year-btn, .archive-filter button, .archive-close { position: relative; }
+  .top-mark::before, .sound::before, .menu-btn::before, .work-index::before, .foot-mail::before, .foot-links a::before,
+  .year-btn::before, .archive-filter button::before, .archive-close::before {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: max(calc(100% + 12px), 44px); height: max(100%, 44px);
+    translate: -50% -50%;
+  }
+  /* there is no key to press */
+  .af-esc { visibility: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {

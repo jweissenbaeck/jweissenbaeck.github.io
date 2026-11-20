@@ -2,7 +2,7 @@
 // its wall along a spiral; scrolling turns the tower about its axis and lifts
 // it, so one window after the other comes round to the middle. Everything is
 // real geometry: the curve of the wall gives the perspective of every window.
-import { THREE, url } from './kit.js';
+import { THREE, url, task, warmUp } from './kit.js';
 import { lancet } from './hero.js';
 import { RoomEnvironment } from '../lib/RoomEnvironment.js';
 
@@ -13,9 +13,8 @@ const R = 2.4;                 // radius of the tower
 const STEP_A = THREE.MathUtils.degToRad(52);   // turn between two windows
 const STEP_Y = 0.92;           // drop between two windows
 const HAZE = [150, 150, 148];  // the air below the clouds, around the tower (sRGB)
-const DARK = [14, 14, 13];     // the band that follows it
 
-// window: three stepped orders around a lancet, a lintel and a sill ----------------
+// window: three stepped orders around a lancet, a lintel and a sill -----------
 const W = 0.46, HS = 0.02;
 const ORDERS = [{ s: 0.13, sill: -0.56, d: 0.12 }, { s: 0.065, sill: -0.54, d: 0.07 }, { s: 0, sill: -0.52, d: 0.07 }];
 const rect = (x0, y0, x1, y1) => [new V2(x0, y0), new V2(x1, y0), new V2(x1, y1), new V2(x0, y1)];
@@ -47,7 +46,7 @@ function windowGeometry() {
 }
 
 // the wall: a cylinder built as a grid in (arc length, height), whose lines run
-// along every window edge, so each opening is cut exactly ------------------------
+// along every window edge, so each opening is cut exactly ---------------------
 function wallGeometry(spots, top, bottom, tile) {
   const C = TAU * R;
   const us = new Set(), vs = new Set([top, bottom]);
@@ -99,18 +98,19 @@ export function createWorks(canvas, images, { onReady } = {}) {
   renderer.shadowMap.autoUpdate = false;
 
   const scene = new THREE.Scene();
-  // the far side of the tower sinks into the mist of the page
-  scene.fog = new THREE.Fog(0xdcdbd7, 9, 24);
+  // the far side of the tower and the ground sink into the haze around it
+  scene.fog = new THREE.Fog(new THREE.Color().setRGB(HAZE[0] / 255, HAZE[1] / 255, HAZE[2] / 255, THREE.SRGBColorSpace), 9, 30);
   const pm = new THREE.PMREMGenerator(renderer);
   scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.3;
   pm.dispose();
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 60);
 
-  // materials ------------------------------------------------------------------
+  // materials -----------------------------------------------------------------
   const loader = new THREE.TextureLoader();
   let pending = 3;
-  const done = () => { if (--pending === 0) onReady && onReady(); };
+  const texDone = task(3), warmDone = task(3);
+  const done = () => { if (--pending === 0) { texDone(); requestAnimationFrame(warm); } };
   const tex = (name, srgb) => {
     const t = loader.load(url(`tex/${name}.jpg`), done, undefined, done);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -127,7 +127,7 @@ export function createWorks(canvas, images, { onReady } = {}) {
     });
   };
 
-  // the tower ------------------------------------------------------------------
+  // the tower -----------------------------------------------------------------
   const N = images.length;
   const spots = images.map((_, i) => ({ a: i * STEP_A, u: i * STEP_A * R, y: -i * STEP_Y }));
   const top = H / 2 + 0.55;
@@ -229,7 +229,6 @@ export function createWorks(canvas, images, { onReady } = {}) {
 
   // light: a low sun from the left, so the round wall turns from light into shade
   const sun = new THREE.DirectionalLight(0xffffff, 3.2);
-  const SUN = 3.2, SKY = 0.45;
   sun.position.set(-7, 6, 6);
   sun.target.position.set(0, 0, 0);
   sun.castShadow = true;
@@ -238,10 +237,10 @@ export function createWorks(canvas, images, { onReady } = {}) {
   sun.shadow.bias = -0.0005;
   sun.shadow.normalBias = 0.02;
   scene.add(sun, sun.target);
-  const sky = new THREE.HemisphereLight(0xffffff, 0x666666, SKY);
+  const sky = new THREE.HemisphereLight(0xffffff, 0x666666, 0.45);
   scene.add(sky);
 
-  // camera ---------------------------------------------------------------------
+  // camera --------------------------------------------------------------------
   let dist = 5;
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -257,7 +256,6 @@ export function createWorks(canvas, images, { onReady } = {}) {
   resize();
 
   const state = { p: 0, sp: 0, mx: 0.5, my: 0.5, sx: 0.5, sy: 0.5, d: 0, sd: 0, a: 0, sa: 0 };
-  const fogColor = new THREE.Color();
   const look = new THREE.Vector3();
   const corners = [new THREE.Vector3(), new THREE.Vector3()];
   let last = performance.now();
@@ -283,14 +281,29 @@ export function createWorks(canvas, images, { onReady } = {}) {
     camera.position.set(ox, 0.12 + oy + high, R + dist);
     look.set(ox * 0.2, -0.1 + high - (1 - a) * 1.2, 0);
     camera.lookAt(look);
-    // the far side of the tower and the ground sink into the haze around it
-    fogColor.setRGB(HAZE[0] / 255, HAZE[1] / 255, HAZE[2] / 255, THREE.SRGBColorSpace);
-    scene.fog.color.copy(fogColor);
-    scene.fog.near = 9;
-    scene.fog.far = 30;
   }
 
   let running = false, raf = 0;
+  // warm up while the page is still loading: the tower once at the first window,
+  // once halfway round and once at the last, each a picture of its own, so every
+  // texture, every material and the shadows are ready before it is ever seen
+  function warm() {
+    const stops = [0, 0.5, 1];
+    const next = (first) => {
+      const p = stops.shift();
+      Object.assign(state, { p, sp: p, a: 1, sa: 1, d: 0, sd: 0 });
+      place();
+      renderer.shadowMap.needsUpdate = true;
+      if (first) warmUp(renderer, scene, camera); else renderer.render(scene, camera);
+      if (stops.length) { requestAnimationFrame(() => next(false)); return; }
+      Object.assign(state, { p: 0, sp: 0, a: 0, sa: 0 });
+      shadowAt = '';
+      warmDone();
+      onReady && onReady();
+    };
+    next(true);
+  }
+
   let shadowAt = '';
   function frame() {
     raf = requestAnimationFrame(frame);

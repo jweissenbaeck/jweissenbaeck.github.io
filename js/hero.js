@@ -1,6 +1,6 @@
 // Hero scene: a lancet window cut into a board-formed concrete wall.
 // Sunlight falls through the tracery, the camera walks towards the glass on scroll.
-import * as THREE from '../lib/three.module.min.js';
+import { THREE, url } from './kit.js';
 
 const V2 = THREE.Vector2;
 
@@ -156,19 +156,19 @@ export function createHero(canvas, { onReady } = {}) {
 
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 80);
 
-  // materials ---------------------------------------------------------------
+  // materials -----------------------------------------------------------------
   const loader = new THREE.TextureLoader();
   let pending = 6;
   const done = () => { if (--pending === 0) ready(); };
-  const load = (url, srgb, repeat) => {
-    const t = loader.load(url, done, undefined, done);
+  const load = (file, srgb, repeat) => {
+    const t = loader.load(file, done, undefined, done);
     t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.repeat.set(repeat, repeat);
     t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     return t;
   };
-  const base = new URL('../tex/', import.meta.url).href;
+  const base = url('tex/');
   const wr = 1 / 4.2; // one tile of formwork covers 4.2 m
   const wallArm = load(base + 'wall_arm.jpg', false, wr);
   const concrete = new THREE.MeshStandardMaterial({
@@ -191,7 +191,7 @@ export function createHero(canvas, { onReady } = {}) {
     aoMap: floorArm, roughnessMap: floorArm, roughness: 0.85, metalness: 0,
   });
 
-  // architecture -----------------------------------------------------------
+  // architecture --------------------------------------------------------------
   const arch = new THREE.Group();
   scene.add(arch);
   const WALL = [-18, FLOOR, 18, 18];
@@ -209,7 +209,7 @@ export function createHero(canvas, { onReady } = {}) {
   arch.add(extrude(rect(-3.15, 6.55, 18, 18), [], 1.7, 1.7, concrete));    // cantilever above
   arch.add(extrude(rect(3.6, FLOOR, 18, -0.62), [], 1.5, 1.5, concrete));   // bench, right
 
-  const { holes, oculus, light } = traceryLayout();
+  const { holes, light } = traceryLayout();
   arch.add(extrude(lancet(W, HS, 0.02, 0), holes, 0.2, -0.98, concreteDeep));
 
   // the floor stops at the wall: behind the glass there is only the next page
@@ -232,7 +232,7 @@ export function createHero(canvas, { onReady } = {}) {
   halo.position.set(0, 2.5, -0.55);
   scene.add(halo);
 
-  // light ----------------------------------------------------------------
+  // light ---------------------------------------------------------------------
   const sunDir = new THREE.Vector3(0.24, -0.62, 0.75).normalize();
   const winC = new THREE.Vector3(0, 2.6, -1.2);
 
@@ -343,7 +343,7 @@ export function createHero(canvas, { onReady } = {}) {
   });
   scene.add(new THREE.Points(dGeo, dustMat));
 
-  // camera ---------------------------------------------------------------
+  // camera --------------------------------------------------------------------
   const state = { p: 0, mx: 0, my: 0, sx: 0, sy: 0 };
   const look = new THREE.Vector3();
   let dist = 12;
